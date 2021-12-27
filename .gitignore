@@ -1,0 +1,10 @@
+build/
+coverage/
+deployments/*/solcInputs
+deployments/localhost/
+lib/
+node_modules/
+coverage.json
+yarn-error.log
+*.tgz
+.mocharc.json
