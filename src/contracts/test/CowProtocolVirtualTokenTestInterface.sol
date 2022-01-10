@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 pragma solidity ^0.8.10;
 
-import "../CowSwapVirtualToken.sol";
+import "../CowProtocolVirtualToken.sol";
 
-contract CowSwapVirtualTokenTestInterface is CowSwapVirtualToken {
+contract CowProtocolVirtualTokenTestInterface is CowProtocolVirtualToken {
     constructor(
         bytes32 merkleRoot,
         address cowToken,
@@ -17,7 +17,7 @@ contract CowSwapVirtualTokenTestInterface is CowSwapVirtualToken {
         uint256 wethPrice,
         address teamController
     )
-        CowSwapVirtualToken(
+        CowProtocolVirtualToken(
             merkleRoot,
             cowToken,
             communityFundsTarget,

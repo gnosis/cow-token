@@ -24,13 +24,13 @@ const allClaimTypes: ClaimType[] = Object.keys(ClaimType)
   .map((c) => Number(c))
   .filter((c) => !isNaN(c));
 
-describe("CowSwapVirtualToken", () => {
+describe("CowProtocolVirtualToken", () => {
   let token: Contract;
   let realToken: MockContract;
   let usdcToken: MockContract;
   let gnoToken: MockContract;
   let wethToken: MockContract;
-  let CowSwapVirtualToken: ContractFactory;
+  let CowProtocolVirtualToken: ContractFactory;
 
   const [deployer, executor, user, teamController, teamMember] =
     waffle.provider.getWallets();
@@ -49,7 +49,7 @@ describe("CowSwapVirtualToken", () => {
     gnoToken = await waffle.deployMockContract(deployer, IERC20.abi);
     wethToken = await waffle.deployMockContract(deployer, IERC20.abi);
 
-    CowSwapVirtualToken = (
+    CowProtocolVirtualToken = (
       await ethers.getContractFactory(ContractName.VirtualToken)
     ).connect(deployer);
     deploymentParams = {
@@ -69,7 +69,7 @@ describe("CowSwapVirtualToken", () => {
 
   describe("constructor parameters", async function () {
     beforeEach(async function () {
-      token = await CowSwapVirtualToken.deploy(
+      token = await CowProtocolVirtualToken.deploy(
         ...constructorInput(ContractName.VirtualToken, deploymentParams),
       );
     });
@@ -149,7 +149,7 @@ describe("CowSwapVirtualToken", () => {
       ...storageAccessibleFunctions,
       ...customPublicFunctions,
     ];
-    const { functions } = CowSwapVirtualToken.interface;
+    const { functions } = CowProtocolVirtualToken.interface;
     const actualPublicFunctions = Object.keys(functions).filter(
       (name) => !["view", "pure"].includes(functions[name].stateMutability),
     );
@@ -202,7 +202,7 @@ describe("CowSwapVirtualToken", () => {
 
     beforeEach(async function () {
       token = (
-        await CowSwapVirtualToken.deploy(
+        await CowProtocolVirtualToken.deploy(
           ...constructorInput(ContractName.VirtualToken, {
             ...deploymentParams,
             merkleRoot,
@@ -422,10 +422,10 @@ describe("CowSwapVirtualToken", () => {
     const vestingAmount = ethers.utils.parseUnits("5437", 18);
 
     beforeEach(async () => {
-      const CowSwapVirtualToken = await ethers.getContractFactory(
-        "CowSwapVirtualTokenTestInterface",
+      const CowProtocolVirtualToken = await ethers.getContractFactory(
+        "CowProtocolVirtualTokenTestInterface",
       );
-      token = await CowSwapVirtualToken.connect(deployer).deploy(
+      token = await CowProtocolVirtualToken.connect(deployer).deploy(
         ...constructorInput(ContractName.VirtualToken, deploymentParams),
       );
     });
@@ -489,10 +489,10 @@ describe("CowSwapVirtualToken", () => {
     const vestingAmount = ethers.utils.parseUnits("5437", 18);
 
     beforeEach(async () => {
-      const CowSwapVirtualToken = await ethers.getContractFactory(
-        "CowSwapVirtualTokenTestInterface",
+      const CowProtocolVirtualToken = await ethers.getContractFactory(
+        "CowProtocolVirtualTokenTestInterface",
       );
-      token = await CowSwapVirtualToken.connect(deployer).deploy(
+      token = await CowProtocolVirtualToken.connect(deployer).deploy(
         ...constructorInput(ContractName.VirtualToken, deploymentParams),
       );
     });

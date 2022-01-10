@@ -5,9 +5,9 @@ import "../vendored/libraries/Math.sol";
 
 import "../interfaces/VestingInterface.sol";
 
-/// @dev The vesting logic for the virtual CowSwap token
+/// @dev The vesting logic for distributing the COW token
 /// @title Vesting Logic
-/// @author Gnosis Developers
+/// @author CoW Protocol Developers
 contract Vesting is VestingInterface {
     /// @dev The timestamp of the official vesting start. This value is shared
     /// between all participants.

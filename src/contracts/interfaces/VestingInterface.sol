@@ -7,8 +7,8 @@ pragma solidity ^0.8.10;
 /// separately and are linked to each other by the functions in this contract.
 /// This contracs is for all intents and purposes an interface, however actual
 /// interfaces cannot declare internal functions.
-/// @title CowSwap vesting function interface.
-/// @author Gnosis Developers
+/// @title COW token vesting interface.
+/// @author CoW Protocol Developers
 abstract contract VestingInterface {
     /// @dev Adds an amount that will be vested over time.
     /// Should be called from the parent contract on redeeming a vested claim.

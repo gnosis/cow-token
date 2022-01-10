@@ -1,8 +1,8 @@
 export const metadata = {
-  real: { symbol: "COW", name: "CowSwap Token", decimals: 18 },
+  real: { symbol: "COW", name: "CoW Protocol Token", decimals: 18 },
   virtual: {
     symbol: "vCOW",
-    name: "Virtual CowSwap Token",
+    name: "Virtual CoW Protocol Token",
     decimals: 18,
   },
 };

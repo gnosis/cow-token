@@ -1,16 +1,16 @@
-# CowSwap Token
+# CoW Protocol Token
 
-This repository contains the Solidity smart contract code for the CowSwap token.
+This repository contains the Solidity smart contract code for the CoW Protocol/CowSwap token.
 
 ## Overview
 
-This repo contains all code related to the deployment of the CowSwap token contract and the tools that manage how the token will be distributed.
+This repo contains all code related to the deployment of the COW token contract and the tools that manage how the token will be distributed.
 
-Two contracts will be deployed onchain: the CowSwap token contract (COW) and a "virtual" CowSwap token (vCOW).
-The Cowswap token is a standard ERC20 token that can optionally be minted by the CowDao, up to 3% of the total supply each year.
+Two contracts will be deployed onchain: the CoW Protocol token contract (COW) and a "virtual" CoW Protocol token (vCOW).
+The COW token is a standard ERC20 token that can optionally be minted by the CowDao, up to 3% of the total supply each year.
 The virtual token manages how the real token is distributed and cannot be transferred.
 
-In the deployment transaction, all existing COW tokens are minted and sent to the CowSwap DAO.
+In the deployment transaction, all existing COW tokens are minted and sent to the CoW Protocol DAO.
 Shares of virtual tokens will be assigned to the users in advance based on a Merkle tree that is determined at deployment time.
 Some claims will be paid (with different currencies), some will be vesting in time, and some will be cancellable.
 All claims have a deadline, the latest is six weeks after deployment; no claim can be redeemed after its deadline has passed.

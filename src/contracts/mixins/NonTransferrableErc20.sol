@@ -5,7 +5,7 @@ import "../vendored/interfaces/IERC20.sol";
 
 /// @dev A contract of an ERC20 token that cannot be transferred.
 /// @title Non-Transferrable ERC20
-/// @author Gnosis Developers
+/// @author CoW Protocol Developers
 abstract contract NonTransferrableErc20 is IERC20 {
     /// @dev The ERC20 name of the token
     string public name;

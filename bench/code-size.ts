@@ -1,7 +1,9 @@
 import { artifacts } from "hardhat";
 
+import { ContractName } from "../src/ts";
+
 async function main() {
-  const contracts = ["CowSwapToken", "CowSwapVirtualToken"];
+  const contracts = [ContractName.RealToken, ContractName.VirtualToken];
   const maxLenght = Math.max(...contracts.map((name) => name.length));
 
   console.log(`${"Contract".padEnd(maxLenght, " ")} | Deployed | Deployment`);
