@@ -6,7 +6,7 @@ import "../vendored/mixins/draft-ERC20Permit.sol";
 
 /// @dev Contract contains the logic for minting new tokens
 /// @title Mintable Token
-/// @author Gnosis Developers
+/// @author CoW Protocol Developers
 contract InflationaryToken is ERC20, ERC20Permit {
     /// @dev Defines the cowDao address that is allowed to mint new tokens
     address public immutable cowDao;

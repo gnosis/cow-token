@@ -4,12 +4,12 @@ pragma solidity ^0.8.10;
 import "./mixins/InflationaryToken.sol";
 import "./vendored/mixins/StorageAccessible.sol";
 
-/// @dev The governance token for the CowSwap protocol.
-/// @title CowSwap Governance Token
-/// @author Gnosis Developers
-contract CowSwapToken is InflationaryToken, StorageAccessible {
+/// @dev The governance token for the CoW Protocol.
+/// @title CoW Protocol Governance Token
+/// @author CoW Protocol Developers
+contract CowProtocolToken is InflationaryToken, StorageAccessible {
     string private constant ERC20_SYMBOL = "COW";
-    string private constant ERC20_NAME = "CowSwap Token";
+    string private constant ERC20_NAME = "CoW Protocol Token";
 
     constructor(address cowDao, uint256 totalSupply)
         InflationaryToken(cowDao, totalSupply, ERC20_NAME, ERC20_SYMBOL)

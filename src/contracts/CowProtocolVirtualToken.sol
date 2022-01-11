@@ -7,11 +7,11 @@ import "./mixins/Claiming.sol";
 import "./mixins/MerkleDistributor.sol";
 import "./vendored/mixins/StorageAccessible.sol";
 
-/// @dev The token that manages how the CowSwap governance token is distributed
-/// to all different types of investors.
-/// @title CowSwap Virtual Token
-/// @author Gnosis Developers
-contract CowSwapVirtualToken is
+/// @dev The token that manages how the CoW Protocol governance token is
+/// distributed to all different types of investors.
+/// @title CoW Protocol Virtual Token
+/// @author CoW Protocol Developers
+contract CowProtocolVirtualToken is
     NonTransferrableErc20,
     Vesting,
     Claiming,
@@ -19,7 +19,7 @@ contract CowSwapVirtualToken is
     StorageAccessible
 {
     string private constant ERC20_SYMBOL = "vCOW";
-    string private constant ERC20_NAME = "Virtual CowSwap Token";
+    string private constant ERC20_NAME = "CoW Protocol Virtual Token";
 
     constructor(
         bytes32 merkleRoot,

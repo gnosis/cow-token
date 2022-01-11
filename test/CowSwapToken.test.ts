@@ -9,7 +9,7 @@ import {
   RealTokenDeployParams,
 } from "../src/ts";
 
-describe("CowSwapToken", () => {
+describe("CowProtocolToken", () => {
   let token: Contract;
   let cowDao: Wallet;
   const totalSupply = ethers.utils.parseUnits("31337", 18);
@@ -17,14 +17,14 @@ describe("CowSwapToken", () => {
   beforeEach(async () => {
     [cowDao] = await waffle.provider.getWallets();
 
-    const CowSwapToken = await ethers.getContractFactory(
+    const CowProtocolToken = await ethers.getContractFactory(
       ContractName.RealToken,
     );
     const constructorParams: RealTokenDeployParams = {
       cowDao: cowDao.address,
       totalSupply,
     };
-    token = await CowSwapToken.deploy(
+    token = await CowProtocolToken.deploy(
       ...constructorInput(ContractName.RealToken, constructorParams),
     );
   });

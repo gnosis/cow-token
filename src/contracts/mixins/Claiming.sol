@@ -10,8 +10,8 @@ import "../interfaces/VestingInterface.sol";
 
 /// @dev The logic behind the claiming of virtual tokens and the swapping to
 /// real tokens.
-/// @title CowSwap Virtual Token Claiming Logic
-/// @author Gnosis Developers
+/// @title COW Virtual Token Claiming Logic
+/// @author CoW Protocol Developers
 abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     using SafeERC20 for IERC20;
 
@@ -45,12 +45,12 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// claim the options derived from holding GNO.
     IERC20 public immutable gnoToken;
     /// @dev Address of the WETH token. It is a form of payment for users who
-    /// claim the options derived from being CowSwap users.
+    /// claim the options derived from being users of the CoW Protocol.
     IERC20 public immutable wethToken;
 
-    /// @dev Address representing the CowSwap team. It is the only address that
-    /// is allowed to stop the vesting of a claim, and exclusively for team
-    /// claims.
+    /// @dev Address representing the CoW Protocol/CowSwap team. It is the only
+    /// address that is allowed to stop the vesting of a claim, and exclusively
+    /// for team claims.
     address public immutable teamController;
 
     /// @dev Time at which this contract was deployed.

@@ -61,8 +61,8 @@ export interface VirtualTokenDeployParams {
 }
 
 export enum ContractName {
-  RealToken = "CowSwapToken",
-  VirtualToken = "CowSwapVirtualToken",
+  RealToken = "CowProtocolToken",
+  VirtualToken = "CowProtocolVirtualToken",
 }
 export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;

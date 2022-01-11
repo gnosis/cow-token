@@ -7,8 +7,8 @@ pragma solidity ^0.8.10;
 /// separately and are linked to each other by the functions in this contract.
 /// This contracs is for all intents and purposes an interface, however actual
 /// interfaces cannot declare internal functions.
-/// @title CowSwap claiming function interface.
-/// @author Gnosis Developers
+/// @title COW token claiming interface.
+/// @author CoW Protocol Developers
 abstract contract ClaimingInterface {
     /// @dev Exhaustive list of the different branches of the claiming logic.
     enum ClaimType {
