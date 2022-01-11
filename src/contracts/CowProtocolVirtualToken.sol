@@ -19,7 +19,7 @@ contract CowProtocolVirtualToken is
     StorageAccessible
 {
     string private constant ERC20_SYMBOL = "vCOW";
-    string private constant ERC20_NAME = "Virtual CoW Protocol Token";
+    string private constant ERC20_NAME = "CoW Protocol Virtual Token";
 
     constructor(
         bytes32 merkleRoot,
