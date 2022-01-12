@@ -64,6 +64,7 @@ describe("CowProtocolVirtualToken", () => {
       gnoPrice,
       wethPrice,
       teamController: teamController.address,
+      startTimestamp: 0,
     };
   });
 

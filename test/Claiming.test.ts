@@ -44,7 +44,7 @@ describe("Claiming", function () {
   let gnoToken: MockContract;
   let wethToken: MockContract;
 
-  let deploymentTimestamp: number;
+  let startTimestamp: number;
 
   const [deployer, executor, ownsNoVirtualTokens, teamController] =
     waffle.provider.getWallets();
@@ -79,6 +79,7 @@ describe("Claiming", function () {
       gnoPrice,
       wethPrice,
       teamController: teamController.address,
+      startTimestamp: 0,
     };
 
     Claiming = await ethers.getContractFactory("ClaimingTestInterface");
@@ -87,7 +88,7 @@ describe("Claiming", function () {
         ...(await claimingConstructorInput(deploymentParams)),
       )
     ).connect(executor);
-    deploymentTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
+    startTimestamp = (await ethers.provider.getBlock("latest")).timestamp;
   });
 
   it("sets the expected real token", async function () {
@@ -129,7 +130,7 @@ describe("Claiming", function () {
   });
 
   it("sets the expected deployment timestamp", async function () {
-    expect(await claiming.deploymentTimestamp()).to.equal(deploymentTimestamp);
+    expect(await claiming.startTimestamp()).to.equal(startTimestamp);
   });
 
   it("has zero starting total supply", async function () {
@@ -205,7 +206,7 @@ describe("Claiming", function () {
       });
 
       it("can be claimed until immediately before the deadline", async function () {
-        await setTime(deploymentTimestamp + FREE_CLAIM_EXPIRATION);
+        await setTime(startTimestamp + FREE_CLAIM_EXPIRATION);
         await expect(
           claiming.performClaimTest(
             ClaimType.Airdrop,
@@ -218,7 +219,7 @@ describe("Claiming", function () {
       });
 
       it("cannot be claimed after deadline", async function () {
-        await setTime(deploymentTimestamp + FREE_CLAIM_EXPIRATION + 1);
+        await setTime(startTimestamp + FREE_CLAIM_EXPIRATION + 1);
         await expect(
           claiming.performClaimTest(
             ClaimType.Airdrop,
@@ -320,7 +321,7 @@ describe("Claiming", function () {
       });
 
       it("can be claimed until immediately before the deadline", async function () {
-        await setTime(deploymentTimestamp + testParams.expiration);
+        await setTime(startTimestamp + testParams.expiration);
         await expect(
           claiming.performClaimTest(
             testParams.claimType,
@@ -333,7 +334,7 @@ describe("Claiming", function () {
       });
 
       it("cannot be claimed after deadline", async function () {
-        await setTime(deploymentTimestamp + testParams.expiration + 1);
+        await setTime(startTimestamp + testParams.expiration + 1);
         await expect(
           claiming.performClaimTest(
             testParams.claimType,

@@ -53,8 +53,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// for team claims.
     address public immutable teamController;
 
-    /// @dev Time at which this contract was deployed.
-    uint256 public immutable deploymentTimestamp;
+    /// @dev Time at which the claiming is started
+    uint256 public immutable startTimestamp;
 
     /// @dev Returns the amount of virtual tokens in existence, including those
     /// that have yet to be vested.
@@ -87,7 +87,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 _gnoPrice,
         address _wethToken,
         uint256 _wethPrice,
-        address _teamController
+        address _teamController,
+        uint256 _startTimestamp
     ) {
         cowToken = IERC20(_cowToken);
         communityFundsTarget = _communityFundsTarget;
@@ -100,8 +101,11 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         wethPrice = _wethPrice;
         teamController = _teamController;
 
-        // solhint-disable-next-line not-rely-on-time
-        deploymentTimestamp = block.timestamp;
+        if (_startTimestamp == 0) {
+            // solhint-disable-next-line not-rely-on-time
+            _startTimestamp = block.timestamp;
+        }
+        startTimestamp = _startTimestamp;
     }
 
     /// @dev Allows the decorated function only to be executed before the
@@ -111,7 +115,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// function reverts afterwards.
     modifier before(uint256 durationSinceDeployment) {
         // solhint-disable-next-line not-rely-on-time
-        if (block.timestamp > deploymentTimestamp + durationSinceDeployment) {
+        if (block.timestamp > startTimestamp + durationSinceDeployment) {
             revert ClaimingExpired();
         }
         _;

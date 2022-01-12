@@ -18,7 +18,8 @@ contract ClaimingTestInterface is Claiming, NonTransferrableErc20 {
         uint256 _gnoPrice,
         address _wethToken,
         uint256 _wethPrice,
-        address _teamController
+        address _teamController,
+        uint256 _startTimestamp
     )
         Claiming(
             _cowToken,
@@ -30,7 +31,8 @@ contract ClaimingTestInterface is Claiming, NonTransferrableErc20 {
             _gnoPrice,
             _wethToken,
             _wethPrice,
-            _teamController
+            _teamController,
+            _startTimestamp
         )
         NonTransferrableErc20(ERC20_NAME, ERC20_SYMBOL)
     // solhint-disable-next-line no-empty-blocks

@@ -58,6 +58,7 @@ export interface VirtualTokenDeployParams {
   wethToken: string;
   wethPrice: BigNumberish;
   teamController: string;
+  startTimestamp: BigNumberish;
 }
 
 export enum ContractName {
@@ -82,6 +83,7 @@ export type ContructorInput = {
     string,
     BigNumber,
     string,
+    BigNumber,
   ];
 };
 
@@ -115,6 +117,7 @@ export function constructorInput<T extends ContractName>(
         wethToken,
         wethPrice,
         teamController,
+        startTimestamp,
       } = params as DeployParams[ContractName.VirtualToken];
       const result: ContructorInput[ContractName.VirtualToken] = [
         merkleRoot,
@@ -128,6 +131,7 @@ export function constructorInput<T extends ContractName>(
         wethToken,
         BigNumber.from(wethPrice),
         teamController,
+        BigNumber.from(startTimestamp),
       ];
       return result as ContructorInput[T];
     }

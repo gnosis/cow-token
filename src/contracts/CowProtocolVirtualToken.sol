@@ -32,7 +32,8 @@ contract CowProtocolVirtualToken is
         uint256 gnoPrice,
         address wethToken,
         uint256 wethPrice,
-        address teamController
+        address teamController,
+        uint256 startTimestamp
     )
         NonTransferrableErc20(ERC20_NAME, ERC20_SYMBOL)
         Claiming(
@@ -45,7 +46,8 @@ contract CowProtocolVirtualToken is
             gnoPrice,
             wethToken,
             wethPrice,
-            teamController
+            teamController,
+            startTimestamp
         )
         MerkleDistributor(merkleRoot)
     // solhint-disable-next-line no-empty-blocks

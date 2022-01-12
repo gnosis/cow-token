@@ -36,6 +36,7 @@ describe("deployment", () => {
       wethToken: "0x" + "42".repeat(3).padEnd(38, "0") + "05",
       wethPrice: 31337,
       teamController: "0x" + "42".repeat(3).padEnd(38, "0") + "06",
+      startTimestamp: 0,
     };
   let currentSnapshot: unknown;
 

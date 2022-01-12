@@ -15,7 +15,8 @@ contract CowProtocolVirtualTokenTestInterface is CowProtocolVirtualToken {
         uint256 gnoPrice,
         address wethToken,
         uint256 wethPrice,
-        address teamController
+        address teamController,
+        uint256 startTimestamp
     )
         CowProtocolVirtualToken(
             merkleRoot,
@@ -28,7 +29,8 @@ contract CowProtocolVirtualTokenTestInterface is CowProtocolVirtualToken {
             gnoPrice,
             wethToken,
             wethPrice,
-            teamController
+            teamController,
+            startTimestamp
         )
     // solhint-disable-next-line no-empty-blocks
     {
