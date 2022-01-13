@@ -523,7 +523,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds,
               ),
-            ).to.be.revertedWith(RevertMessage.ContractCannotReceiveEth);
+            ).to.be.revertedWith(customError("FailedEthTransfer"));
           });
         } else {
           it("reverts if sending ETH when claiming", async function () {

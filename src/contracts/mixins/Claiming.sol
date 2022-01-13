@@ -73,6 +73,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Error resulting from sending an incorrect amount of eth to the
     /// contract.
     error InvalidEthAmount();
+    /// @dev Error caused by an unsuccessful attempt to transfer ETH.
+    error FailedEthTransfer();
     /// @dev Error resulting from sending ETH for a claim that cannot be
     /// redeemed with ETH.
     error CannotSendEth();
@@ -303,7 +305,20 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         if (sentEth != ethEquivalent) {
             revert InvalidEthAmount();
         }
-        to.transfer(ethEquivalent);
+
+        // We transfer ETH using .call instead of .transfer as not to restrict
+        // the amount of gas sent to the target address during the transfer.
+        // This is particularly relevant for sending ETH to smart contracts:
+        // since EIP 2929, if a contract sends eth using `.transfer` then the
+        // transaction proposed to the node needs to specify an _access list_,
+        // which is currently not well supported by some wallet implementations.
+        // The drawback of this approach is that it requires the rest of the
+        // contract to be robust against reentrancy attacks at this point.
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = to.call{value: ethEquivalent}("");
+        if (!success) {
+            revert FailedEthTransfer();
+        }
     }
 
     /// @dev Converts input amount in COW token atoms to an amount in token
