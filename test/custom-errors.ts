@@ -12,5 +12,5 @@ export enum RevertMessage {
   ArrayIndexOutOfBound = "reverted with panic code 0x32 (Array accessed at an out-of-bounds or negative index)",
   OverOrUnderflow = "reverted with panic code 0x11 (Arithmetic operation underflowed or overflowed outside of an unchecked block)",
   UninitializedMock = "Mock on the method is not initialized",
-  ContractCannotReceiveEth = "Transaction reverted: function selector was not recognized and there's no fallback nor receive function",
+  ContractCannotReceiveNativeTokens = "Transaction reverted: function selector was not recognized and there's no fallback nor receive function",
 }

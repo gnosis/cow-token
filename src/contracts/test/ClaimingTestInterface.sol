@@ -16,8 +16,8 @@ contract ClaimingTestInterface is Claiming, NonTransferrableErc20 {
         uint256 _usdcPrice,
         address _gnoToken,
         uint256 _gnoPrice,
-        address _wethToken,
-        uint256 _wethPrice,
+        address _wrappedNativeToken,
+        uint256 _nativeTokenPrice,
         address _teamController
     )
         Claiming(
@@ -28,8 +28,8 @@ contract ClaimingTestInterface is Claiming, NonTransferrableErc20 {
             _usdcPrice,
             _gnoToken,
             _gnoPrice,
-            _wethToken,
-            _wethPrice,
+            _wrappedNativeToken,
+            _nativeTokenPrice,
             _teamController
         )
         NonTransferrableErc20(ERC20_NAME, ERC20_SYMBOL)
@@ -43,9 +43,9 @@ contract ClaimingTestInterface is Claiming, NonTransferrableErc20 {
         address payer,
         address account,
         uint256 amount,
-        uint256 ethAmount
+        uint256 nativeTokenAmount
     ) public payable {
-        performClaim(claimType, payer, account, amount, ethAmount);
+        performClaim(claimType, payer, account, amount, nativeTokenAmount);
     }
 
     function addInstantlySwappableTokens(address user, uint256 amount) public {

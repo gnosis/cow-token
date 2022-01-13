@@ -55,8 +55,8 @@ export interface VirtualTokenDeployParams {
   usdcPrice: BigNumberish;
   gnoToken: string;
   gnoPrice: BigNumberish;
-  wethToken: string;
-  wethPrice: BigNumberish;
+  wrappedNativeToken: string;
+  nativeTokenPrice: BigNumberish;
   teamController: string;
 }
 
@@ -112,8 +112,8 @@ export function constructorInput<T extends ContractName>(
         usdcPrice,
         gnoToken,
         gnoPrice,
-        wethToken,
-        wethPrice,
+        wrappedNativeToken,
+        nativeTokenPrice,
         teamController,
       } = params as DeployParams[ContractName.VirtualToken];
       const result: ContructorInput[ContractName.VirtualToken] = [
@@ -125,8 +125,8 @@ export function constructorInput<T extends ContractName>(
         BigNumber.from(usdcPrice),
         gnoToken,
         BigNumber.from(gnoPrice),
-        wethToken,
-        BigNumber.from(wethPrice),
+        wrappedNativeToken,
+        BigNumber.from(nativeTokenPrice),
         teamController,
       ];
       return result as ContructorInput[T];
