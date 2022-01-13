@@ -26,9 +26,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Price numerator for the COW/GNO price. This is the number of GNO
     /// atoms required to obtain a full unit of virtual token from an option.
     uint256 public immutable gnoPrice;
-    /// @dev Price numerator for the COW/WETH price. This is the number of WETH
-    /// wei required to obtain a full unit of virtual token from an option.
-    uint256 public immutable wethPrice;
+    /// @dev Price numerator for the COW/native-token price. This is the number
+    /// of native token wei required to obtain a full unit of virtual token from
+    /// an option.
+    uint256 public immutable nativeTokenPrice;
 
     /// @dev The proceeds from selling options to the community will be sent to,
     /// this address.
@@ -44,9 +45,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Address of the GNO token. It is a form of payment for users who
     /// claim the options derived from holding GNO.
     IERC20 public immutable gnoToken;
-    /// @dev Address of the WETH token. It is a form of payment for users who
-    /// claim the options derived from being users of the CoW Protocol.
-    IERC20 public immutable wethToken;
+    /// @dev Address of the wrapped native token. It is a form of payment for
+    /// users who claim the options derived from being users of the CoW
+    /// Protocol.
+    IERC20 public immutable wrappedNativeToken;
 
     /// @dev Address representing the CoW Protocol/CowSwap team. It is the only
     /// address that is allowed to stop the vesting of a claim, and exclusively
@@ -70,14 +72,14 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Error presented to anyone but the team controller to stop a
     /// cancelable vesting position (i.e., only team vesting).
     error OnlyTeamController();
-    /// @dev Error resulting from sending an incorrect amount of eth to the
+    /// @dev Error resulting from sending an incorrect amount of native to the
     /// contract.
-    error InvalidEthAmount();
-    /// @dev Error caused by an unsuccessful attempt to transfer ETH.
-    error FailedEthTransfer();
-    /// @dev Error resulting from sending ETH for a claim that cannot be
-    /// redeemed with ETH.
-    error CannotSendEth();
+    error InvalidNativeTokenAmount();
+    /// @dev Error caused by an unsuccessful attempt to transfer native tokens.
+    error FailedNativeTokenTransfer();
+    /// @dev Error resulting from sending native tokens for a claim that cannot
+    /// be redeemed with native tokens.
+    error CannotSendNativeToken();
 
     constructor(
         address _cowToken,
@@ -87,8 +89,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 _usdcPrice,
         address _gnoToken,
         uint256 _gnoPrice,
-        address _wethToken,
-        uint256 _wethPrice,
+        address _wrappedNativeToken,
+        uint256 _nativeTokenPrice,
         address _teamController
     ) {
         cowToken = IERC20(_cowToken);
@@ -98,8 +100,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         usdcPrice = _usdcPrice;
         gnoToken = IERC20(_gnoToken);
         gnoPrice = _gnoPrice;
-        wethToken = IERC20(_wethToken);
-        wethPrice = _wethPrice;
+        wrappedNativeToken = IERC20(_wrappedNativeToken);
+        nativeTokenPrice = _nativeTokenPrice;
         teamController = _teamController;
 
         // solhint-disable-next-line not-rely-on-time
@@ -133,21 +135,21 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address payer,
         address claimant,
         uint256 amount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) internal override {
         if (claimType == ClaimType.Airdrop) {
-            claimAirdrop(claimant, amount, sentEth);
+            claimAirdrop(claimant, amount, sentNativeTokens);
         } else if (claimType == ClaimType.GnoOption) {
-            claimGnoOption(claimant, amount, payer, sentEth);
+            claimGnoOption(claimant, amount, payer, sentNativeTokens);
         } else if (claimType == ClaimType.UserOption) {
-            claimUserOption(claimant, amount, payer, sentEth);
+            claimUserOption(claimant, amount, payer, sentNativeTokens);
         } else if (claimType == ClaimType.Investor) {
-            claimInvestor(claimant, amount, payer, sentEth);
+            claimInvestor(claimant, amount, payer, sentNativeTokens);
         } else if (claimType == ClaimType.Team) {
-            claimTeam(claimant, amount, sentEth);
+            claimTeam(claimant, amount, sentNativeTokens);
         } else {
             // claimType == ClaimType.Advisor
-            claimAdvisor(claimant, amount, sentEth);
+            claimAdvisor(claimant, amount, sentNativeTokens);
         }
 
         // Each claiming operation results in the creation of `amount` virtual
@@ -170,10 +172,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     function claimAirdrop(
         address account,
         uint256 amount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(6 weeks) {
-        if (sentEth != 0) {
-            revert CannotSendEth();
+        if (sentNativeTokens != 0) {
+            revert CannotSendNativeToken();
         }
         instantlySwappableBalance[account] += amount;
     }
@@ -186,16 +188,16 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         address payer,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(2 weeks) {
-        if (sentEth != 0) {
-            revert CannotSendEth();
+        if (sentNativeTokens != 0) {
+            revert CannotSendNativeToken();
         }
         collectPayment(gnoToken, gnoPrice, payer, communityFundsTarget, amount);
         addVesting(account, amount, false);
     }
 
-    /// @dev Claims an Eth-based option for the user.
+    /// @dev Claims a native-token-based option for the user.
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
     /// @param payer The address that pays the amount required by the claim.
@@ -203,14 +205,18 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         address payer,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(2 weeks) {
-        if (sentEth != 0) {
-            collectEthPayment(communityFundsTarget, amount, sentEth);
+        if (sentNativeTokens != 0) {
+            collectNativeTokenPayment(
+                communityFundsTarget,
+                amount,
+                sentNativeTokens
+            );
         } else {
             collectPayment(
-                wethToken,
-                wethPrice,
+                wrappedNativeToken,
+                nativeTokenPrice,
                 payer,
                 communityFundsTarget,
                 amount
@@ -227,10 +233,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         address payer,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(2 weeks) {
-        if (sentEth != 0) {
-            revert CannotSendEth();
+        if (sentNativeTokens != 0) {
+            revert CannotSendNativeToken();
         }
         collectPayment(
             usdcToken,
@@ -249,10 +255,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     function claimTeam(
         address account,
         uint256 amount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(6 weeks) {
-        if (sentEth != 0) {
-            revert CannotSendEth();
+        if (sentNativeTokens != 0) {
+            revert CannotSendNativeToken();
         }
         addVesting(account, amount, true);
     }
@@ -264,10 +270,10 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     function claimAdvisor(
         address account,
         uint256 amount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private before(6 weeks) {
-        if (sentEth != 0) {
-            revert CannotSendEth();
+        if (sentNativeTokens != 0) {
+            revert CannotSendNativeToken();
         }
         addVesting(account, amount, false);
     }
@@ -291,19 +297,23 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         token.safeTransferFrom(from, to, tokenEquivalent);
     }
 
-    /// @dev Transfers eth from this contract to the target, assuming that the
-    /// amount of ETH sent coincides with the expected amount of ETH. This
-    /// amount is based on the price of WETH and amount of COW bought.
+    /// @dev Transfers native tokens from this contract to the target, assuming
+    /// that the amount of native tokens sent coincides with the expected amount
+    /// of native tokens. This amount is based on the price of the native token
+    /// and amount of COW bought.
     /// @param to The address to which to send the funds.
     /// @param amount The amount of COW atoms that will be paid for.
-    function collectEthPayment(
+    function collectNativeTokenPayment(
         address payable to,
         uint256 amount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private {
-        uint256 ethEquivalent = convertCowAmountAtPrice(amount, wethPrice);
-        if (sentEth != ethEquivalent) {
-            revert InvalidEthAmount();
+        uint256 nativeTokenEquivalent = convertCowAmountAtPrice(
+            amount,
+            nativeTokenPrice
+        );
+        if (sentNativeTokens != nativeTokenEquivalent) {
+            revert InvalidNativeTokenAmount();
         }
 
         // We transfer ETH using .call instead of .transfer as not to restrict
@@ -315,9 +325,9 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         // The drawback of this approach is that it requires the rest of the
         // contract to be robust against reentrancy attacks at this point.
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = to.call{value: ethEquivalent}("");
+        (bool success, ) = to.call{value: sentNativeTokens}("");
         if (!success) {
-            revert FailedEthTransfer();
+            revert FailedNativeTokenTransfer();
         }
     }
 

@@ -13,8 +13,8 @@ contract CowProtocolVirtualTokenTestInterface is CowProtocolVirtualToken {
         uint256 usdcPrice,
         address gnoToken,
         uint256 gnoPrice,
-        address wethToken,
-        uint256 wethPrice,
+        address wrappedNativeToken,
+        uint256 nativeTokenPrice,
         address teamController
     )
         CowProtocolVirtualToken(
@@ -26,8 +26,8 @@ contract CowProtocolVirtualTokenTestInterface is CowProtocolVirtualToken {
             usdcPrice,
             gnoToken,
             gnoPrice,
-            wethToken,
-            wethPrice,
+            wrappedNativeToken,
+            nativeTokenPrice,
             teamController
         )
     // solhint-disable-next-line no-empty-blocks

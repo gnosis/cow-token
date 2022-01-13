@@ -404,7 +404,7 @@ describe("MerkleDistributor", () => {
       expect(await distributor.isClaimed(executableFullClaim.index)).to.be.true;
     });
 
-    it("allows using eth to claim", async function () {
+    it("allows using native tokens to claim", async function () {
       const {
         merkleRoot,
         claims: [provenClaim1, provenClaim2, provenClaimNoEth],
@@ -463,7 +463,7 @@ describe("MerkleDistributor", () => {
       expect(await distributor.isClaimed(executedClaimNoEth.index)).to.be.true;
     });
 
-    it("reverts if the amount of eth sent is not correct", async function () {
+    it("reverts if the amount of native tokens sent is not correct", async function () {
       const {
         merkleRoot,
         claims: [provenClaim1, provenClaim2],
@@ -488,7 +488,7 @@ describe("MerkleDistributor", () => {
           ]),
           { value: value1.add(value2).sub(1) },
         ),
-      ).to.be.revertedWith(customError("InvalidEthValue"));
+      ).to.be.revertedWith(customError("InvalidNativeTokenValue"));
 
       await expect(
         distributor.claimMany(
@@ -504,7 +504,7 @@ describe("MerkleDistributor", () => {
           ]),
           { value: value1.add(value2).add(1) },
         ),
-      ).to.be.revertedWith(customError("InvalidEthValue"));
+      ).to.be.revertedWith(customError("InvalidNativeTokenValue"));
     });
 
     describe("if input arrays have different length", function () {

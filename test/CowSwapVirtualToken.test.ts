@@ -29,7 +29,7 @@ describe("CowProtocolVirtualToken", () => {
   let realToken: MockContract;
   let usdcToken: MockContract;
   let gnoToken: MockContract;
-  let wethToken: MockContract;
+  let wrappedNativeToken: MockContract;
   let CowProtocolVirtualToken: ContractFactory;
 
   const [deployer, executor, user, teamController, teamMember] =
@@ -40,14 +40,14 @@ describe("CowProtocolVirtualToken", () => {
   const investorFundsTarget = "0x" + "42".repeat(3).padEnd(38, "0") + "02";
   const usdcPrice = 31337;
   const gnoPrice = 42;
-  const wethPrice = 1337;
+  const nativeTokenPrice = 1337;
   let deploymentParams: VirtualTokenDeployParams;
 
   beforeEach(async () => {
     realToken = await waffle.deployMockContract(deployer, IERC20.abi);
     usdcToken = await waffle.deployMockContract(deployer, IERC20.abi);
     gnoToken = await waffle.deployMockContract(deployer, IERC20.abi);
-    wethToken = await waffle.deployMockContract(deployer, IERC20.abi);
+    wrappedNativeToken = await waffle.deployMockContract(deployer, IERC20.abi);
 
     CowProtocolVirtualToken = (
       await ethers.getContractFactory(ContractName.VirtualToken)
@@ -58,11 +58,11 @@ describe("CowProtocolVirtualToken", () => {
       investorFundsTarget,
       gnoToken: gnoToken.address,
       usdcToken: usdcToken.address,
-      wethToken: wethToken.address,
+      wrappedNativeToken: wrappedNativeToken.address,
       communityFundsTarget,
       usdcPrice,
       gnoPrice,
-      wethPrice,
+      nativeTokenPrice,
       teamController: teamController.address,
     };
   });
@@ -114,12 +114,14 @@ describe("CowProtocolVirtualToken", () => {
       expect(await token.gnoPrice()).to.equal(gnoPrice);
     });
 
-    it("sets the expected WETH token", async function () {
-      expect(await token.wethToken()).to.equal(wethToken.address);
+    it("sets the expected wrapped native token", async function () {
+      expect(await token.wrappedNativeToken()).to.equal(
+        wrappedNativeToken.address,
+      );
     });
 
-    it("sets the expected WETH price", async function () {
-      expect(await token.wethPrice()).to.equal(wethPrice);
+    it("sets the expected native token price", async function () {
+      expect(await token.nativeTokenPrice()).to.equal(nativeTokenPrice);
     });
 
     it("sets the expected team controller", async function () {
@@ -392,7 +394,7 @@ describe("CowProtocolVirtualToken", () => {
         await realToken.mock.transfer.returns(true);
         await usdcToken.mock.transferFrom.returns(true);
         await gnoToken.mock.transferFrom.returns(true);
-        await wethToken.mock.transferFrom.returns(true);
+        await wrappedNativeToken.mock.transferFrom.returns(true);
       });
 
       function testClaim(provenClaim: ProvenClaim) {

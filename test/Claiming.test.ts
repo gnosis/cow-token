@@ -42,7 +42,7 @@ describe("Claiming", function () {
   let realToken: MockContract;
   let usdcToken: MockContract;
   let gnoToken: MockContract;
-  let wethToken: MockContract;
+  let wrappedNativeToken: MockContract;
 
   let deploymentTimestamp: number;
 
@@ -59,25 +59,25 @@ describe("Claiming", function () {
   // - 1 WETH = 4000 USDC
   const usdcPrice = utils.parseUnits("0.1", 6);
   const gnoPrice = utils.parseUnits("1", 18).div(4000);
-  const wethPrice = utils.parseUnits("1", 18).div(40000);
+  const nativeTokenPrice = utils.parseUnits("1", 18).div(40000);
   let deploymentParams: ClaimingDeploymentParams;
 
   beforeEach(async function () {
     realToken = await waffle.deployMockContract(deployer, IERC20.abi);
     usdcToken = await waffle.deployMockContract(deployer, IERC20.abi);
     gnoToken = await waffle.deployMockContract(deployer, IERC20.abi);
-    wethToken = await waffle.deployMockContract(deployer, IERC20.abi);
+    wrappedNativeToken = await waffle.deployMockContract(deployer, IERC20.abi);
 
     deploymentParams = {
       realToken: realToken.address,
       gnoToken: gnoToken.address,
       usdcToken: usdcToken.address,
-      wethToken: wethToken.address,
+      wrappedNativeToken: wrappedNativeToken.address,
       communityFundsTarget,
       investorFundsTarget,
       usdcPrice,
       gnoPrice,
-      wethPrice,
+      nativeTokenPrice,
       teamController: teamController.address,
     };
 
@@ -116,12 +116,14 @@ describe("Claiming", function () {
     expect(await claiming.gnoPrice()).to.equal(gnoPrice);
   });
 
-  it("sets the expected WETH token", async function () {
-    expect(await claiming.wethToken()).to.equal(wethToken.address);
+  it("sets the expected wrapped native token", async function () {
+    expect(await claiming.wrappedNativeToken()).to.equal(
+      wrappedNativeToken.address,
+    );
   });
 
-  it("sets the expected WETH price", async function () {
-    expect(await claiming.wethPrice()).to.equal(wethPrice);
+  it("sets the expected native token price", async function () {
+    expect(await claiming.nativeTokenPrice()).to.equal(nativeTokenPrice);
   });
 
   it("sets the expected team controller", async function () {
@@ -239,7 +241,7 @@ describe("Claiming", function () {
             claimedAmount,
             constants.One,
           ),
-        ).to.be.revertedWith(customError("CannotSendEth"));
+        ).to.be.revertedWith(customError("CannotSendNativeToken"));
       });
     });
 
@@ -359,7 +361,7 @@ describe("Claiming", function () {
               claimedAmount,
               constants.One,
             ),
-          ).to.be.revertedWith(customError("CannotSendEth"));
+          ).to.be.revertedWith(customError("CannotSendNativeToken"));
         });
       });
     }
@@ -369,7 +371,7 @@ describe("Claiming", function () {
       paymentTokenName: string;
       price: BigNumber;
       fundsTarget: "communityFunds" | "investorFunds";
-      acceptsEthAt?: BigNumber;
+      acceptsNativeTokensAt?: BigNumber;
     }
     function target(fundsTarget: "communityFunds" | "investorFunds"): string {
       switch (fundsTarget) {
@@ -388,7 +390,7 @@ describe("Claiming", function () {
         case "GNO":
           return gnoToken;
         case "WETH":
-          return wethToken;
+          return wrappedNativeToken;
         default:
           throw new Error("Invalid token");
       }
@@ -449,9 +451,9 @@ describe("Claiming", function () {
           ).to.be.revertedWith("failed transfer");
         });
 
-        if (testParams.acceptsEthAt !== undefined) {
+        if (testParams.acceptsNativeTokensAt !== undefined) {
           const ethProceeds = amount
-            .mul(testParams.acceptsEthAt)
+            .mul(testParams.acceptsNativeTokensAt)
             .div(priceDenominator);
 
           describe("can use ETH for claiming", async function () {
@@ -476,7 +478,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds.sub(1),
               ),
-            ).to.be.revertedWith(customError("InvalidEthAmount"));
+            ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
           });
 
           it("reverts if sending too much ETH", async function () {
@@ -488,7 +490,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds.add(1),
               ),
-            ).to.be.revertedWith(customError("InvalidEthAmount"));
+            ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
           });
 
           it("reverts if ETH transfer fails", async function () {
@@ -523,7 +525,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds,
               ),
-            ).to.be.revertedWith(customError("FailedEthTransfer"));
+            ).to.be.revertedWith(customError("FailedNativeTokenTransfer"));
           });
         } else {
           it("reverts if sending ETH when claiming", async function () {
@@ -535,7 +537,7 @@ describe("Claiming", function () {
                 amount,
                 constants.One,
               ),
-            ).to.be.revertedWith(customError("CannotSendEth"));
+            ).to.be.revertedWith(customError("CannotSendNativeToken"));
           });
         }
 
@@ -569,8 +571,8 @@ describe("Claiming", function () {
       isCancelable: false,
       expiration: PAID_OPTION_EXPIRATION,
       paymentTokenName: "WETH",
-      price: wethPrice,
-      acceptsEthAt: wethPrice,
+      price: nativeTokenPrice,
+      acceptsNativeTokensAt: nativeTokenPrice,
       fundsTarget: "communityFunds",
     });
 

@@ -30,8 +30,8 @@ contract CowProtocolVirtualToken is
         uint256 usdcPrice,
         address gnoToken,
         uint256 gnoPrice,
-        address wethToken,
-        uint256 wethPrice,
+        address wrappedNativeToken,
+        uint256 nativeTokenPrice,
         address teamController
     )
         NonTransferrableErc20(ERC20_NAME, ERC20_SYMBOL)
@@ -43,8 +43,8 @@ contract CowProtocolVirtualToken is
             usdcPrice,
             gnoToken,
             gnoPrice,
-            wethToken,
-            wethPrice,
+            wrappedNativeToken,
+            nativeTokenPrice,
             teamController
         )
         MerkleDistributor(merkleRoot)
