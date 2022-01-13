@@ -7,7 +7,7 @@
 //  - the claim function doesn't trigger a transfer on a successful proof, but
 //    it executes a dedicated (virtual) function.
 //  - added a claimMany function for bundling multiple claims in a transaction
-//  - supported sending an amount of eth along with the claim
+//  - supported sending an amount of native tokens along with the claim
 //  - added the option of claiming less than the maximum amount
 //  - gas optimizations in the packing and unpacking of the claimed bit
 //  - bumped Solidity version
@@ -45,7 +45,7 @@ abstract contract MerkleDistributor is ClaimingInterface {
     error InvalidProof();
     /// @dev Error caused by calling claimMany with a transaction value that is
     /// different from the required one.
-    error InvalidEthValue();
+    error InvalidNativeTokenValue();
 
     /// @dev Packed array of booleans that stores if a claim is available.
     mapping(uint256 => uint256) private claimedBitMap;
@@ -118,8 +118,8 @@ abstract contract MerkleDistributor is ClaimingInterface {
     /// for details.
     /// @param merkleProofs A vector of merkle proofs. See [`claim`] for
     /// details.
-    /// @param sentEth A vector of eth amounts. See [`performClaim`] for
-    /// details.
+    /// @param sentNativeTokens A vector of native token amounts. See
+    /// [`performClaim`] for details.
     function claimMany(
         uint256[] memory indices,
         ClaimType[] memory claimTypes,
@@ -127,11 +127,11 @@ abstract contract MerkleDistributor is ClaimingInterface {
         uint256[] calldata claimableAmounts,
         uint256[] calldata claimedAmounts,
         bytes32[][] calldata merkleProofs,
-        uint256[] calldata sentEth
+        uint256[] calldata sentNativeTokens
     ) external payable {
-        uint256 sumSentEth;
+        uint256 sumSentNativeTokens;
         for (uint256 i = 0; i < indices.length; i++) {
-            sumSentEth += sentEth[i];
+            sumSentNativeTokens += sentNativeTokens[i];
             _claim(
                 indices[i],
                 claimTypes[i],
@@ -139,11 +139,11 @@ abstract contract MerkleDistributor is ClaimingInterface {
                 claimableAmounts[i],
                 claimedAmounts[i],
                 merkleProofs[i],
-                sentEth[i]
+                sentNativeTokens[i]
             );
         }
-        if (sumSentEth != msg.value) {
-            revert InvalidEthValue();
+        if (sumSentNativeTokens != msg.value) {
+            revert InvalidNativeTokenValue();
         }
     }
 
@@ -156,7 +156,7 @@ abstract contract MerkleDistributor is ClaimingInterface {
     /// @param claimableAmount See [`claim`].
     /// @param claimedAmount See [`performClaim`].
     /// @param merkleProof See [`claim`].
-    /// @param sentEth See [`performClaim`].
+    /// @param sentNativeTokens See [`performClaim`].
     function _claim(
         uint256 index,
         ClaimType claimType,
@@ -164,7 +164,7 @@ abstract contract MerkleDistributor is ClaimingInterface {
         uint256 claimableAmount,
         uint256 claimedAmount,
         bytes32[] calldata merkleProof,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) private {
         if (isClaimed(index)) {
             revert AlreadyClaimed();
@@ -187,7 +187,13 @@ abstract contract MerkleDistributor is ClaimingInterface {
 
         _setClaimed(index);
 
-        performClaim(claimType, msg.sender, claimant, claimedAmount, sentEth);
+        performClaim(
+            claimType,
+            msg.sender,
+            claimant,
+            claimedAmount,
+            sentNativeTokens
+        );
 
         emit Claimed(
             index,

@@ -34,8 +34,8 @@ describe("deployment", () => {
       usdcPrice: 42,
       gnoToken: "0x" + "42".repeat(3).padEnd(38, "0") + "04",
       gnoPrice: 1337,
-      wethToken: "0x" + "42".repeat(3).padEnd(38, "0") + "05",
-      wethPrice: 31337,
+      wrappedNativeToken: "0x" + "42".repeat(3).padEnd(38, "0") + "05",
+      nativeTokenPrice: 31337,
       teamController: "0x" + "42".repeat(3).padEnd(38, "0") + "06",
     };
   let currentSnapshot: unknown;
@@ -225,15 +225,15 @@ describe("deployment", () => {
         );
       });
 
-      it("wethToken", async function () {
-        expect(await virtualToken.wethToken()).to.equal(
-          virtualTokenDeployParams.wethToken,
+      it("wrappedNativeToken", async function () {
+        expect(await virtualToken.wrappedNativeToken()).to.equal(
+          virtualTokenDeployParams.wrappedNativeToken,
         );
       });
 
-      it("wethPrice", async function () {
-        expect(await virtualToken.wethPrice()).to.equal(
-          virtualTokenDeployParams.wethPrice,
+      it("nativeTokenPrice", async function () {
+        expect(await virtualToken.nativeTokenPrice()).to.equal(
+          virtualTokenDeployParams.nativeTokenPrice,
         );
       });
 

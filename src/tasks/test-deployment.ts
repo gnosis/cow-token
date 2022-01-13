@@ -310,8 +310,8 @@ async function generateClaimsAndDeploy(
         .parseUnits("1", gno.decimals)
         .mul(usdcPerCow)
         .div(usdcPerGno),
-      wethToken: weth.instance.address,
-      wethPrice: utils
+      wrappedNativeToken: weth.instance.address,
+      nativeTokenPrice: utils
         .parseUnits("1", weth.decimals)
         .mul(usdcPerCow)
         .div(usdcPerWeth),
