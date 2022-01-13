@@ -2,6 +2,7 @@ build/
 coverage/
 deployments/*/solcInputs
 deployments/localhost/
+output/
 lib/
 node_modules/
 coverage.json

@@ -2,6 +2,7 @@ import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import hre, { ethers, waffle } from "hardhat";
 
+import { execSafeTransaction } from "../src/tasks/ts/safe";
 import {
   metadata,
   prepareSafeDeployment,
@@ -11,7 +12,7 @@ import {
 } from "../src/ts";
 
 import { setupDeployer } from "./deterministic-deployment";
-import { execSafeTransaction, GnosisSafeManager } from "./safe";
+import { GnosisSafeManager } from "./safe";
 import { skipOnCoverage } from "./test-management";
 
 describe("deployment", () => {
