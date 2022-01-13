@@ -13,7 +13,7 @@ contract MerkleDistributorTestInterface is MerkleDistributor {
         address payer,
         address claimant,
         uint256 amount,
-        uint256 ethAmount
+        uint256 nativeTokenAmount
     );
 
     function performClaim(
@@ -21,9 +21,15 @@ contract MerkleDistributorTestInterface is MerkleDistributor {
         address payer,
         address claimant,
         uint256 claimableAmount,
-        uint256 ethAmount
+        uint256 nativeTokenAmount
     ) internal override {
-        emit HasClaimed(claimType, payer, claimant, claimableAmount, ethAmount);
+        emit HasClaimed(
+            claimType,
+            payer,
+            claimant,
+            claimableAmount,
+            nativeTokenAmount
+        );
     }
 
     function claimName(ClaimType claim) public pure returns (string memory) {

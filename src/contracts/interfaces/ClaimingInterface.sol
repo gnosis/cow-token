@@ -30,13 +30,13 @@ abstract contract ClaimingInterface {
     /// will receive the corresponding virtual tokens.
     /// @param claimedAmount The amount that the user decided to claim (after
     /// vesting if it applies).
-    /// @param sentEth The amount of ETH that the user sent along with the
-    /// transaction.
+    /// @param sentNativeTokens The amount of native tokens that the user sent
+    /// along with the transaction.
     function performClaim(
         ClaimType claimType,
         address payer,
         address claimant,
         uint256 claimedAmount,
-        uint256 sentEth
+        uint256 sentNativeTokens
     ) internal virtual;
 }
