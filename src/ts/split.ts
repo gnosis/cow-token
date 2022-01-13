@@ -33,11 +33,12 @@ export interface SplitClaims {
  * of the cohort.
  *
  * @param claims The claims to split in distinct chuncks.
- * @param maxCohortSize The appriximate maximum size of a cohort in bytes.
+ * @param maxCohortSize The appriximate maximum size of a cohort in number of
+ * users.
  */
 export function splitClaims(
   claims: ProvenClaim[],
-  maxCohortSize = 200000,
+  desiredCohortSize = 70,
 ): SplitClaims {
   const sortedAddresses: string[] = claims
     .map(({ account }) => account)
@@ -60,37 +61,21 @@ export function splitClaims(
 
   const addressChunks: AddressChunks = {};
   const claimChunks: ClaimChunks = {};
-  let currentClaimChunk: ClaimChunk = {};
-  let firstAddressInChunk: FirstAddress = sortedAddresses[0];
-  let currentChunckSize = 0;
-  for (const [currentUserIndex, currentUser] of Array.from(
-    sortedAddresses.entries(),
-  )) {
-    const sizeExtraUser = JSON.stringify(claimsByAddress[currentUser]).length;
-    if (sizeExtraUser + currentChunckSize < maxCohortSize) {
-      currentClaimChunk[currentUser] = claimsByAddress[currentUser];
-      currentChunckSize += sizeExtraUser;
-    } else {
-      if (sizeExtraUser > maxCohortSize) {
-        throw new Error(
-          `Claim of user ${currentUser} is too large and cannot be stored in a single file.`,
-        );
-      }
-      addressChunks[firstAddressInChunk] =
-        sortedAddresses[currentUserIndex - 1];
-      claimChunks[firstAddressInChunk] = currentClaimChunk;
-      // prepare next chunk
-      firstAddressInChunk = currentUser;
-      currentClaimChunk = {};
-      currentClaimChunk[currentUser] = claimsByAddress[currentUser];
-      currentChunckSize = sizeExtraUser;
-    }
+
+  for (let i = 0; i < sortedAddresses.length; i += desiredCohortSize) {
+    const lastIndex = Math.min(
+      i + desiredCohortSize - 1,
+      sortedAddresses.length - 1,
+    );
+    addressChunks[sortedAddresses[i]] = sortedAddresses[lastIndex];
+    claimChunks[sortedAddresses[i]] = sortedAddresses
+      .slice(i, lastIndex + 1)
+      .reduce((claims, addr) => {
+        claims[addr] = claimsByAddress[addr];
+        return claims;
+      }, <ClaimChunk>{});
   }
-  if (Object.keys(currentClaimChunk).length !== 0) {
-    claimChunks[firstAddressInChunk] = currentClaimChunk;
-    addressChunks[firstAddressInChunk] =
-      sortedAddresses[sortedAddresses.length - 1];
-  }
+
   return { claimChunks, addressChunks };
 }
 
