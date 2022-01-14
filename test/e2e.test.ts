@@ -276,4 +276,68 @@ describe("e2e-tests", () => {
       vCowTokenSupply.sub(claim.claimableAmount.div(2)),
     );
   });
+  const gnoBalanceOfUser = ethers.utils.parseUnits("5354", 18);
+  it("GNO option: claims the gno option and vest it", async () => {
+    claim = {
+      account: user.address,
+      claimableAmount: ethers.utils.parseUnits("1234", 18),
+      type: ClaimType.GnoOption,
+    };
+    provenClaims = computeProofs([claim]);
+    claims = provenClaims.claims;
+    const deploymentParameters: DeploymentParameters = {
+      deployer,
+      cowDao,
+      communityFundsTarget,
+      investorFundsTarget,
+      teamController,
+      provenClaims,
+      usdcPrice,
+      gnoPrice,
+      nativeTokenPrice,
+      usdPerCow,
+      initialCowSupply,
+    };
+    deploymentData = await standardDeployment(deploymentParameters);
+
+    await deploymentData.gnoToken
+      .connect(deployer)
+      .mint(user.address, gnoBalanceOfUser);
+    // Perform a claim of a gno option
+    const gnoToPay = claim.claimableAmount.mul(gnoPrice).div(priceDenominator);
+
+    await deploymentData.gnoToken
+      .connect(user)
+      .approve(deploymentData.vCowToken.address, gnoToPay);
+    await deploymentData.vCowToken
+      .connect(user)
+      .claim(...getClaimInput(fullyExecuteClaim(claims[0])));
+    expect(await deploymentData.gnoToken.balanceOf(user.address)).to.be.equal(
+      gnoBalanceOfUser.sub(gnoToPay),
+    );
+    expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
+      claim.claimableAmount,
+    );
+    vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
+
+    // Send cowTokens to the vCowToken
+    await deploymentData.cowToken
+      .connect(cowDao)
+      .transfer(deploymentData.vCowToken.address, claim.claimableAmount.div(3));
+
+    // Perform a swapAll
+    const vestingPeriod =
+      await deploymentData.vCowToken.VESTING_PERIOD_IN_SECONDS();
+    setTime(deploymentData.deploymentTimestamp + vestingPeriod / 3);
+    await deploymentData.vCowToken.connect(user).swapAll();
+    expect(await deploymentData.cowToken.balanceOf(user.address)).to.be.equal(
+      claim.claimableAmount.div(3),
+    );
+    expect(
+      await deploymentData.cowToken.balanceOf(deploymentData.vCowToken.address),
+    ).to.be.equal(0);
+    expect(await deploymentData.vCowToken.totalSupply()).to.be.equal(
+      vCowTokenSupply.sub(claim.claimableAmount.div(3)),
+    );
+  });
 });
