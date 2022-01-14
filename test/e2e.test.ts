@@ -9,6 +9,7 @@ import {
   constructorInput,
   ContractName,
   getClaimInput,
+  ProvenClaim,
   ProvenClaims,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
@@ -34,7 +35,7 @@ interface DeploymentParameters {
   provenClaims: ProvenClaims;
   usdcPrice: BigNumber;
   gnoPrice: BigNumber;
-  cowPerWethPriceNumerator: BigNumber;
+  nativeTokenPrice: BigNumber;
   usdPerCow: BigNumber;
   initialCowSupply: BigNumber;
 }
@@ -74,7 +75,7 @@ async function standardDeployment(
     communityFundsTarget: deploymentParameters.communityFundsTarget.address,
     usdcPrice: deploymentParameters.usdcPrice,
     gnoPrice: deploymentParameters.gnoPrice,
-    nativeTokenPrice: deploymentParameters.cowPerWethPriceNumerator,
+    nativeTokenPrice: deploymentParameters.nativeTokenPrice,
     teamController: deploymentParameters.teamController.address,
   };
   const vCowToken = await CowSwapVirtualToken.deploy(
@@ -93,7 +94,7 @@ async function standardDeployment(
   };
 }
 
-describe("e2e user option", () => {
+describe("e2e-tests", () => {
   // In the actual deployment cowDAO, communityFundsTarget, investorFundsTarget, teamController are all gnosis safes.
   // But to keep the e2e tests simple, we use normal EOA.
   // This should not make a difference, as in the e2e tests they are only used to send and receive tokens
@@ -107,28 +108,33 @@ describe("e2e user option", () => {
     teamController,
   ] = waffle.provider.getWallets();
   const initialCowSupply = ethers.utils.parseEther("1000");
-  const claim: Claim = {
-    account: user.address,
-    claimableAmount: ethers.utils.parseUnits("234", 18),
-    type: ClaimType.UserOption,
-  };
-  const provenClaims = computeProofs([claim]);
 
   // Prices are chosen to be realistic but yet easy to work with, so that the
   // test amounts are meaningful.
   // - 1 COW = 0.15 USDC
   const usdcPrice = utils.parseUnits("0.15", 6);
   // - 1 GNO = 400 USDC
-  const gnoPrice = utils.parseUnits("0.15", 18).div(400);
   const usdPerCow = ethers.utils.parseEther("0.15");
+  const gnoPrice = usdPerCow.div(400);
   // - 1 WETH = 4000 USDC
-  const cowPerWethPriceNumerator = usdPerCow.div(4000);
-  const cowPerWethPriceDenominator = ethers.utils.parseEther("1");
+  const nativeTokenPrice = usdPerCow.div(4000);
+  const priceDenominator = ethers.utils.parseEther("1");
   const wethBalanceOfUser = ethers.utils.parseUnits("234", 18);
-
   let deploymentData: DeploymentData;
+  let vCowTokenSupply: BigNumber;
+  let provenClaims: ProvenClaims;
+  let claim: Claim;
+  let claims: ProvenClaim[];
 
-  beforeEach(async function () {
+  it("User Option: claims the user option and vest it", async () => {
+    claim = {
+      account: user.address,
+      claimableAmount: ethers.utils.parseUnits("1234", 18),
+      type: ClaimType.UserOption,
+    };
+    provenClaims = computeProofs([claim]);
+    claims = provenClaims.claims;
+
     const deploymentParameters: DeploymentParameters = {
       deployer,
       cowDao,
@@ -138,19 +144,15 @@ describe("e2e user option", () => {
       provenClaims,
       usdcPrice,
       gnoPrice,
-      cowPerWethPriceNumerator,
+      nativeTokenPrice,
       usdPerCow,
       initialCowSupply,
     };
     deploymentData = await standardDeployment(deploymentParameters);
-  });
-  const { claims } = provenClaims;
 
-  const wethToPay = claim.claimableAmount
-    .mul(cowPerWethPriceNumerator)
-    .div(cowPerWethPriceDenominator);
-
-  it("claims the user option and vest it", async () => {
+    const wethToPay = claim.claimableAmount
+      .mul(nativeTokenPrice)
+      .div(priceDenominator);
     await deploymentData.wethToken
       .connect(deployer)
       .mint(user.address, wethBalanceOfUser);
@@ -161,8 +163,7 @@ describe("e2e user option", () => {
     await deploymentData.vCowToken
       .connect(user)
       .claim(...getClaimInput(fullyExecuteClaim(claims[0])));
-
-    const vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
+    vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
     expect(vCowTokenSupply).to.be.equal(claim.claimableAmount);
 
     expect(await deploymentData.wethToken.balanceOf(user.address)).to.be.equal(
@@ -195,7 +196,33 @@ describe("e2e user option", () => {
       vCowTokenSupply.sub(claim.claimableAmount.div(2)),
     );
   });
-  it("claims the user option on behalf of someone else", async () => {
+  it("User Option: claims the user option on behalf of someone else", async () => {
+    claim = {
+      account: user.address,
+      claimableAmount: ethers.utils.parseUnits("1234", 18),
+      type: ClaimType.UserOption,
+    };
+    provenClaims = computeProofs([claim]);
+    claims = provenClaims.claims;
+
+    const deploymentParameters: DeploymentParameters = {
+      deployer,
+      cowDao,
+      communityFundsTarget,
+      investorFundsTarget,
+      teamController,
+      provenClaims,
+      usdcPrice,
+      gnoPrice,
+      nativeTokenPrice,
+      usdPerCow,
+      initialCowSupply,
+    };
+    deploymentData = await standardDeployment(deploymentParameters);
+
+    const wethToPay = claim.claimableAmount
+      .mul(nativeTokenPrice)
+      .div(priceDenominator);
     await deploymentData.wethToken
       .connect(deployer)
       .mint(user_not_eligible.address, wethBalanceOfUser);
@@ -216,7 +243,7 @@ describe("e2e user option", () => {
       .connect(user_not_eligible)
       .claim(...getClaimInput(fullyExecuteClaim(claims[0])));
 
-    const vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
+    vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
     expect(vCowTokenSupply).to.be.equal(claim.claimableAmount);
 
     expect(
