@@ -43,7 +43,7 @@ const defaultTokens = {
 
 const defaultArgs = {
   userCount: 1000,
-  totalSupply: (10 ** (3 * 4)).toString(),
+  totalSupply: (10n ** (3n * 4n)).toString(),
   usdcPerCow: "0.15",
   usdcPerGno: "400",
   usdcPerWeth: "4000",
