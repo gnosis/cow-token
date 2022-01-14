@@ -173,7 +173,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         uint256 sentNativeTokens
-    ) private before(6 weeks) {
+    ) private before(40 minutes) {
         if (sentNativeTokens != 0) {
             revert CannotSendNativeToken();
         }
@@ -189,7 +189,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 amount,
         address payer,
         uint256 sentNativeTokens
-    ) private before(2 weeks) {
+    ) private before(30 minutes) {
         if (sentNativeTokens != 0) {
             revert CannotSendNativeToken();
         }
@@ -206,7 +206,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 amount,
         address payer,
         uint256 sentNativeTokens
-    ) private before(2 weeks) {
+    ) private before(30 minutes) {
         if (sentNativeTokens != 0) {
             collectNativeTokenPayment(
                 communityFundsTarget,
@@ -234,7 +234,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 amount,
         address payer,
         uint256 sentNativeTokens
-    ) private before(2 weeks) {
+    ) private before(30 minutes) {
         if (sentNativeTokens != 0) {
             revert CannotSendNativeToken();
         }
@@ -256,7 +256,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         uint256 sentNativeTokens
-    ) private before(6 weeks) {
+    ) private before(40 minutes) {
         if (sentNativeTokens != 0) {
             revert CannotSendNativeToken();
         }
@@ -271,7 +271,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         address account,
         uint256 amount,
         uint256 sentNativeTokens
-    ) private before(6 weeks) {
+    ) private before(40 minutes) {
         if (sentNativeTokens != 0) {
             revert CannotSendNativeToken();
         }
