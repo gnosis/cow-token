@@ -14,7 +14,7 @@ contract Vesting is VestingInterface {
     uint256 public immutable vestingStart;
     /// @dev How long it will take for all vesting to be completed. It is set to
     /// four years.
-    uint256 public constant VESTING_PERIOD_IN_SECONDS = 4 * 365 days + 1 days;
+    uint256 public constant VESTING_PERIOD_IN_SECONDS = 4 * 60 minutes;
 
     /// @dev Stores the amount of vesting that the user has already vested.
     mapping(address => uint256) public vestedAllocation;
