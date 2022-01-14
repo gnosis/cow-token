@@ -224,7 +224,7 @@ function generateClaims(users: string[]): Claim[] {
     .filter((configuration) => configuration.size !== 0);
 
   const pseudorandomAmount = (i: number) =>
-    BigNumber.from(utils.id(i.toString()))
+    BigNumber.from(id(i.toString()))
       .mod(10000)
       .mul(utils.parseUnits("1", metadata.real.decimals));
   return users
