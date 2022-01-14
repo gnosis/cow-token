@@ -17,7 +17,7 @@ import {
   allClaimTypes,
   computeProofs,
 } from "../ts";
-import { splitClaimsAndSaveToFolder } from "../ts/split";
+import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
 import {
   SupportedChainId,
@@ -335,9 +335,17 @@ async function generateClaimsAndDeploy(
   expect(await ethers.provider.getCode(realTokenAddress)).to.equal("0x");
   expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
 
+  console.log("Clearing old files");
+  await fs.rm(`${OUTPUT_FOLDER}/private-keys.json`, {
+    recursive: true,
+    force: true,
+  });
+  await fs.rm(`${OUTPUT_FOLDER}/claims.json`, { recursive: true, force: true });
+  await fs.rm(`${OUTPUT_FOLDER}/params.json`, { recursive: true, force: true });
+  await removeSplitClaimFiles(OUTPUT_FOLDER);
+
   console.log("Saving generated data to file...");
-  await fs.rmdir(OUTPUT_FOLDER, { recursive: true });
-  await fs.mkdir(OUTPUT_FOLDER);
+  await fs.mkdir(OUTPUT_FOLDER, { recursive: true });
   await fs.writeFile(
     `${OUTPUT_FOLDER}/private-keys.json`,
     JSON.stringify(privateKeys),

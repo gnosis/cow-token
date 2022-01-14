@@ -86,7 +86,6 @@ export async function splitClaimsAndSaveToFolder(
   const { claimChunks, addressChunks } = splitClaims(claims);
   await fs.writeFile(`${path}/mapping.json`, JSON.stringify(addressChunks));
   const chunksDir = `${path}/chunks`;
-  await fs.rmdir(chunksDir, { recursive: true });
   await fs.mkdir(chunksDir);
   for (const [firstAddress, chunk] of Object.entries(claimChunks)) {
     await fs.writeFile(
@@ -94,4 +93,9 @@ export async function splitClaimsAndSaveToFolder(
       JSON.stringify(chunk),
     );
   }
+}
+
+export async function removeSplitClaimFiles(path: string) {
+  await fs.rm(`${path}/mapping.json`, { recursive: true, force: true });
+  await fs.rm(`${path}/chunks`, { recursive: true, force: true });
 }
