@@ -467,6 +467,24 @@ describe("Claiming", function () {
             });
 
             testOptionClaim(testParams, ethProceeds);
+
+            it(`sends ETH to the ${testParams.fundsTarget} target`, async function () {
+              const initialBalance = await ethers.provider.getBalance(
+                target(testParams.fundsTarget),
+              );
+              await claiming.performClaimTest(
+                testParams.claimType,
+                payer,
+                claimant,
+                amount,
+                ethProceeds,
+              );
+              expect(
+                await ethers.provider.getBalance(
+                  target(testParams.fundsTarget),
+                ),
+              ).to.equal(initialBalance.add(ethProceeds));
+            });
           });
 
           it("reverts if sending too little ETH", async function () {
