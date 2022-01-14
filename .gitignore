@@ -9,3 +9,4 @@ coverage.json
 yarn-error.log
 *.tgz
 .mocharc.json
+.env
