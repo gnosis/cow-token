@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.10;
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 import "../vendored/interfaces/IERC20.sol";
 import "../vendored/libraries/SafeERC20.sol";
 
@@ -12,7 +14,12 @@ import "../interfaces/VestingInterface.sol";
 /// real tokens.
 /// @title COW Virtual Token Claiming Logic
 /// @author CoW Protocol Developers
-abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
+abstract contract Claiming is
+    ClaimingInterface,
+    VestingInterface,
+    IERC20,
+    ReentrancyGuard
+{
     using SafeERC20 for IERC20;
 
     /// @dev Prices are represented as fractions. For readability, the
@@ -159,7 +166,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Stops all vesting claims of a user. This is only applicable for
     /// claims that are cancellable, i.e., team claims.
     /// @param user The user whose vesting claims should be canceled.
-    function stopClaim(address user) external onlyTeamController {
+    function stopClaim(address user) external nonReentrant onlyTeamController {
         uint256 accruedVesting = shiftVesting(user, teamController);
         instantlySwappableBalance[user] += accruedVesting;
     }
@@ -332,7 +339,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Converts an amount of (virtual) tokens from this contract to real
     /// tokens based on the claims previously performed by the caller.
     /// @param amount How many virtual tokens to convert into real tokens.
-    function swap(uint256 amount) external {
+    function swap(uint256 amount) external nonReentrant {
         makeVestingSwappable();
         _swap(amount);
     }
@@ -341,7 +348,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// tokens based on the claims previously performed by the caller.
     /// @return swappedBalance The full amount that was swapped (i.e., virtual
     /// tokens burnt as well as real tokens received).
-    function swapAll() external returns (uint256 swappedBalance) {
+    function swapAll() external nonReentrant returns (uint256 swappedBalance) {
         swappedBalance = makeVestingSwappable();
         _swap(swappedBalance);
     }

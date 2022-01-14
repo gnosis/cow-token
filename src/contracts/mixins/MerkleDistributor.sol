@@ -15,12 +15,14 @@
 
 pragma solidity ^0.8.10;
 
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
 import "../vendored/interfaces/IERC20.sol";
 import "../vendored/libraries/MerkleProof.sol";
 
 import "../interfaces/ClaimingInterface.sol";
 
-abstract contract MerkleDistributor is ClaimingInterface {
+abstract contract MerkleDistributor is ClaimingInterface, ReentrancyGuard {
     bytes32 public immutable merkleRoot;
 
     /// @dev Event fired if a claim was successfully performed.
@@ -93,7 +95,7 @@ abstract contract MerkleDistributor is ClaimingInterface {
         uint256 claimableAmount,
         uint256 claimedAmount,
         bytes32[] calldata merkleProof
-    ) external payable {
+    ) external payable nonReentrant {
         _claim(
             index,
             claimType,
@@ -128,7 +130,7 @@ abstract contract MerkleDistributor is ClaimingInterface {
         uint256[] calldata claimedAmounts,
         bytes32[][] calldata merkleProofs,
         uint256[] calldata sentNativeTokens
-    ) external payable {
+    ) external payable nonReentrant {
         uint256 sumSentNativeTokens;
         for (uint256 i = 0; i < indices.length; i++) {
             sumSentNativeTokens += sentNativeTokens[i];
