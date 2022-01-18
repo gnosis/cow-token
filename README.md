@@ -86,3 +86,15 @@ npx hardhat test-deployment --network rinkeby --mnemonic "candy maple cake sugar
 The output files can be found in the `output/` folder, which include the addresses of the deployed Gnosis Safes.
 
 More advanced options can be listed by running `npx hardhat test-deployment --help`.
+
+### Verifying contract code
+
+For verifying the deployed contracts on Etherscan:
+
+```sh
+export INFURA_KEY='insert your Infura key here'
+export ETHERSCAN_API_KEY='insert your Etherscan API key here'
+yarn verify $VIRTUAL_TOKEN_ADDRESS --network $NETWORK
+```
+
+It is currently only possible to verify the contract code on mainnet or Rinkeby.

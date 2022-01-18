@@ -6,6 +6,7 @@ import {
   BigNumberish,
   BytesLike,
   constants,
+  Contract,
   Signer,
   utils,
 } from "ethers";
@@ -248,4 +249,40 @@ export async function prepareSafeDeployment(
     realTokenAddress,
     virtualTokenAddress,
   };
+}
+
+export async function getDeployArgsFromRealToken(
+  realToken: Contract,
+): Promise<Omit<RealTokenDeployParams, "totalSupply">> {
+  return {
+    cowDao: await realToken.cowDao(),
+  };
+}
+
+export async function getDeployArgsFromVirtualToken(
+  virtualToken: Contract,
+): Promise<VirtualTokenDeployParams> {
+  const promisedParameters: Record<
+    keyof VirtualTokenDeployParams,
+    Promise<VirtualTokenDeployParams[keyof VirtualTokenDeployParams]>
+  > = {
+    merkleRoot: virtualToken.merkleRoot(),
+    realToken: virtualToken.cowToken(),
+    communityFundsTarget: virtualToken.communityFundsTarget(),
+    investorFundsTarget: virtualToken.investorFundsTarget(),
+    usdcToken: virtualToken.usdcToken(),
+    usdcPrice: virtualToken.usdcPrice(),
+    gnoToken: virtualToken.gnoToken(),
+    gnoPrice: virtualToken.gnoPrice(),
+    wrappedNativeToken: virtualToken.wrappedNativeToken(),
+    nativeTokenPrice: virtualToken.nativeTokenPrice(),
+    teamController: virtualToken.teamController(),
+  };
+  return Object.fromEntries(
+    await Promise.all(
+      Object.entries(promisedParameters).map(async ([key, entry]) =>
+        entry.then((e) => [key, e]),
+      ),
+    ),
+  );
 }

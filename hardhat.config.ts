@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-waffle";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
+import "@nomiclabs/hardhat-etherscan";
 
 import dotenv from "dotenv";
 import type { HttpNetworkUserConfig } from "hardhat/types";
@@ -20,8 +21,15 @@ const argv = yargs
 
 // Load environment variables.
 dotenv.config();
-const { INFURA_KEY, MNEMONIC, PK, REPORT_GAS, MOCHA_CONF, NODE_URL } =
-  process.env;
+const {
+  INFURA_KEY,
+  MNEMONIC,
+  PK,
+  REPORT_GAS,
+  MOCHA_CONF,
+  NODE_URL,
+  ETHERSCAN_API_KEY,
+} = process.env;
 
 const DEFAULT_MNEMONIC =
   "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
@@ -106,5 +114,8 @@ export default {
     enabled: REPORT_GAS ? true : false,
     currency: "USD",
     gasPrice: 21,
+  },
+  etherscan: {
+    apiKey: ETHERSCAN_API_KEY,
   },
 };

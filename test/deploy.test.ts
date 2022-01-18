@@ -1,5 +1,6 @@
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
+import { BigNumber, utils } from "ethers";
 import hre, { ethers, waffle } from "hardhat";
 
 import { execSafeTransaction } from "../src/tasks/ts/safe";
@@ -9,6 +10,8 @@ import {
   ContractName,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
+  getDeployArgsFromRealToken,
+  getDeployArgsFromVirtualToken,
 } from "../src/ts";
 
 import { setupDeployer } from "./deterministic-deployment";
@@ -23,20 +26,28 @@ describe("deployment", () => {
 
   const realTokenDeployParams: RealTokenDeployParams = {
     totalSupply,
-    cowDao: "0x" + "ca1f0000" + "42".repeat(16),
+    cowDao: utils.getAddress("0x" + "ca1f0000" + "42".repeat(16)),
   };
   const virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken"> =
     {
       merkleRoot: "0x" + "42".repeat(32),
-      communityFundsTarget: "0x" + "42".repeat(3).padEnd(38, "0") + "01",
-      investorFundsTarget: "0x" + "42".repeat(3).padEnd(38, "0") + "02",
-      usdcToken: "0x" + "42".repeat(3).padEnd(38, "0") + "03",
-      usdcPrice: 42,
-      gnoToken: "0x" + "42".repeat(3).padEnd(38, "0") + "04",
-      gnoPrice: 1337,
-      wrappedNativeToken: "0x" + "42".repeat(3).padEnd(38, "0") + "05",
-      nativeTokenPrice: 31337,
-      teamController: "0x" + "42".repeat(3).padEnd(38, "0") + "06",
+      communityFundsTarget: utils.getAddress(
+        "0x" + "42".repeat(3).padEnd(38, "0") + "01",
+      ),
+      investorFundsTarget: utils.getAddress(
+        "0x" + "42".repeat(3).padEnd(38, "0") + "02",
+      ),
+      usdcToken: utils.getAddress("0x" + "42".repeat(3).padEnd(38, "0") + "03"),
+      usdcPrice: BigNumber.from(42),
+      gnoToken: utils.getAddress("0x" + "42".repeat(3).padEnd(38, "0") + "04"),
+      gnoPrice: BigNumber.from(1337),
+      wrappedNativeToken: utils.getAddress(
+        "0x" + "42".repeat(3).padEnd(38, "0") + "05",
+      ),
+      nativeTokenPrice: BigNumber.from(31337),
+      teamController: utils.getAddress(
+        "0x" + "42".repeat(3).padEnd(38, "0") + "06",
+      ),
     };
   let currentSnapshot: unknown;
 
@@ -241,6 +252,23 @@ describe("deployment", () => {
         expect(await virtualToken.teamController()).to.equal(
           virtualTokenDeployParams.teamController,
         );
+      });
+    });
+
+    it("getDeployArgsFromRealToken", async function () {
+      const extractedParams = await getDeployArgsFromRealToken(realToken);
+      const expectedResult: Omit<RealTokenDeployParams, "totalSupply"> = {
+        ...realTokenDeployParams,
+      };
+      delete (expectedResult as Record<string, unknown>).totalSupply;
+      expect(extractedParams).to.deep.equal(expectedResult);
+    });
+
+    it("getDeployArgsFromVirtualToken", async function () {
+      const extractedParams = await getDeployArgsFromVirtualToken(virtualToken);
+      expect(extractedParams).to.deep.equal({
+        ...virtualTokenDeployParams,
+        realToken: realToken.address,
       });
     });
   });
