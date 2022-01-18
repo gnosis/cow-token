@@ -168,6 +168,9 @@ describe("e2e-tests", () => {
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
       claim.claimableAmount,
     );
+    expect(
+      await deploymentData.wethToken.balanceOf(communityFundsTarget.address),
+    ).to.be.equal(wethToPay);
     await expect(
       deploymentData.vCowToken.connect(user).swapAll(),
     ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
