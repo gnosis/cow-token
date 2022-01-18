@@ -302,7 +302,6 @@ describe("e2e-tests", () => {
       usdcPrice,
       gnoPrice,
       nativeTokenPrice,
-      usdPerCow,
       initialCowSupply,
     };
     deploymentData = await standardDeployment(deploymentParameters);
@@ -319,32 +318,42 @@ describe("e2e-tests", () => {
     await deploymentData.vCowToken
       .connect(user)
       .claim(...getClaimInput(fullyExecuteClaim(claims[0])));
+    vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
+    expect(vCowTokenSupply).to.be.equal(claim.claimableAmount);
     expect(await deploymentData.gnoToken.balanceOf(user.address)).to.be.equal(
       gnoBalanceOfUser.sub(gnoToPay),
     );
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
       claim.claimableAmount,
     );
-    vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
+    expect(
+      await deploymentData.gnoToken.balanceOf(communityFundsTarget.address),
+    ).to.be.equal(gnoToPay);
+    await expect(
+      deploymentData.vCowToken.connect(user).swapAll(),
+    ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
 
     // Send cowTokens to the vCowToken
     await deploymentData.cowToken
       .connect(cowDao)
-      .transfer(deploymentData.vCowToken.address, claim.claimableAmount.div(3));
+      .transfer(deploymentData.vCowToken.address, initialCowSupply);
 
     // Perform a swapAll
     const vestingPeriod =
       await deploymentData.vCowToken.VESTING_PERIOD_IN_SECONDS();
-    setTime(deploymentData.deploymentTimestamp + vestingPeriod / 3);
+    await setTime(deploymentData.deploymentTimestamp + vestingPeriod / 4);
     await deploymentData.vCowToken.connect(user).swapAll();
     expect(await deploymentData.cowToken.balanceOf(user.address)).to.be.equal(
-      claim.claimableAmount.div(3),
+      claim.claimableAmount.div(4),
     );
     expect(
       await deploymentData.cowToken.balanceOf(deploymentData.vCowToken.address),
-    ).to.be.equal(0);
+    ).to.be.equal(initialCowSupply.sub(claim.claimableAmount.div(4)));
     expect(await deploymentData.vCowToken.totalSupply()).to.be.equal(
-      vCowTokenSupply.sub(claim.claimableAmount.div(3)),
+      vCowTokenSupply.sub(claim.claimableAmount.div(4)),
+    );
+    expect(await deploymentData.vCowToken.balanceOf(user.address)).to.equal(
+      claim.claimableAmount.mul(3).div(4),
     );
   });
 });
