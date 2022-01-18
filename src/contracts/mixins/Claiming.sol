@@ -324,6 +324,12 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         // which is currently not well supported by some wallet implementations.
         // The drawback of this approach is that it requires the rest of the
         // contract to be robust against reentrancy attacks at this point.
+        // As the contract code is finalized at the time of this change, we are
+        // able to guarantee that a reentrant transaction would not be able to
+        // affect the execution of the contract in a way that a normal
+        // transaction couldn't. We decide to avoid reentrancy guards as they
+        // would increase the gas cost of calling any function that acts on the
+        // state by 2500 gas each.
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = to.call{value: sentNativeTokens}("");
         if (!success) {
