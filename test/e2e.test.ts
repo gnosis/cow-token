@@ -36,7 +36,6 @@ interface DeploymentParameters {
   usdcPrice: BigNumber;
   gnoPrice: BigNumber;
   nativeTokenPrice: BigNumber;
-  usdPerCow: BigNumber;
   initialCowSupply: BigNumber;
 }
 
@@ -45,11 +44,9 @@ async function standardDeployment(
 ): Promise<DeploymentData> {
   // Deploy the required tokens
   const TestERC20 = await ethers.getContractFactory("TestERC20");
-  const usdcToken = await TestERC20.deploy("USDC");
-  const gnoToken = await TestERC20.deploy("GNO");
-  const wethToken = await TestERC20.connect(
-    deploymentParameters.deployer,
-  ).deploy("WETH");
+  const usdcToken = await TestERC20.deploy("USDC", 6);
+  const gnoToken = await TestERC20.deploy("GNO", 18);
+  const wethToken = await TestERC20.deploy("WETH", 18);
 
   // Deploying of the CowToken
   const CowSwapToken = await ethers.getContractFactory(ContractName.RealToken);
@@ -101,7 +98,7 @@ describe("e2e-tests", () => {
   const [
     deployer,
     user,
-    user_not_eligible,
+    userNotEligible,
     cowDao,
     communityFundsTarget,
     investorFundsTarget,
@@ -126,7 +123,7 @@ describe("e2e-tests", () => {
   let claim: Claim;
   let claims: ProvenClaim[];
 
-  it("User Option: claims the user option and vest it", async () => {
+  it("User Option: claims the user option with WETH and vest it", async () => {
     claim = {
       account: user.address,
       claimableAmount: ethers.utils.parseUnits("1234", 18),
@@ -145,7 +142,6 @@ describe("e2e-tests", () => {
       usdcPrice,
       gnoPrice,
       nativeTokenPrice,
-      usdPerCow,
       initialCowSupply,
     };
     deploymentData = await standardDeployment(deploymentParameters);
@@ -172,6 +168,9 @@ describe("e2e-tests", () => {
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
       claim.claimableAmount,
     );
+    expect(
+      await deploymentData.wethToken.balanceOf(communityFundsTarget.address),
+    ).to.be.equal(wethToPay);
     await expect(
       deploymentData.vCowToken.connect(user).swapAll(),
     ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
@@ -179,24 +178,28 @@ describe("e2e-tests", () => {
     // Send cowTokens to the vCowToken
     await deploymentData.cowToken
       .connect(cowDao)
-      .transfer(deploymentData.vCowToken.address, claim.claimableAmount.div(2));
+      .transfer(deploymentData.vCowToken.address, initialCowSupply);
 
     // Perform a swapAll
     const vestingPeriod =
       await deploymentData.vCowToken.VESTING_PERIOD_IN_SECONDS();
-    setTime(deploymentData.deploymentTimestamp + vestingPeriod / 2);
+    setTime(deploymentData.deploymentTimestamp + vestingPeriod / 4);
     await deploymentData.vCowToken.connect(user).swapAll();
     expect(await deploymentData.cowToken.balanceOf(user.address)).to.be.equal(
-      claim.claimableAmount.div(2),
+      claim.claimableAmount.div(4),
     );
     expect(
       await deploymentData.cowToken.balanceOf(deploymentData.vCowToken.address),
-    ).to.be.equal(0);
+    ).to.be.equal(initialCowSupply.sub(claim.claimableAmount.div(4)));
     expect(await deploymentData.vCowToken.totalSupply()).to.be.equal(
-      vCowTokenSupply.sub(claim.claimableAmount.div(2)),
+      vCowTokenSupply.sub(claim.claimableAmount.div(4)),
+    );
+    expect(await deploymentData.vCowToken.balanceOf(user.address)).to.equal(
+      claim.claimableAmount.mul(3).div(4),
     );
   });
-  it("User Option: claims the user option on behalf of someone else", async () => {
+
+  it("User Option: claims the user option on behalf of someone else with ETH", async () => {
     claim = {
       account: user.address,
       claimableAmount: ethers.utils.parseUnits("1234", 18),
@@ -215,40 +218,41 @@ describe("e2e-tests", () => {
       usdcPrice,
       gnoPrice,
       nativeTokenPrice,
-      usdPerCow,
       initialCowSupply,
     };
     deploymentData = await standardDeployment(deploymentParameters);
 
-    const wethToPay = claim.claimableAmount
+    const ethToPay = claim.claimableAmount
       .mul(nativeTokenPrice)
       .div(priceDenominator);
+    const ethBalanceOfCommunityFundsTarget = await ethers.provider.getBalance(
+      communityFundsTarget.address,
+    );
     await deploymentData.wethToken
       .connect(deployer)
-      .mint(user_not_eligible.address, wethBalanceOfUser);
+      .mint(userNotEligible.address, wethBalanceOfUser);
     // Claim vCowTokens
-    await deploymentData.wethToken
-      .connect(user_not_eligible)
-      .approve(deploymentData.vCowToken.address, wethToPay);
     let executeClaim = fullyExecuteClaim(claims[0]);
     executeClaim.claimedAmount = executeClaim.claimedAmount.div(2);
     await expect(
       deploymentData.vCowToken
-        .connect(user_not_eligible)
-        .claim(...getClaimInput(executeClaim)),
+        .connect(userNotEligible)
+        .claim(...getClaimInput(executeClaim), { value: ethToPay.div(2) }),
     ).to.be.revertedWith("OnlyOwnerCanClaimPartially()");
 
     executeClaim = fullyExecuteClaim(claims[0]);
     await deploymentData.vCowToken
-      .connect(user_not_eligible)
-      .claim(...getClaimInput(fullyExecuteClaim(claims[0])));
+      .connect(userNotEligible)
+      .claim(...getClaimInput(fullyExecuteClaim(claims[0])), {
+        value: ethToPay,
+      });
 
     vCowTokenSupply = await deploymentData.vCowToken.totalSupply();
     expect(vCowTokenSupply).to.be.equal(claim.claimableAmount);
 
     expect(
-      await deploymentData.wethToken.balanceOf(user_not_eligible.address),
-    ).to.be.equal(wethBalanceOfUser.sub(wethToPay));
+      await ethers.provider.getBalance(communityFundsTarget.address),
+    ).to.be.equal(ethToPay.add(ethBalanceOfCommunityFundsTarget));
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
       claim.claimableAmount,
     );
@@ -274,6 +278,9 @@ describe("e2e-tests", () => {
     ).to.be.equal(0);
     expect(await deploymentData.vCowToken.totalSupply()).to.be.equal(
       vCowTokenSupply.sub(claim.claimableAmount.div(2)),
+    );
+    expect(await deploymentData.vCowToken.balanceOf(user.address)).to.equal(
+      claim.claimableAmount.div(2),
     );
   });
   const gnoBalanceOfUser = ethers.utils.parseUnits("5354", 18);
