@@ -14,15 +14,12 @@ import {
   computeProofs,
   getClaimInput,
   ProvenClaim,
+  allClaimTypes,
 } from "../src/ts";
 
 import { fullyExecuteClaim } from "./claiming";
 import { customError } from "./custom-errors";
 import { setTime, setTimeAndMineBlock } from "./utils/timeUtils";
-
-const allClaimTypes: ClaimType[] = Object.keys(ClaimType)
-  .map((c) => Number(c))
-  .filter((c) => !isNaN(c));
 
 describe("CowProtocolVirtualToken", () => {
   let token: Contract;

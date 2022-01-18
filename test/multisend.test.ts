@@ -1,9 +1,10 @@
 import { expect } from "chai";
 import { ethers, waffle } from "hardhat";
 
+import { execSafeTransaction } from "../src/tasks/ts/safe";
 import { multisend } from "../src/ts/deploy/safe";
 
-import { execSafeTransaction, GnosisSafeManager } from "./safe";
+import { GnosisSafeManager } from "./safe";
 
 describe("multisend", () => {
   const [ethSource, deployer, ...owners] = waffle.provider.getWallets();
