@@ -25,6 +25,7 @@ import {
   deployWithOwners,
   MultiSendDeployment,
   execSafeTransaction,
+  gnosisSafeAt,
 } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output";
@@ -58,6 +59,11 @@ interface DeployTaskArgs {
   usdcPerGno?: string;
   wethToken?: string;
   usdcPerWeth?: string;
+  gnosisDao?: string;
+  cowDao?: string;
+  communityFundsTarget?: string;
+  investorFundsTarget?: string;
+  teamController?: string;
 }
 interface CleanArgs {
   mnemonic: string;
@@ -70,6 +76,11 @@ interface CleanArgs {
   weth: Token;
   usdcPerWeth: BigNumber;
   chainId: SupportedChainId;
+  gnosisDaoAddress?: string;
+  cowDaoAddress?: string;
+  communityFundsTargetAddress?: string;
+  investorFundsTargetAddress?: string;
+  teamControllerAddress?: string;
 }
 
 interface Token {
@@ -122,6 +133,9 @@ async function parseArgs(
     getToken(defaultIfUnset(args.gnoToken, "gno")),
     getToken(defaultIfUnset(args.wethToken, "weth")),
   ]);
+  function checksummedAddress(address: string | undefined): string | undefined {
+    return address === undefined ? undefined : utils.getAddress(address);
+  }
   return {
     chainId,
     mnemonic: args.mnemonic,
@@ -145,6 +159,11 @@ async function parseArgs(
       args.usdcPerWeth ?? defaultArgs.usdcPerWeth,
       usdc.decimals,
     ),
+    gnosisDaoAddress: checksummedAddress(args.gnosisDao),
+    cowDaoAddress: checksummedAddress(args.cowDao),
+    communityFundsTargetAddress: checksummedAddress(args.communityFundsTarget),
+    investorFundsTargetAddress: checksummedAddress(args.investorFundsTarget),
+    teamControllerAddress: checksummedAddress(args.teamController),
   };
 }
 
@@ -186,6 +205,26 @@ const setupTestDeploymentTask: () => void = () => {
       "How many USDC a WETH is worth.",
       defaultArgs.usdcPerWeth,
       types.string,
+    )
+    .addOptionalParam(
+      "gnosisDao",
+      "The address of the Gnosis Safe from which the contract will be deployed. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
+    )
+    .addOptionalParam(
+      "cowDao",
+      "The address representing the Cow DAO. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
+    )
+    .addOptionalParam(
+      "communityFundsTarget",
+      "The address that will receive the community funds. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
+    )
+    .addOptionalParam(
+      "investorFundsTarget",
+      "The address that will receive the investor funds. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
+    )
+    .addOptionalParam(
+      "teamController",
+      "The address that controls team claims. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
     )
     .setAction(async (args, hre) => {
       await generateClaimsAndDeploy(await parseArgs(args, hre), hre);
@@ -252,6 +291,11 @@ async function generateClaimsAndDeploy(
     weth,
     usdcPerWeth,
     chainId,
+    gnosisDaoAddress,
+    cowDaoAddress,
+    communityFundsTargetAddress,
+    investorFundsTargetAddress,
+    teamControllerAddress,
   }: CleanArgs,
   hre: HardhatRuntimeEnvironment,
 ) {
@@ -282,27 +326,35 @@ async function generateClaimsAndDeploy(
 
   // The contracts are deployed from a contract and require that some receiver
   // addresses are set. All these are created now and are Gnosis Safe.
-  console.log("Deploying administration safes...");
+  console.log("Setting up administration addresses...");
   const deploySafe: () => Promise<Contract> = async () =>
     (await deployWithOwners([deployer.address], 1, deployer, hre)).connect(
       ethers.provider,
     );
-  const gnosisDao = await deploySafe();
-  const cowDao = await deploySafe();
-  const communityFundsTarget = await deploySafe();
-  const investorFundsTarget = await deploySafe();
-  const teamController = await deploySafe();
+  const gnosisDao =
+    gnosisDaoAddress === undefined
+      ? await deploySafe()
+      : gnosisSafeAt(gnosisDaoAddress).connect(deployer);
+  // The remaining addresses don't need to be Gnosis Safes. We deploy Gnosis
+  // Safes by default to make the deployment more similar to the expected final
+  // deployment.
+  const cowDao = cowDaoAddress ?? (await deploySafe()).address;
+  const communityFundsTarget =
+    communityFundsTargetAddress ?? (await deploySafe()).address;
+  const investorFundsTarget =
+    investorFundsTargetAddress ?? (await deploySafe()).address;
+  const teamController = teamControllerAddress ?? (await deploySafe()).address;
 
   const realTokenDeployParams: RealTokenDeployParams = {
     totalSupply,
-    cowDao: cowDao.address,
+    cowDao,
   };
 
   const virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken"> =
     {
       merkleRoot,
-      communityFundsTarget: communityFundsTarget.address,
-      investorFundsTarget: investorFundsTarget.address,
+      communityFundsTarget: communityFundsTarget,
+      investorFundsTarget: investorFundsTarget,
       usdcToken: usdc.instance.address,
       usdcPrice: usdcPerCow,
       gnoToken: gno.instance.address,
@@ -315,7 +367,7 @@ async function generateClaimsAndDeploy(
         .parseUnits("1", weth.decimals)
         .mul(usdcPerCow)
         .div(usdcPerWeth),
-      teamController: teamController.address,
+      teamController: teamController,
     };
 
   console.log("Generating deploy transactions...");
@@ -335,7 +387,7 @@ async function generateClaimsAndDeploy(
   expect(await ethers.provider.getCode(realTokenAddress)).to.equal("0x");
   expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
 
-  console.log("Clearing old files");
+  console.log("Clearing old files...");
   await fs.rm(`${OUTPUT_FOLDER}/private-keys.json`, {
     recursive: true,
     force: true,
