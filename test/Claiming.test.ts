@@ -543,9 +543,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds,
               ),
-            ).to.be.revertedWith(
-              RevertMessage.ContractCannotReceiveNativeTokens,
-            );
+            ).to.be.revertedWith(customError("FailedNativeTokenTransfer"));
           });
         } else {
           it("reverts if sending ETH when claiming", async function () {
