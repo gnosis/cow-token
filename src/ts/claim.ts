@@ -32,6 +32,10 @@ export interface ExecutableClaim extends ProvenClaim {
   value?: BigNumber;
 }
 
+export const allClaimTypes: ClaimType[] = Object.keys(ClaimType)
+  .map((c) => Number(c))
+  .filter((c) => !isNaN(c));
+
 // Returns a collision-free identifier for the pair (claim, index).
 export function claimHash(
   index: number | BigNumber,

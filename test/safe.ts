@@ -1,13 +1,7 @@
-import { TransactionResponse } from "@ethersproject/abstract-provider";
-import {
-  buildSafeTransaction,
-  executeTxWithSigners,
-  MetaTransaction,
-} from "@gnosis.pm/safe-contracts";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
 import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
-import { Signer, Contract, Wallet } from "ethers";
+import { Signer, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
 
 export class GnosisSafeManager {
@@ -47,17 +41,4 @@ export class GnosisSafeManager {
     );
     return safe;
   }
-}
-
-export async function execSafeTransaction(
-  safe: Contract,
-  transaction: MetaTransaction,
-  signers: Wallet[],
-): Promise<TransactionResponse> {
-  const safeTransaction = buildSafeTransaction({
-    ...transaction,
-    nonce: await safe.nonce(),
-  });
-
-  return await executeTxWithSigners(safe, safeTransaction, signers);
 }

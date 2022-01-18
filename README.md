@@ -67,4 +67,34 @@ yarn bench:code-size
 ### Deploying Contracts
 
 The contracts are expected to be deployed by the Gnosis DAO using the Zodiac module.
-A script to create this transaction will be included in this repo.
+
+#### Test deployment
+
+A script that can be used to create a live test deployment of the token contract on the supported networks.
+It generates private keys for each user participating in the auctions based on a mnemonic parameter.
+Any valid combination of claims can be found among the generated addresses.
+
+The script also deploys all administration Gnosis Safe, for example the DAOs and the funds targets. By default, they will be owned by the deployer address.
+
+Here is an example of how to run a deployment:
+```
+export INFURA_KEY='insert your Infura key here'
+export PK='insert you private key here'
+npx hardhat test-deployment --network rinkeby --mnemonic "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+```
+
+The output files can be found in the `output/` folder, which include the addresses of the deployed Gnosis Safes.
+
+More advanced options can be listed by running `npx hardhat test-deployment --help`.
+
+### Verifying contract code
+
+For verifying the deployed contracts on Etherscan:
+
+```sh
+export INFURA_KEY='insert your Infura key here'
+export ETHERSCAN_API_KEY='insert your Etherscan API key here'
+yarn verify $VIRTUAL_TOKEN_ADDRESS --network $NETWORK
+```
+
+It is currently only possible to verify the contract code on mainnet or Rinkeby.

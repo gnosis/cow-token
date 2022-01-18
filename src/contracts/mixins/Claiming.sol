@@ -75,6 +75,8 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @dev Error resulting from sending an incorrect amount of native to the
     /// contract.
     error InvalidNativeTokenAmount();
+    /// @dev Error caused by an unsuccessful attempt to transfer native tokens.
+    error FailedNativeTokenTransfer();
     /// @dev Error resulting from sending native tokens for a claim that cannot
     /// be redeemed with native tokens.
     error CannotSendNativeToken();
@@ -313,7 +315,26 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         if (sentNativeTokens != nativeTokenEquivalent) {
             revert InvalidNativeTokenAmount();
         }
-        to.transfer(nativeTokenEquivalent);
+
+        // We transfer ETH using .call instead of .transfer as not to restrict
+        // the amount of gas sent to the target address during the transfer.
+        // This is particularly relevant for sending ETH to smart contracts:
+        // since EIP 2929, if a contract sends eth using `.transfer` then the
+        // transaction proposed to the node needs to specify an _access list_,
+        // which is currently not well supported by some wallet implementations.
+        // The drawback of this approach is that it requires the rest of the
+        // contract to be robust against reentrancy attacks at this point.
+        // As the contract code is finalized at the time of this change, we are
+        // able to guarantee that a reentrant transaction would not be able to
+        // affect the execution of the contract in a way that a normal
+        // transaction couldn't. We decide to avoid reentrancy guards as they
+        // would increase the gas cost of calling any function that acts on the
+        // state by 2500 gas each.
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = to.call{value: sentNativeTokens}("");
+        if (!success) {
+            revert FailedNativeTokenTransfer();
+        }
     }
 
     /// @dev Converts input amount in COW token atoms to an amount in token

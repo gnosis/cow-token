@@ -467,6 +467,24 @@ describe("Claiming", function () {
             });
 
             testOptionClaim(testParams, ethProceeds);
+
+            it(`sends ETH to the ${testParams.fundsTarget} target`, async function () {
+              const initialBalance = await ethers.provider.getBalance(
+                target(testParams.fundsTarget),
+              );
+              await claiming.performClaimTest(
+                testParams.claimType,
+                payer,
+                claimant,
+                amount,
+                ethProceeds,
+              );
+              expect(
+                await ethers.provider.getBalance(
+                  target(testParams.fundsTarget),
+                ),
+              ).to.equal(initialBalance.add(ethProceeds));
+            });
           });
 
           it("reverts if sending too little ETH", async function () {
@@ -525,9 +543,7 @@ describe("Claiming", function () {
                 amount,
                 ethProceeds,
               ),
-            ).to.be.revertedWith(
-              RevertMessage.ContractCannotReceiveNativeTokens,
-            );
+            ).to.be.revertedWith(customError("FailedNativeTokenTransfer"));
           });
         } else {
           it("reverts if sending ETH when claiming", async function () {

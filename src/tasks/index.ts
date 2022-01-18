@@ -1,2 +1,7 @@
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export function setupTasks(): void {}
+import { setupTestDeploymentTask } from "./test-deployment";
+import { setupVerifyContractCodeTask } from "./verify-contract-code";
+
+export function setupTasks(): void {
+  setupTestDeploymentTask();
+  setupVerifyContractCodeTask();
+}
