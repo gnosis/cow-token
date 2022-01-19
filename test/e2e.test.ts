@@ -283,8 +283,9 @@ describe("e2e-tests", () => {
       claim.claimableAmount.div(2),
     );
   });
-  const gnoBalanceOfUser = ethers.utils.parseUnits("5354", 18);
+
   it("GNO option: claims the gno option and vest it", async () => {
+    const gnoBalanceOfUser = ethers.utils.parseUnits("5354", 18);
     claim = {
       account: user.address,
       claimableAmount: ethers.utils.parseUnits("1234", 18),
