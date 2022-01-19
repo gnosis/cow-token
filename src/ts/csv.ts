@@ -1,7 +1,7 @@
-import { createReadStream } from "fs";
-import type { Readable } from "stream";
+import { createReadStream, createWriteStream } from "fs";
+import type { Readable, Writable } from "stream";
 
-import { parse } from "csv-parse";
+import { parse, stringify } from "csv";
 import { BigNumber } from "ethers";
 
 import { ClaimType, Claim } from "./claim";
@@ -17,7 +17,7 @@ export const claimLegend = {
   Advisor: ClaimType.Advisor,
 } as const;
 // The header of the column containing the addresses of the claim owner.
-const accountLegend = "Account";
+const accountLegend = "Account" as const;
 
 export async function parseCsv(stream: Readable): Promise<Claim[]> {
   const result: Claim[] = [];
@@ -50,4 +50,61 @@ export async function parseCsv(stream: Readable): Promise<Claim[]> {
 
 export function parseCsvFile(csvPath: string): Promise<Claim[]> {
   return parseCsv(createReadStream(csvPath));
+}
+
+export function writeCsv(claims: Claim[]): Writable {
+  const accounts = Array.from(new Set(claims.map(({ account }) => account)));
+
+  const claimsByAccount: Record<string, Claim[]> = {};
+  for (const user of accounts) {
+    claimsByAccount[user] = claims.filter(({ account }) => account === user);
+  }
+
+  const headers: (typeof accountLegend | keyof typeof claimLegend)[] = [
+    "Account",
+    "Airdrop",
+    "GnoOption",
+    "UserOption",
+    "Investor",
+    "Team",
+    "Advisor",
+  ];
+  const stringifier = stringify({
+    header: true,
+    columns: headers,
+  });
+  for (const [user, userClaims] of Object.entries(claimsByAccount)) {
+    if (userClaims.length != new Set(userClaims.map(({ type }) => type)).size) {
+      throw new Error(
+        `Account ${user} has more than one claim for the same type. This case is currently not implemented.`,
+      );
+    }
+    const amountByClaimType = Object.keys(claimLegend)
+      .map((key) => [
+        key,
+        userClaims
+          .filter(
+            ({ type }) => type === claimLegend[key as keyof typeof claimLegend],
+          )[0]
+          ?.claimableAmount.toString(),
+      ])
+      .filter(([, value]) => value !== undefined);
+
+    stringifier.write(
+      Object.fromEntries(amountByClaimType.concat([[accountLegend, user]])),
+    );
+  }
+
+  stringifier.end();
+
+  return stringifier;
+}
+
+export async function writeCsvToFile(
+  csvPath: string,
+  claims: Claim[],
+): Promise<void> {
+  return new Promise((resolve) =>
+    writeCsv(claims).pipe(createWriteStream(csvPath)).on("end", resolve),
+  );
 }
