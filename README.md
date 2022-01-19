@@ -71,8 +71,7 @@ The contracts are expected to be deployed by the Gnosis DAO using the Zodiac mod
 #### Test deployment
 
 A script that can be used to create a live test deployment of the token contract on the supported networks.
-It generates private keys for each user participating in the auctions based on a mnemonic parameter.
-Any valid combination of claims can be found among the generated addresses.
+It generates claims based on an input CSV file. See the [example section](#example-csv-file-with-claims) for how to generate a valid CSV file.
 
 The script also deploys all administration Gnosis Safe, for example the DAOs and the funds targets. By default, they will be owned by the deployer address.
 
@@ -80,12 +79,25 @@ Here is an example of how to run a deployment:
 ```
 export INFURA_KEY='insert your Infura key here'
 export PK='insert you private key here'
-npx hardhat test-deployment --network rinkeby --mnemonic "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+npx hardhat test-deployment --network rinkeby /path/to/claims.csv
 ```
 
-The output files can be found in the `output/` folder, which include the addresses of the deployed Gnosis Safes.
+The output files can be found in the `output/test-deployment` folder, which include the addresses of the deployed Gnosis Safes.
 
 More advanced options can be listed by running `npx hardhat test-deployment --help`.
+
+#### Example CSV file with claims
+
+A script is available to generate a CSV file containing pseudorandom claims for testing.
+It generates private keys for each user based on a mnemonic parameter. To each of these users will be assigned different claim combinations.
+Any valid combination of claim types can be found among the generated addresses.
+
+Example usage:
+```
+npx hardhat test-claims --user-count 10000 --mnemonic "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat"
+```
+
+The computed private keys and the CSV file containing all the claims are stored in the folder `output/test-claims`.
 
 ### Verifying contract code
 
