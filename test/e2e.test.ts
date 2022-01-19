@@ -103,6 +103,7 @@ describe("e2e-tests", () => {
     communityFundsTarget,
     investorFundsTarget,
     teamController,
+    anyAddress,
   ] = waffle.provider.getWallets();
   const initialCowSupply = ethers.utils.parseEther("1000");
 
@@ -225,9 +226,6 @@ describe("e2e-tests", () => {
     const ethToPay = claim.claimableAmount
       .mul(nativeTokenPrice)
       .div(priceDenominator);
-    const ethBalanceOfCommunityFundsTarget = await ethers.provider.getBalance(
-      communityFundsTarget.address,
-    );
     await deploymentData.wethToken
       .connect(deployer)
       .mint(userNotEligible.address, wethBalanceOfUser);
@@ -251,8 +249,8 @@ describe("e2e-tests", () => {
     expect(vCowTokenSupply).to.be.equal(claim.claimableAmount);
 
     expect(
-      await ethers.provider.getBalance(communityFundsTarget.address),
-    ).to.be.equal(ethToPay.add(ethBalanceOfCommunityFundsTarget));
+      await ethers.provider.getBalance(deploymentData.vCowToken.address),
+    ).to.be.equal(ethToPay);
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.be.equal(
       claim.claimableAmount,
     );
@@ -282,6 +280,18 @@ describe("e2e-tests", () => {
     expect(await deploymentData.vCowToken.balanceOf(user.address)).to.equal(
       claim.claimableAmount.div(2),
     );
+
+    // Withdraw ETH to the community funds.
+    const ethBalanceOfCommunityFundsTarget = await ethers.provider.getBalance(
+      communityFundsTarget.address,
+    );
+    await deploymentData.vCowToken.connect(anyAddress).withdrawEth();
+    expect(
+      await ethers.provider.getBalance(communityFundsTarget.address),
+    ).to.be.equal(ethBalanceOfCommunityFundsTarget.add(ethToPay));
+    expect(
+      await ethers.provider.getBalance(deploymentData.vCowToken.address),
+    ).to.be.equal(0);
   });
 
   it("GNO option: claims the gno option and vest it", async () => {
