@@ -100,3 +100,7 @@ export async function deployWithOwners(
   }
   return new Contract(newSafeAddress, GnosisSafe.abi);
 }
+
+export function gnosisSafeAt(address: string): Contract {
+  return new Contract(address, GnosisSafe.abi);
+}
