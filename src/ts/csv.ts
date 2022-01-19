@@ -33,7 +33,7 @@ export async function parseCsv(stream: Readable): Promise<Claim[]> {
     for (const key of Object.keys(line)) {
       if (Object.keys(claimLegend).includes(key)) {
         const type = claimLegend[key as keyof typeof claimLegend];
-        const claimableAmount = BigNumber.from(line[key]);
+        const claimableAmount = BigNumber.from(line[key] || "0");
         if (!claimableAmount.eq(0)) {
           result.push({
             account,

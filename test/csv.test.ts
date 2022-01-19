@@ -74,4 +74,17 @@ describe("CSV parsing", function () {
     }));
     expect(await parseCsv(stream)).to.deep.equal(expected);
   });
+
+  it("regards empty entries as no claim", async function () {
+    const stream = Readable.from(`Account,UserOption,Airdrop
+0x1234,,1337`);
+    const expected: Claim[] = [
+      {
+        account: "0x1234",
+        type: ClaimType.Airdrop,
+        claimableAmount: BigNumber.from(1337),
+      },
+    ];
+    expect(await parseCsv(stream)).to.deep.equal(expected);
+  });
 });
