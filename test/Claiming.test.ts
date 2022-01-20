@@ -468,82 +468,29 @@ describe("Claiming", function () {
 
             testOptionClaim(testParams, ethProceeds);
 
-            it(`sends ETH to the ${testParams.fundsTarget} target`, async function () {
-              const initialBalance = await ethers.provider.getBalance(
-                target(testParams.fundsTarget),
-              );
-              await claiming.performClaimTest(
-                testParams.claimType,
-                payer,
-                claimant,
-                amount,
-                ethProceeds,
-              );
-              expect(
-                await ethers.provider.getBalance(
-                  target(testParams.fundsTarget),
+            it("reverts if sending too little ETH", async function () {
+              await expect(
+                claiming.performClaimTest(
+                  testParams.claimType,
+                  payer,
+                  claimant,
+                  amount,
+                  ethProceeds.sub(1),
                 ),
-              ).to.equal(initialBalance.add(ethProceeds));
-            });
-          });
-
-          it("reverts if sending too little ETH", async function () {
-            await expect(
-              claiming.performClaimTest(
-                testParams.claimType,
-                payer,
-                claimant,
-                amount,
-                ethProceeds.sub(1),
-              ),
-            ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
-          });
-
-          it("reverts if sending too much ETH", async function () {
-            await expect(
-              claiming.performClaimTest(
-                testParams.claimType,
-                payer,
-                claimant,
-                amount,
-                ethProceeds.add(1),
-              ),
-            ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
-          });
-
-          it("reverts if ETH transfer fails", async function () {
-            const nonPayableContract = await (
-              await ethers.getContractFactory("NonPayable")
-            ).deploy();
-
-            const updatedDeploymentParams = { ...deploymentParams };
-            updatedDeploymentParams[
-              testParams.fundsTarget === "communityFunds"
-                ? "communityFundsTarget"
-                : "investorFundsTarget"
-            ] = nonPayableContract.address;
-            claiming = (
-              await Claiming.deploy(
-                ...(await claimingConstructorInput(updatedDeploymentParams)),
-              )
-            ).connect(executor);
-
-            // Transfer eth to contract, so that it can actually perform the
-            // transfer.
-            await executor.sendTransaction({
-              to: claiming.address,
-              value: ethProceeds,
+              ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
             });
 
-            await expect(
-              claiming.performClaimTest(
-                testParams.claimType,
-                payer,
-                claimant,
-                amount,
-                ethProceeds,
-              ),
-            ).to.be.revertedWith(customError("FailedNativeTokenTransfer"));
+            it("reverts if sending too much ETH", async function () {
+              await expect(
+                claiming.performClaimTest(
+                  testParams.claimType,
+                  payer,
+                  claimant,
+                  amount,
+                  ethProceeds.add(1),
+                ),
+              ).to.be.revertedWith(customError("InvalidNativeTokenAmount"));
+            });
           });
         } else {
           it("reverts if sending ETH when claiming", async function () {
@@ -848,6 +795,50 @@ describe("Claiming", function () {
 
       expect(await claiming.connect(executor).callStatic.swapAll()).to.equal(
         swappedAmount,
+      );
+    });
+  });
+
+  describe("withdrawEth", function () {
+    const vCowEthBalance = utils.parseEther("42");
+
+    it(`sends ETH to the community funds target`, async function () {
+      // Transfer eth to contract, so that there is something to transfer.
+      await deployer.sendTransaction({
+        to: claiming.address,
+        value: vCowEthBalance,
+      });
+      const initialBalance = await ethers.provider.getBalance(
+        communityFundsTarget,
+      );
+      await claiming.connect(executor).withdrawEth();
+      expect(await ethers.provider.getBalance(communityFundsTarget)).to.equal(
+        initialBalance.add(vCowEthBalance),
+      );
+    });
+
+    it("reverts if ETH transfer fails", async function () {
+      const nonPayableContract = await (
+        await ethers.getContractFactory("NonPayable")
+      ).deploy();
+
+      const updatedDeploymentParams = { ...deploymentParams };
+      updatedDeploymentParams["communityFundsTarget"] =
+        nonPayableContract.address;
+      claiming = (
+        await Claiming.deploy(
+          ...(await claimingConstructorInput(updatedDeploymentParams)),
+        )
+      ).connect(executor);
+
+      // Transfer eth to contract, so that there is something to transfer.
+      await deployer.sendTransaction({
+        to: claiming.address,
+        value: vCowEthBalance,
+      });
+
+      await expect(claiming.withdrawEth()).to.be.revertedWith(
+        customError("FailedNativeTokenTransfer"),
       );
     });
   });
