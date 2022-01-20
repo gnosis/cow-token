@@ -17,6 +17,7 @@ import {
 } from "../ts";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
+import { generateClaims } from "./test-claims";
 import {
   SupportedChainId,
   isChainIdSupported,
@@ -175,6 +176,10 @@ const setupTestDeploymentTask: () => void = () => {
     "Generate a list of pseudorandom claims for each signer and deploy test contracts on the current network.",
   )
     .addPositionalParam(
+      "claimCsv",
+      "Path to the CSV file that contains the list of claims to generate.",
+    )
+    .addOptionalPositionalParam(
       "claimCsv",
       "Path to the CSV file that contains the list of claims to generate.",
     )

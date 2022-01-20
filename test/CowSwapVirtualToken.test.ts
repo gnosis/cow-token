@@ -142,6 +142,7 @@ describe("CowProtocolVirtualToken", () => {
       "stopClaim(address)",
       "swap(uint256)",
       "swapAll()",
+      "withdrawEth()",
     ];
     const goodPublicFunctions = [
       ...erc20TokenFunctions,
