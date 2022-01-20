@@ -12,14 +12,12 @@ import {
   prepareSafeDeployment,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
-  Claim,
-  ClaimType,
-  allClaimTypes,
   computeProofs,
   parseCsvFile,
 } from "../ts";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
+import { generateClaims } from "./test-claims";
 import {
   SupportedChainId,
   isChainIdSupported,
@@ -29,7 +27,7 @@ import {
   gnosisSafeAt,
 } from "./ts/safe";
 
-const OUTPUT_FOLDER = "./output";
+const OUTPUT_FOLDER = "./output/test-deployment";
 
 const defaultTokens = {
   usdc: {
@@ -245,54 +243,6 @@ const setupTestDeploymentTask: () => void = () => {
       await generateClaimsAndDeploy(await parseArgs(args, hre), hre);
     });
 };
-
-function powerSet<T>(set: Set<T>): Set<Set<T>> {
-  const values = [...set.values()];
-  const result: Set<Set<T>> = new Set();
-  for (let i = 0; i < 2 ** values.length; i++) {
-    result.add(new Set(values.filter((_, pos) => (i & (1 << pos)) !== 0)));
-  }
-  return result;
-}
-
-function generateClaims(users: string[]): Claim[] {
-  // For every possible configuration of claims, there should be a user with
-  // these claims. An example of claim configuration is a user who has three
-  // claims: Investor, UserOption, and Airdrop.
-
-  // We filter out impossible configuration, that is a team claim with any other
-  // vesting claim. Also, we don't need users without claims.
-  const vestingClaimTypes = [
-    ClaimType.GnoOption,
-    ClaimType.UserOption,
-    ClaimType.Investor,
-  ];
-  const admissibleClaimConfigurations = [...powerSet(new Set(allClaimTypes))]
-    .filter(
-      (configuration) =>
-        !(
-          configuration.has(ClaimType.Team) &&
-          vestingClaimTypes.some((type) => configuration.has(type))
-        ),
-    )
-    .filter((configuration) => configuration.size !== 0);
-
-  const pseudorandomAmount = (i: number) =>
-    BigNumber.from(id(i.toString()))
-      .mod(10000)
-      .mul(utils.parseUnits("1", metadata.real.decimals));
-  return users
-    .map((account, i) =>
-      Array.from(
-        admissibleClaimConfigurations[i % admissibleClaimConfigurations.length],
-      ).map((type) => ({
-        account,
-        claimableAmount: pseudorandomAmount(i),
-        type,
-      })),
-    )
-    .flat();
-}
 
 async function generateClaimsAndDeploy(
   {
