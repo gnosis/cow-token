@@ -166,9 +166,30 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         instantlySwappableBalance[user] += accruedVesting;
     }
 
+    /// @dev Transfers all ETH stored in the contract to the community funds
+    // target.
+    function withdrawEth() external {
+        // We transfer ETH using .call instead of .transfer as not to restrict
+        // the amount of gas sent to the target address during the transfer.
+        // This is particularly relevant for sending ETH to smart contracts:
+        // since EIP 2929, if a contract sends eth using `.transfer` then the
+        // transaction proposed to the node needs to specify an _access list_,
+        // which is currently not well supported by some wallet implementations.
+        // There is no reentrancy risk as this call does not touch any storage
+        // slot and the contract balance is not used in other logic.
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, ) = communityFundsTarget.call{
+            value: address(this).balance
+        }("");
+        if (!success) {
+            revert FailedNativeTokenTransfer();
+        }
+    }
+
     /// @dev Performs an airdrop-type claim for the user.
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimAirdrop(
         address account,
         uint256 amount,
@@ -184,6 +205,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
     /// @param payer The address that pays the amount required by the claim.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimGnoOption(
         address account,
         uint256 amount,
@@ -201,6 +223,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
     /// @param payer The address that pays the amount required by the claim.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimUserOption(
         address account,
         uint256 amount,
@@ -208,11 +231,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
         uint256 sentNativeTokens
     ) private before(2 weeks) {
         if (sentNativeTokens != 0) {
-            collectNativeTokenPayment(
-                communityFundsTarget,
-                amount,
-                sentNativeTokens
-            );
+            collectNativeTokenPayment(amount, sentNativeTokens);
         } else {
             collectPayment(
                 wrappedNativeToken,
@@ -229,6 +248,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
     /// @param payer The address that pays the amount required by the claim.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimInvestor(
         address account,
         uint256 amount,
@@ -252,6 +272,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// but can be canceled.
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimTeam(
         address account,
         uint256 amount,
@@ -267,6 +288,7 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// payment and cannot be canceled.
     /// @param account The user for which the claim is performed.
     /// @param amount The full amount claimed by the user after vesting.
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
     function claimAdvisor(
         address account,
         uint256 amount,
@@ -301,39 +323,18 @@ abstract contract Claiming is ClaimingInterface, VestingInterface, IERC20 {
     /// that the amount of native tokens sent coincides with the expected amount
     /// of native tokens. This amount is based on the price of the native token
     /// and amount of COW bought.
-    /// @param to The address to which to send the funds.
     /// @param amount The amount of COW atoms that will be paid for.
-    function collectNativeTokenPayment(
-        address payable to,
-        uint256 amount,
-        uint256 sentNativeTokens
-    ) private {
+    /// @param sentNativeTokens Amount of ETH sent along to the transaction.
+    function collectNativeTokenPayment(uint256 amount, uint256 sentNativeTokens)
+        private
+        view
+    {
         uint256 nativeTokenEquivalent = convertCowAmountAtPrice(
             amount,
             nativeTokenPrice
         );
         if (sentNativeTokens != nativeTokenEquivalent) {
             revert InvalidNativeTokenAmount();
-        }
-
-        // We transfer ETH using .call instead of .transfer as not to restrict
-        // the amount of gas sent to the target address during the transfer.
-        // This is particularly relevant for sending ETH to smart contracts:
-        // since EIP 2929, if a contract sends eth using `.transfer` then the
-        // transaction proposed to the node needs to specify an _access list_,
-        // which is currently not well supported by some wallet implementations.
-        // The drawback of this approach is that it requires the rest of the
-        // contract to be robust against reentrancy attacks at this point.
-        // As the contract code is finalized at the time of this change, we are
-        // able to guarantee that a reentrant transaction would not be able to
-        // affect the execution of the contract in a way that a normal
-        // transaction couldn't. We decide to avoid reentrancy guards as they
-        // would increase the gas cost of calling any function that acts on the
-        // state by 2500 gas each.
-        // solhint-disable-next-line avoid-low-level-calls
-        (bool success, ) = to.call{value: sentNativeTokens}("");
-        if (!success) {
-            revert FailedNativeTokenTransfer();
         }
     }
 
