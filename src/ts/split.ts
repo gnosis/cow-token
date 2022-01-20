@@ -26,6 +26,50 @@ export interface SplitClaims {
   claimChunks: ClaimChunks;
 }
 
+function* claimsBySortedAddress(
+  claims: ProvenClaim[],
+): Generator<[string, StringifiedProvenClaim[]], void, undefined> {
+  if (claims.length === 0) {
+    return;
+  }
+  const sortedClaims = [...claims].sort(({ account: lhs }, { account: rhs }) =>
+    lhs === rhs ? 0 : lhs.toLowerCase() < rhs.toLowerCase() ? -1 : 1,
+  );
+
+  let currentUser: string = sortedClaims[0].account;
+  let currentClaims: StringifiedProvenClaim[] = [];
+  for (const claim of sortedClaims) {
+    if (currentUser !== claim.account) {
+      yield [currentUser, currentClaims];
+      currentUser = claim.account;
+      currentClaims = [];
+    }
+    currentClaims.push({
+      proof: claim.proof,
+      index: claim.index,
+      type: ClaimType[claim.type],
+      amount: claim.claimableAmount.toString(),
+    });
+  }
+  yield [currentUser, currentClaims];
+}
+
+function* chunkify<T>(
+  generator: Generator<T, void, undefined>,
+  chunkSize: number,
+): Generator<T[], void, undefined> {
+  let currentChunk: T[] = [];
+  for (const output of generator) {
+    if (currentChunk.length < chunkSize) {
+      currentChunk.push(output);
+    } else {
+      yield currentChunk;
+      currentChunk = [output];
+    }
+  }
+  yield currentChunk;
+}
+
 /**
  * Splits the input claims into cohorts of approximatively the same byte size.
  * Each cohort is identified by the first (lexicographically sorted) address
@@ -36,63 +80,41 @@ export interface SplitClaims {
  * @param maxCohortSize The appriximate maximum size of a cohort in number of
  * users.
  */
-export function splitClaims(
+export function* splitClaims(
   claims: ProvenClaim[],
   desiredCohortSize = 70,
-): SplitClaims {
-  const sortedAddresses: string[] = claims
-    .map(({ account }) => account)
-    .filter(
-      (account, i, thisArg) => thisArg.findIndex((a) => a === account) === i,
-    );
-  sortedAddresses.sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : 1));
-
-  const claimsByAddress: Record<string, StringifiedProvenClaim[]> = {};
-  for (const user of sortedAddresses) {
-    claimsByAddress[user] = claims
-      .filter(({ account }) => account === user)
-      .map((claim) => ({
-        proof: claim.proof,
-        index: claim.index,
-        type: ClaimType[claim.type],
-        amount: claim.claimableAmount.toString(),
-      }));
+): Generator<[[FirstAddress, LastAddress], ClaimChunk], void, undefined> {
+  for (const chunk of chunkify(
+    claimsBySortedAddress(claims),
+    desiredCohortSize,
+  )) {
+    const firstAddress: string = chunk[0][0];
+    const lastAddress: string = chunk[chunk.length - 1][0];
+    const mappingEntry: [string, string] = [firstAddress, lastAddress];
+    const claimChunk = chunk.reduce((collected, [user, claims]) => {
+      collected[user] = claims;
+      return collected;
+    }, <ClaimChunk>{});
+    yield [mappingEntry, claimChunk];
   }
-
-  const addressChunks: AddressChunks = {};
-  const claimChunks: ClaimChunks = {};
-
-  for (let i = 0; i < sortedAddresses.length; i += desiredCohortSize) {
-    const lastIndex = Math.min(
-      i + desiredCohortSize - 1,
-      sortedAddresses.length - 1,
-    );
-    addressChunks[sortedAddresses[i]] = sortedAddresses[lastIndex];
-    claimChunks[sortedAddresses[i]] = sortedAddresses
-      .slice(i, lastIndex + 1)
-      .reduce((claims, addr) => {
-        claims[addr] = claimsByAddress[addr];
-        return claims;
-      }, <ClaimChunk>{});
-  }
-
-  return { claimChunks, addressChunks };
 }
 
 export async function splitClaimsAndSaveToFolder(
   claims: ProvenClaim[],
   path: string,
 ) {
-  const { claimChunks, addressChunks } = splitClaims(claims);
-  await fs.writeFile(`${path}/mapping.json`, JSON.stringify(addressChunks));
+  const addressChunks: AddressChunks = {};
   const chunksDir = `${path}/chunks`;
   await fs.mkdir(chunksDir);
-  for (const [firstAddress, chunk] of Object.entries(claimChunks)) {
+
+  for (const [[firstAddress, lastAddress], chunk] of splitClaims(claims)) {
+    addressChunks[firstAddress] = lastAddress;
     await fs.writeFile(
       `${chunksDir}/${firstAddress}.json`,
       JSON.stringify(chunk),
     );
   }
+  await fs.writeFile(`${path}/mapping.json`, JSON.stringify(addressChunks));
 }
 
 export async function removeSplitClaimFiles(path: string) {
