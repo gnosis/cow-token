@@ -3,6 +3,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "outDir": "lib/commonjs/"
+    "outDir": "lib/commonjs/",
+    "downlevelIteration": true
   }
 }
