@@ -2930,6 +2930,31 @@ crypto-browserify@3.12.0:
     randombytes "^2.0.0"
     randomfill "^1.0.3"
 
+csv-generate@^4.0.4:
+  version "4.0.4"
+  resolved "https://registry.yarnpkg.com/csv-generate/-/csv-generate-4.0.4.tgz#c780c35ec5b23481d7cf37abd147a4fbdf8c94ad"
+  integrity sha512-6/0FOBbF4O+EBSAYsfOXBjIFhyPpfeeeuWEM4XJQhc/6TvDDL9AGFQNPh2SKlFx7VYERBDmZAWnITgaa+z4BJA==
+
+csv-parse@^5.0.4:
+  version "5.0.4"
+  resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-5.0.4.tgz#97e5e654413bcf95f2714ce09bcb2be6de0eb8e3"
+  integrity sha512-5AIdl8l6n3iYQYxan5djB5eKDa+vBnhfWZtRpJTcrETWfVLYN0WSj3L9RwvgYt+psoO77juUr8TG8qpfGZifVQ==
+
+csv-stringify@^6.0.5:
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/csv-stringify/-/csv-stringify-6.0.5.tgz#3474a4fe784249eb5c91d455f616e1f70961cdc0"
+  integrity sha512-7xpV3uweJCFF/Ssn56l3xsR/k2r3UqszwjEhej9qEn2cCPzyK1WyHCgoUVzBA792x8HbwonNX7CU9XM2K5s5yw==
+
+csv@^6.0.5:
+  version "6.0.5"
+  resolved "https://registry.yarnpkg.com/csv/-/csv-6.0.5.tgz#e7823b1d9c8a35d7ec03801e3e80c3fb0d1d5247"
+  integrity sha512-VyII851P4BvzMsXenhtR7g3mARmZ3HvBX16PD85E8IOoxyvNT9e74egbfdkYBj5SGHh1LphCWXeQvskijH+kfg==
+  dependencies:
+    csv-generate "^4.0.4"
+    csv-parse "^5.0.4"
+    csv-stringify "^6.0.5"
+    stream-transform "^3.0.4"
+
 d@1, d@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/d/-/d-1.0.1.tgz#8698095372d58dbee346ffd0c7093f99f8f9eb5a"
@@ -8583,6 +8608,11 @@ stream-to-pull-stream@^1.7.1:
   dependencies:
     looper "^3.0.0"
     pull-stream "^3.2.3"
+
+stream-transform@^3.0.4:
+  version "3.0.4"
+  resolved "https://registry.yarnpkg.com/stream-transform/-/stream-transform-3.0.4.tgz#aae97911ea3adf2cd25976655ec3201fb714fda8"
+  integrity sha512-g2jbk1hs3GiF3oHZLbR7Fph/PXh/3xHoz/D8aR2oHySE4xVUvNeTGqihhb1vxFjYyu4inqiTfT42g2MHBjjx0g==
 
 strict-uri-encode@^1.0.0:
   version "1.1.0"
