@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 
 import IERC20 from "@openzeppelin/contracts/build/contracts/IERC20Metadata.json";
 import { expect } from "chai";
-import { BigNumber, Contract, utils, Wallet } from "ethers";
+import { BigNumber, Contract, utils } from "ethers";
 import { id } from "ethers/lib/utils";
 import { task, types } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
@@ -17,7 +17,6 @@ import {
 } from "../ts";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { generateClaims } from "./test-claims";
 import {
   SupportedChainId,
   isChainIdSupported,
@@ -56,9 +55,7 @@ const defaultArgs = {
   usdcPerWeth: "4000",
 } as const;
 interface DeployTaskArgs {
-  mnemonic: string;
-  claimCsv?: string;
-  userCount?: number;
+  claimCsv: string;
   totalSupply?: string;
   usdcToken?: string;
   usdcPerCow?: string;
@@ -73,9 +70,7 @@ interface DeployTaskArgs {
   teamController?: string;
 }
 interface CleanArgs {
-  mnemonic: string;
-  claimCsv: string | undefined;
-  userCount: number;
+  claimCsv: string;
   totalSupply: BigNumber;
   usdc: Token;
   usdcPerCow: BigNumber;
@@ -146,9 +141,7 @@ async function parseArgs(
   }
   return {
     chainId,
-    mnemonic: args.mnemonic,
     claimCsv: args.claimCsv,
-    userCount: args.userCount ?? defaultArgs.userCount,
     totalSupply: utils.parseUnits(
       args.totalSupply ?? defaultArgs.totalSupply,
       metadata.real.decimals,
@@ -181,14 +174,7 @@ const setupTestDeploymentTask: () => void = () => {
     "test-deployment",
     "Generate a list of pseudorandom claims for each signer and deploy test contracts on the current network.",
   )
-    .addParam("mnemonic", "The mnemonic used to generate user addresses.")
-    .addOptionalParam(
-      "userCount",
-      "Random claims will be generated for this amount of users. Their secret key will be generated from the mnemonic.",
-      defaultArgs.userCount,
-      types.int,
-    )
-    .addOptionalPositionalParam(
+    .addPositionalParam(
       "claimCsv",
       "Path to the CSV file that contains the list of claims to generate.",
     )
@@ -246,9 +232,7 @@ const setupTestDeploymentTask: () => void = () => {
 
 async function generateClaimsAndDeploy(
   {
-    mnemonic,
     claimCsv,
-    userCount,
     totalSupply,
     usdc,
     usdcPerCow,
@@ -270,29 +254,8 @@ async function generateClaimsAndDeploy(
   const salt = id(Date.now().toString());
   console.log(`Using deployer ${deployer.address}`);
 
-  let claims;
-  let privateKeys: Record<string, string> | undefined = undefined;
-  if (claimCsv === undefined) {
-    console.log("Generating user PKs...");
-    const users = Array(userCount)
-      .fill(null)
-      .map((_, i) => {
-        process.stdout.cursorTo(0);
-        process.stdout.write(`${Math.floor((i * 100) / userCount)}%`);
-        return Wallet.fromMnemonic(mnemonic, `m/44'/60'/${i}'/0/0`);
-      });
-    process.stdout.cursorTo(0);
-    privateKeys = {};
-    for (const user of users) {
-      privateKeys[user.address] = user.privateKey;
-    }
-
-    console.log("Generating user claims...");
-    claims = generateClaims(users.map((user) => user.address));
-  } else {
-    console.log("Reading user claims from file...");
-    claims = await parseCsvFile(claimCsv);
-  }
+  console.log("Reading user claims from file...");
+  const claims = await parseCsvFile(claimCsv);
 
   console.log("Generating Merkle proofs...");
   const { merkleRoot, claims: claimsWithProof } = computeProofs(claims);
@@ -361,22 +324,12 @@ async function generateClaimsAndDeploy(
   expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
 
   console.log("Clearing old files...");
-  await fs.rm(`${OUTPUT_FOLDER}/private-keys.json`, {
-    recursive: true,
-    force: true,
-  });
   await fs.rm(`${OUTPUT_FOLDER}/claims.json`, { recursive: true, force: true });
   await fs.rm(`${OUTPUT_FOLDER}/params.json`, { recursive: true, force: true });
   await removeSplitClaimFiles(OUTPUT_FOLDER);
 
   console.log("Saving generated data to file...");
   await fs.mkdir(OUTPUT_FOLDER, { recursive: true });
-  if (privateKeys !== undefined) {
-    await fs.writeFile(
-      `${OUTPUT_FOLDER}/private-keys.json`,
-      JSON.stringify(privateKeys),
-    );
-  }
   await fs.writeFile(
     `${OUTPUT_FOLDER}/claims.json`,
     JSON.stringify(claimsWithProof),
