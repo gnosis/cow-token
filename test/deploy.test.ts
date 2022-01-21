@@ -6,7 +6,8 @@ import hre, { ethers, waffle } from "hardhat";
 import { execSafeTransaction } from "../src/tasks/ts/safe";
 import {
   metadata,
-  prepareSafeDeployment,
+  prepareRealAndVirtualSafeDeployment,
+  prepareVirtualSafeDeployment,
   ContractName,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
@@ -84,7 +85,7 @@ describe("deployment", () => {
       virtualTokenDeployTransaction,
       realTokenAddress,
       virtualTokenAddress,
-    } = await prepareSafeDeployment(
+    } = await prepareRealAndVirtualSafeDeployment(
       realTokenDeployParams,
       virtualTokenDeployParams,
       safeManager.multisend.address,
@@ -127,11 +128,39 @@ describe("deployment", () => {
     expect(await virtual.symbol()).to.equal(metadata.virtual.symbol);
   });
 
+  it("performed from a Gnosis Safe with an existing real token address", async () => {
+    const realTokenAddress = "0x" + "1337".repeat(10);
+    const { virtualTokenDeployTransaction, virtualTokenAddress } =
+      await prepareVirtualSafeDeployment(
+        { ...virtualTokenDeployParams, realToken: realTokenAddress },
+        hre.ethers,
+      );
+
+    expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
+
+    const deploymentVirtual = await execSafeTransaction(
+      safe,
+      virtualTokenDeployTransaction,
+      owners,
+    );
+    await expect(deploymentVirtual).to.emit(safe, "ExecutionSuccess");
+    expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal(
+      "0x",
+    );
+
+    const virtual = await hre.ethers.getContractAt(
+      ContractName.VirtualToken,
+      virtualTokenAddress,
+    );
+    expect(await virtual.symbol()).to.equal(metadata.virtual.symbol);
+    expect(await virtual.cowToken()).to.equal(realTokenAddress);
+  });
+
   it("does not require too much gas [skip-in-coverage]", async function () {
     skipOnCoverage.call(this);
 
     const { realTokenDeployTransaction, virtualTokenDeployTransaction } =
-      await prepareSafeDeployment(
+      await prepareRealAndVirtualSafeDeployment(
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,
@@ -162,7 +191,7 @@ describe("deployment", () => {
         virtualTokenDeployTransaction,
         realTokenAddress,
         virtualTokenAddress,
-      } = await prepareSafeDeployment(
+      } = await prepareRealAndVirtualSafeDeployment(
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,
