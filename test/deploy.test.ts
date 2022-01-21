@@ -6,8 +6,8 @@ import hre, { ethers, waffle } from "hardhat";
 import { execSafeTransaction } from "../src/tasks/ts/safe";
 import {
   metadata,
-  prepareRealAndVirtualSafeDeployment,
-  prepareVirtualSafeDeployment,
+  prepareRealAndVirtualDeploymentFromSafe,
+  prepareVirtualDeploymentFromSafe,
   ContractName,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
@@ -85,7 +85,7 @@ describe("deployment", () => {
       virtualTokenDeployTransaction,
       realTokenAddress,
       virtualTokenAddress,
-    } = await prepareRealAndVirtualSafeDeployment(
+    } = await prepareRealAndVirtualDeploymentFromSafe(
       realTokenDeployParams,
       virtualTokenDeployParams,
       safeManager.multisend.address,
@@ -131,7 +131,7 @@ describe("deployment", () => {
   it("performed from a Gnosis Safe with an existing real token address", async () => {
     const realTokenAddress = "0x" + "1337".repeat(10);
     const { virtualTokenDeployTransaction, virtualTokenAddress } =
-      await prepareVirtualSafeDeployment(
+      await prepareVirtualDeploymentFromSafe(
         { ...virtualTokenDeployParams, realToken: realTokenAddress },
         hre.ethers,
       );
@@ -160,7 +160,7 @@ describe("deployment", () => {
     skipOnCoverage.call(this);
 
     const { realTokenDeployTransaction, virtualTokenDeployTransaction } =
-      await prepareRealAndVirtualSafeDeployment(
+      await prepareRealAndVirtualDeploymentFromSafe(
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,
@@ -191,7 +191,7 @@ describe("deployment", () => {
         virtualTokenDeployTransaction,
         realTokenAddress,
         virtualTokenAddress,
-      } = await prepareRealAndVirtualSafeDeployment(
+      } = await prepareRealAndVirtualDeploymentFromSafe(
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,

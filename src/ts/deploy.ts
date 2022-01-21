@@ -209,7 +209,7 @@ async function getDeploymentTransaction<T extends ContractName>(
   return { safeTransaction, address };
 }
 
-export async function prepareRealAndVirtualSafeDeployment(
+export async function prepareRealAndVirtualDeploymentFromSafe(
   realTokenDeployParams: RealTokenDeployParams,
   virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken">,
   multisendAddress: string,
@@ -233,7 +233,7 @@ export async function prepareRealAndVirtualSafeDeployment(
   );
 
   const { virtualTokenDeployTransaction, virtualTokenAddress } =
-    await prepareVirtualSafeDeployment(
+    await prepareVirtualDeploymentFromSafe(
       { ...virtualTokenDeployParams, realToken: realTokenAddress },
       ethers,
       salt,
@@ -251,7 +251,7 @@ export async function prepareRealAndVirtualSafeDeployment(
   };
 }
 
-export async function prepareVirtualSafeDeployment(
+export async function prepareVirtualDeploymentFromSafe(
   virtualTokenDeployParams: VirtualTokenDeployParams,
   ethers: HardhatEthersHelpers,
   salt?: string,

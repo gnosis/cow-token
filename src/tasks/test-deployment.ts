@@ -10,8 +10,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   metadata,
-  prepareRealAndVirtualSafeDeployment,
-  prepareVirtualSafeDeployment,
+  prepareRealAndVirtualDeploymentFromSafe,
+  prepareVirtualDeploymentFromSafe,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
   computeProofs,
@@ -328,7 +328,7 @@ async function generateClaimsAndDeploy(
   let realTokenDeployment: MaybeDeployment;
   let virtualTokenDeployment: Deployment;
   if (cowToken === undefined) {
-    const deployment = await prepareRealAndVirtualSafeDeployment(
+    const deployment = await prepareRealAndVirtualDeploymentFromSafe(
       realTokenDeployParams,
       virtualTokenDeployParams,
       MultiSendDeployment.networkAddresses[chainId],
@@ -348,7 +348,7 @@ async function generateClaimsAndDeploy(
     );
   } else {
     {
-      const deployment = await prepareVirtualSafeDeployment(
+      const deployment = await prepareVirtualDeploymentFromSafe(
         { ...virtualTokenDeployParams, realToken: cowToken },
         ethers,
         salt,
