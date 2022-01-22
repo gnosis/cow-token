@@ -145,6 +145,32 @@ describe("claim splitting", async function () {
     ]);
   });
 
+  it("can have the same claim multiple times", async function () {
+    const claim = {
+      account: "0x" + "1".repeat(40),
+      type: ClaimType.Advisor,
+      claimableAmount: BigNumber.from(42),
+      index: 42,
+      proof,
+    };
+    const claims: ProvenClaim[] = [claim, claim, claim];
+    const size = 3;
+    const [[, chunk]] = [...splitClaims(claims, size)];
+    const stringifiedClaim = {
+      type: "Advisor",
+      amount: "42",
+      index: 42,
+      proof,
+    };
+    expect(chunk).to.deep.equal({
+      ["0x" + "1".repeat(40)]: [
+        stringifiedClaim,
+        stringifiedClaim,
+        stringifiedClaim,
+      ],
+    });
+  });
+
   it("joins same address with different case", async function () {
     const claims: ProvenClaim[] = [
       {
