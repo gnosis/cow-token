@@ -166,8 +166,8 @@ describe("claim splitting", async function () {
     expect(result).to.deep.equal([
       [
         [
-          "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-          "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+          "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         ],
         {
           ["0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"]: [
@@ -192,8 +192,8 @@ describe("claim splitting", async function () {
     const result = [...splitClaims(claims)];
     const [[mapping]] = result;
     expect(mapping).to.deep.equal([
-      "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-      "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     ]);
   });
 
@@ -220,7 +220,7 @@ describe("claim splitting", async function () {
     ];
     const result = [...splitClaims(claims, 2)];
     const [[mapping]] = result;
-    expect(mapping).to.deep.equal([small, large]);
+    expect(mapping).to.deep.equal([small.toLowerCase(), large.toLowerCase()]);
   });
 
   it("has expected case for chunk", async function () {

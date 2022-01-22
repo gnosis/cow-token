@@ -90,8 +90,8 @@ export function* splitClaims(
     claimsBySortedAddress(claims),
     desiredCohortSize,
   )) {
-    const firstAddress: string = chunk[0][0];
-    const lastAddress: string = chunk[chunk.length - 1][0];
+    const firstAddress: string = chunk[0][0].toLowerCase();
+    const lastAddress: string = chunk[chunk.length - 1][0].toLowerCase();
     const mappingEntry: [string, string] = [firstAddress, lastAddress];
     const claimChunk = chunk.reduce((collected, [user, claims]) => {
       collected[user.toLowerCase()] = claims;
