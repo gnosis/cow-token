@@ -8,16 +8,16 @@ import { Claim, ClaimType, parseCsv, writeCsv } from "../src/ts";
 describe("CSV parsing", function () {
   it("parses one claim per line", async function () {
     const stream = Readable.from(`Account,UserOption,Airdrop
-0x1234,0,1337
-0x5678,42,0`);
+0x4242424242424242424242424242424242424242,0,1337
+0x2121212121212121212121212121212121212121,42,0`);
     const expected: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(1337),
       },
       {
-        account: "0x5678",
+        account: "0x2121212121212121212121212121212121212121",
         type: ClaimType.UserOption,
         claimableAmount: BigNumber.from(42),
       },
@@ -27,15 +27,15 @@ describe("CSV parsing", function () {
 
   it("parses multiple claims per line", async function () {
     const stream = Readable.from(`Account,UserOption,Airdrop
-0x1234,42,1337`);
+0x4242424242424242424242424242424242424242,42,1337`);
     const expected: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.UserOption,
         claimableAmount: BigNumber.from(42),
       },
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(1337),
       },
@@ -45,10 +45,10 @@ describe("CSV parsing", function () {
 
   it("ignores unnecessary columns", async function () {
     const stream = Readable.from(`Account,Comment,Airdrop
-0x1234,this is a comment,1337`);
+0x4242424242424242424242424242424242424242,this is a comment,1337`);
     const expected: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(1337),
       },
@@ -58,7 +58,7 @@ describe("CSV parsing", function () {
 
   it("reads all claim types", async function () {
     const stream = Readable.from(
-      "Account,Advisor,Airdrop,GnoOption,Investor,Team,UserOption\n0x1234,1,2,3,4,5,6",
+      "Account,Advisor,Airdrop,GnoOption,Investor,Team,UserOption\n0x4242424242424242424242424242424242424242,1,2,3,4,5,6",
     );
     const expected: Claim[] = [
       [ClaimType.Advisor, 1],
@@ -68,7 +68,7 @@ describe("CSV parsing", function () {
       [ClaimType.Team, 5],
       [ClaimType.UserOption, 6],
     ].map(([type, i]) => ({
-      account: "0x1234",
+      account: "0x4242424242424242424242424242424242424242",
       type,
       claimableAmount: BigNumber.from(i),
     }));
@@ -77,10 +77,23 @@ describe("CSV parsing", function () {
 
   it("regards empty entries as no claim", async function () {
     const stream = Readable.from(`Account,UserOption,Airdrop
-0x1234,,1337`);
+0x4242424242424242424242424242424242424242,,1337`);
     const expected: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
+        type: ClaimType.Airdrop,
+        claimableAmount: BigNumber.from(1337),
+      },
+    ];
+    expect(await parseCsv(stream)).to.deep.equal(expected);
+  });
+
+  it("converts addresses to checksummed addresses", async function () {
+    const stream = Readable.from(`Account,UserOption,Airdrop
+0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,,1337`);
+    const expected: Claim[] = [
+      {
+        account: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(1337),
       },
@@ -102,19 +115,19 @@ describe("CSV writing", function () {
   it("writes single claims", async function () {
     const claims: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.UserOption,
         claimableAmount: BigNumber.from(1337),
       },
       {
-        account: "0x5678",
+        account: "0x2121212121212121212121212121212121212121",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(42),
       },
     ];
     const expected = `Account,Airdrop,GnoOption,UserOption,Investor,Team,Advisor
-0x1234,,,1337,,,
-0x5678,42,,,,,
+0x4242424242424242424242424242424242424242,,,1337,,,
+0x2121212121212121212121212121212121212121,42,,,,,
 `;
     expect(await streamToString(writeCsv(claims))).to.deep.equal(expected);
   });
@@ -122,18 +135,18 @@ describe("CSV writing", function () {
   it("writes multiple claims for the same user jointly", async function () {
     const claims: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.UserOption,
         claimableAmount: BigNumber.from(1337),
       },
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(42),
       },
     ];
     const expected = `Account,Airdrop,GnoOption,UserOption,Investor,Team,Advisor
-0x1234,42,,1337,,,
+0x4242424242424242424242424242424242424242,42,,1337,,,
 `;
     expect(await streamToString(writeCsv(claims))).to.deep.equal(expected);
   });
@@ -141,19 +154,38 @@ describe("CSV writing", function () {
   it("throws if there are two claims of the same type for the same user", async function () {
     const claims: Claim[] = [
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(1337),
       },
       {
-        account: "0x1234",
+        account: "0x4242424242424242424242424242424242424242",
         type: ClaimType.Airdrop,
         claimableAmount: BigNumber.from(42),
       },
     ];
     expect(() => writeCsv(claims)).to.throw(
       Error,
-      "Account 0x1234 has more than one claim for the same type. This case is currently not implemented.",
+      "Account 0x4242424242424242424242424242424242424242 has more than one claim for the same type. This case is currently not implemented.",
     );
+  });
+
+  it("converts addresses to checksummed addresses", async function () {
+    const claims: Claim[] = [
+      {
+        account: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        type: ClaimType.UserOption,
+        claimableAmount: BigNumber.from(1337),
+      },
+      {
+        account: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+        type: ClaimType.Airdrop,
+        claimableAmount: BigNumber.from(42),
+      },
+    ];
+    const expected = `Account,Airdrop,GnoOption,UserOption,Investor,Team,Advisor
+0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,42,,1337,,,
+`;
+    expect(await streamToString(writeCsv(claims))).to.deep.equal(expected);
   });
 });
