@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 
+import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import IERC20 from "@openzeppelin/contracts/build/contracts/IERC20Metadata.json";
 import { expect } from "chai";
 import { BigNumber, Contract, utils } from "ethers";
@@ -9,7 +10,8 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   metadata,
-  prepareSafeDeployment,
+  prepareRealAndVirtualDeploymentFromSafe,
+  prepareVirtualDeploymentFromSafe,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
   computeProofs,
@@ -68,6 +70,7 @@ interface DeployTaskArgs {
   communityFundsTarget?: string;
   investorFundsTarget?: string;
   teamController?: string;
+  cowToken?: string;
 }
 interface CleanArgs {
   claimCsv: string;
@@ -84,11 +87,20 @@ interface CleanArgs {
   communityFundsTargetAddress: string | undefined;
   investorFundsTargetAddress: string | undefined;
   teamControllerAddress: string | undefined;
+  cowToken: string | undefined;
 }
 
 interface Token {
   decimals: number;
   instance: Contract;
+}
+
+interface MaybeDeployment {
+  address: string;
+  transaction: MetaTransaction | null;
+}
+interface Deployment extends MaybeDeployment {
+  transaction: MetaTransaction;
 }
 
 async function parseArgs(
@@ -166,6 +178,7 @@ async function parseArgs(
     communityFundsTargetAddress: checksummedAddress(args.communityFundsTarget),
     investorFundsTargetAddress: checksummedAddress(args.investorFundsTarget),
     teamControllerAddress: checksummedAddress(args.teamController),
+    cowToken: checksummedAddress(args.cowToken),
   };
 }
 
@@ -225,6 +238,10 @@ const setupTestDeploymentTask: () => void = () => {
       "teamController",
       "The address that controls team claims. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
     )
+    .addOptionalParam(
+      "cowToken",
+      "The virtual token will point to this address for the cow token. If left out, the real token will be deployed by this script.",
+    )
     .setAction(async (args, hre) => {
       await generateClaimsAndDeploy(await parseArgs(args, hre), hre);
     });
@@ -246,6 +263,7 @@ async function generateClaimsAndDeploy(
     communityFundsTargetAddress,
     investorFundsTargetAddress,
     teamControllerAddress,
+    cowToken,
   }: CleanArgs,
   hre: HardhatRuntimeEnvironment,
 ) {
@@ -307,21 +325,44 @@ async function generateClaimsAndDeploy(
     };
 
   console.log("Generating deploy transactions...");
-  const {
-    realTokenDeployTransaction,
-    virtualTokenDeployTransaction,
-    realTokenAddress,
-    virtualTokenAddress,
-  } = await prepareSafeDeployment(
-    realTokenDeployParams,
-    virtualTokenDeployParams,
-    MultiSendDeployment.networkAddresses[chainId],
-    ethers,
-    salt,
-  );
-
-  expect(await ethers.provider.getCode(realTokenAddress)).to.equal("0x");
-  expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
+  let realTokenDeployment: MaybeDeployment;
+  let virtualTokenDeployment: Deployment;
+  if (cowToken === undefined) {
+    const deployment = await prepareRealAndVirtualDeploymentFromSafe(
+      realTokenDeployParams,
+      virtualTokenDeployParams,
+      MultiSendDeployment.networkAddresses[chainId],
+      ethers,
+      salt,
+    );
+    realTokenDeployment = {
+      address: deployment.realTokenAddress,
+      transaction: deployment.realTokenDeployTransaction,
+    };
+    virtualTokenDeployment = {
+      address: deployment.virtualTokenAddress,
+      transaction: deployment.virtualTokenDeployTransaction,
+    };
+    expect(await ethers.provider.getCode(realTokenDeployment.address)).to.equal(
+      "0x",
+    );
+  } else {
+    {
+      const deployment = await prepareVirtualDeploymentFromSafe(
+        { ...virtualTokenDeployParams, realToken: cowToken },
+        ethers,
+        salt,
+      );
+      realTokenDeployment = { address: cowToken, transaction: null };
+      virtualTokenDeployment = {
+        address: deployment.virtualTokenAddress,
+        transaction: deployment.virtualTokenDeployTransaction,
+      };
+    }
+  }
+  expect(
+    await ethers.provider.getCode(virtualTokenDeployment.address),
+  ).to.equal("0x");
 
   console.log("Clearing old files...");
   await fs.rm(`${OUTPUT_FOLDER}/claims.json`, { recursive: true, force: true });
@@ -337,34 +378,40 @@ async function generateClaimsAndDeploy(
   await fs.writeFile(
     `${OUTPUT_FOLDER}/params.json`,
     JSON.stringify({
-      realTokenAddress,
-      virtualTokenAddress,
+      realTokenAddress: realTokenDeployment.address,
+      virtualTokenAddress: virtualTokenDeployment.address,
       ...realTokenDeployParams,
       ...virtualTokenDeployParams,
     }),
   );
   await splitClaimsAndSaveToFolder(claimsWithProof, OUTPUT_FOLDER);
 
-  console.log("Deploying real token...");
-  const deploymentReal = await execSafeTransaction(
-    gnosisDao.connect(deployer),
-    realTokenDeployTransaction,
-    [deployer],
-  );
-  await expect(deploymentReal).to.emit(
-    gnosisDao.connect(ethers.provider),
-    "ExecutionSuccess",
-  );
-  expect(await ethers.provider.getCode(realTokenAddress)).not.to.equal("0x");
+  if (realTokenDeployment.transaction !== null) {
+    console.log("Deploying real token...");
+    const deploymentReal = await execSafeTransaction(
+      gnosisDao.connect(deployer),
+      realTokenDeployment.transaction,
+      [deployer],
+    );
+    await expect(deploymentReal).to.emit(
+      gnosisDao.connect(ethers.provider),
+      "ExecutionSuccess",
+    );
+    expect(
+      await ethers.provider.getCode(realTokenDeployment.address),
+    ).not.to.equal("0x");
+  }
 
   console.log("Deploying virtual token...");
   const deploymentVirtual = await execSafeTransaction(
     gnosisDao.connect(deployer),
-    virtualTokenDeployTransaction,
+    virtualTokenDeployment.transaction,
     [deployer],
   );
   await expect(deploymentVirtual).to.emit(gnosisDao, "ExecutionSuccess");
-  expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal("0x");
+  expect(
+    await ethers.provider.getCode(virtualTokenDeployment.address),
+  ).not.to.equal("0x");
 }
 
 export { setupTestDeploymentTask };

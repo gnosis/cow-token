@@ -209,7 +209,7 @@ async function getDeploymentTransaction<T extends ContractName>(
   return { safeTransaction, address };
 }
 
-export async function prepareSafeDeployment(
+export async function prepareRealAndVirtualDeploymentFromSafe(
   realTokenDeployParams: RealTokenDeployParams,
   virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken">,
   multisendAddress: string,
@@ -222,31 +222,55 @@ export async function prepareSafeDeployment(
   realTokenAddress: string;
   virtualTokenAddress: string;
 }> {
-  const { safeTransaction: realTokenDeployment, address: realTokenAddress } =
-    await getDeploymentTransaction(
-      ContractName.RealToken,
-      realTokenDeployParams,
+  const {
+    safeTransaction: realTokenDeployTransaction,
+    address: realTokenAddress,
+  } = await getDeploymentTransaction(
+    ContractName.RealToken,
+    realTokenDeployParams,
+    ethers,
+    salt,
+  );
+
+  const { virtualTokenDeployTransaction, virtualTokenAddress } =
+    await prepareVirtualDeploymentFromSafe(
+      { ...virtualTokenDeployParams, realToken: realTokenAddress },
       ethers,
       salt,
     );
+
+  return {
+    realTokenDeployTransaction,
+    virtualTokenDeployTransaction,
+    deployTransaction: multisend(
+      [realTokenDeployTransaction, virtualTokenDeployTransaction],
+      multisendAddress,
+    ),
+    realTokenAddress,
+    virtualTokenAddress,
+  };
+}
+
+export async function prepareVirtualDeploymentFromSafe(
+  virtualTokenDeployParams: VirtualTokenDeployParams,
+  ethers: HardhatEthersHelpers,
+  salt?: string,
+): Promise<{
+  virtualTokenDeployTransaction: MetaTransaction;
+  virtualTokenAddress: string;
+}> {
   const {
     safeTransaction: virtualTokenDeployment,
     address: virtualTokenAddress,
   } = await getDeploymentTransaction(
     ContractName.VirtualToken,
-    { ...virtualTokenDeployParams, realToken: realTokenAddress },
+    virtualTokenDeployParams,
     ethers,
     salt,
   );
 
   return {
-    realTokenDeployTransaction: realTokenDeployment,
     virtualTokenDeployTransaction: virtualTokenDeployment,
-    deployTransaction: multisend(
-      [realTokenDeployment, virtualTokenDeployment],
-      multisendAddress,
-    ),
-    realTokenAddress,
     virtualTokenAddress,
   };
 }
