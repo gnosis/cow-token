@@ -162,7 +162,7 @@ describe("InflationaryToken", () => {
         "InflationaryToken",
       );
       token = await InflationaryToken.connect(deployer).deploy(
-        cowDao.address,
+        initialTokenHolder.address,
         cowDao.address,
         totalSupply,
         erc20Name,
