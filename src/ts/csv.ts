@@ -2,7 +2,7 @@ import { createReadStream, createWriteStream } from "fs";
 import type { Readable, Writable } from "stream";
 
 import { parse, stringify } from "csv";
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 import { ClaimType, Claim } from "./claim";
 
@@ -29,7 +29,7 @@ export async function parseCsv(stream: Readable): Promise<Claim[]> {
         `Each CSV line must specify an account. Found: ${JSON.stringify(line)}`,
       );
     }
-    const account = line[accountLegend];
+    const account = utils.getAddress(line[accountLegend]);
     for (const key of Object.keys(line)) {
       if (Object.keys(claimLegend).includes(key)) {
         const type = claimLegend[key as keyof typeof claimLegend];
@@ -53,11 +53,15 @@ export function parseCsvFile(csvPath: string): Promise<Claim[]> {
 }
 
 export function writeCsv(claims: Claim[]): Writable {
-  const accounts = Array.from(new Set(claims.map(({ account }) => account)));
+  const accounts = Array.from(
+    new Set(claims.map(({ account }) => utils.getAddress(account))),
+  );
 
   const claimsByAccount: Record<string, Claim[]> = {};
   for (const user of accounts) {
-    claimsByAccount[user] = claims.filter(({ account }) => account === user);
+    claimsByAccount[user] = claims.filter(
+      ({ account }) => account.toLowerCase() === user.toLowerCase(),
+    );
   }
 
   const headers: (typeof accountLegend | keyof typeof claimLegend)[] = [

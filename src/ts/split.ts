@@ -6,6 +6,8 @@
 
 import { promises as fs } from "fs";
 
+import { utils } from "ethers";
+
 import { ClaimType, ProvenClaim } from "./claim";
 
 export type FirstAddress = string;
@@ -36,10 +38,10 @@ function* claimsBySortedAddress(
     lhs === rhs ? 0 : lhs.toLowerCase() < rhs.toLowerCase() ? -1 : 1,
   );
 
-  let currentUser: string = sortedClaims[0].account;
+  let currentUser: string = utils.getAddress(sortedClaims[0].account);
   let currentClaims: StringifiedProvenClaim[] = [];
   for (const claim of sortedClaims) {
-    if (currentUser !== claim.account) {
+    if (currentUser.toLowerCase() !== claim.account.toLowerCase()) {
       yield [currentUser, currentClaims];
       currentUser = claim.account;
       currentClaims = [];
@@ -88,11 +90,11 @@ export function* splitClaims(
     claimsBySortedAddress(claims),
     desiredCohortSize,
   )) {
-    const firstAddress: string = chunk[0][0];
-    const lastAddress: string = chunk[chunk.length - 1][0];
+    const firstAddress: string = chunk[0][0].toLowerCase();
+    const lastAddress: string = chunk[chunk.length - 1][0].toLowerCase();
     const mappingEntry: [string, string] = [firstAddress, lastAddress];
     const claimChunk = chunk.reduce((collected, [user, claims]) => {
-      collected[user] = claims;
+      collected[user.toLowerCase()] = claims;
       return collected;
     }, <ClaimChunk>{});
     yield [mappingEntry, claimChunk];
@@ -110,7 +112,7 @@ export async function splitClaimsAndSaveToFolder(
   for (const [[firstAddress, lastAddress], chunk] of splitClaims(claims)) {
     addressChunks[firstAddress] = lastAddress;
     await fs.writeFile(
-      `${chunksDir}/${firstAddress}.json`,
+      `${chunksDir}/${firstAddress.toLowerCase()}.json`,
       JSON.stringify(chunk),
     );
   }
