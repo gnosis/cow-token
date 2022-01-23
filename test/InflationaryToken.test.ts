@@ -13,6 +13,7 @@ describe("InflationaryToken", () => {
   let cowDao: Wallet;
   let user: Wallet;
   let deployer: Wallet;
+  let initialTokenHolder: Wallet;
 
   const totalSupply = ethers.utils.parseUnits("31337", 18);
   const erc20Name = "erc20Name";
@@ -23,11 +24,13 @@ describe("InflationaryToken", () => {
   let oneYearAfterDeployment: number;
 
   beforeEach(async () => {
-    [deployer, cowDao, user] = await waffle.provider.getWallets();
+    [deployer, initialTokenHolder, cowDao, user] =
+      await waffle.provider.getWallets();
     const InflationaryToken = await ethers.getContractFactory(
       "InflationaryToken",
     );
     token = await InflationaryToken.connect(deployer).deploy(
+      initialTokenHolder.address,
       cowDao.address,
       totalSupply,
       erc20Name,
@@ -53,8 +56,10 @@ describe("InflationaryToken", () => {
     expect(await token.totalSupply()).to.equal(totalSupply);
   });
 
-  it("sends total supply to cow dao", async () => {
-    expect(await token.balanceOf(cowDao.address)).to.equal(totalSupply);
+  it("sends total supply to initialTokenHolder dao", async () => {
+    expect(await token.balanceOf(initialTokenHolder.address)).to.equal(
+      totalSupply,
+    );
   });
 
   it("sets the minter role for cowDao", async function () {
@@ -157,6 +162,7 @@ describe("InflationaryToken", () => {
         "InflationaryToken",
       );
       token = await InflationaryToken.connect(deployer).deploy(
+        cowDao.address,
         cowDao.address,
         totalSupply,
         erc20Name,

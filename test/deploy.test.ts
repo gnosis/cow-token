@@ -26,6 +26,7 @@ describe("deployment", () => {
   let safe: Contract;
 
   const realTokenDeployParams: RealTokenDeployParams = {
+    initialTokenHolder: utils.getAddress("0x" + "0da00000" + "42".repeat(16)),
     totalSupply,
     cowDao: utils.getAddress("0x" + "ca1f0000" + "42".repeat(16)),
   };
@@ -218,8 +219,12 @@ describe("deployment", () => {
       });
 
       it("cowDao", async function () {
+        expect(await realToken.cowDao()).to.equal(realTokenDeployParams.cowDao);
+      });
+
+      it("initialTokenHolder", async function () {
         expect(
-          await realToken.balanceOf(realTokenDeployParams.cowDao),
+          await realToken.balanceOf(realTokenDeployParams.initialTokenHolder),
         ).not.to.equal(0);
       });
     });

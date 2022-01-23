@@ -11,8 +11,18 @@ contract CowProtocolToken is InflationaryToken, StorageAccessible {
     string private constant ERC20_SYMBOL = "COW";
     string private constant ERC20_NAME = "CoW Protocol Token";
 
-    constructor(address cowDao, uint256 totalSupply)
-        InflationaryToken(cowDao, totalSupply, ERC20_NAME, ERC20_SYMBOL)
+    constructor(
+        address initialTokenHolder,
+        address cowDao,
+        uint256 totalSupply
+    )
+        InflationaryToken(
+            initialTokenHolder,
+            cowDao,
+            totalSupply,
+            ERC20_NAME,
+            ERC20_SYMBOL
+        )
     // solhint-disable-next-line no-empty-blocks
     {
 
