@@ -1,9 +1,7 @@
-build/
-coverage/
-deployments/*/solcInputs
-deployments/localhost/
-output/
-lib/
+/build/
+/coverage/
+/output/
+/lib/
 node_modules/
 coverage.json
 yarn-error.log

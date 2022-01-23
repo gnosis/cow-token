@@ -11,7 +11,7 @@ import {
   utils,
 } from "ethers";
 
-import { SafeOperation, multisend, createTransaction } from "./deploy/safe";
+import { SafeOperation, multisend, createTransaction } from "./lib/safe";
 
 /**
  * The salt used when deterministically deploying smart contracts.

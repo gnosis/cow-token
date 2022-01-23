@@ -14,7 +14,7 @@ import {
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
 } from "../src/ts";
-import { contractsCreatedWithCreateCall } from "../src/ts/deploy/safe";
+import { contractsCreatedWithCreateCall } from "../src/ts/lib/safe";
 
 import { setupDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
