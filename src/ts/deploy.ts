@@ -292,9 +292,18 @@ export async function prepareVirtualDeploymentFromSafe(
 
 export async function getDeployArgsFromRealToken(
   realToken: Contract,
-): Promise<Omit<RealTokenDeployParams, "totalSupply">> {
+): Promise<RealTokenDeployParams> {
+  const filterMintingTransfers = realToken.filters.Transfer(
+    constants.AddressZero,
+    null,
+    null,
+  );
+  const logs = await realToken.queryFilter(filterMintingTransfers, 0, "latest");
+  const events = logs.map((log) => realToken.interface.parseLog(log));
+  const totalSupply = BigNumber.from(events[0].args.value).toString();
   return {
     cowDao: await realToken.cowDao(),
+    totalSupply,
   };
 }
 
