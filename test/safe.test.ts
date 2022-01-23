@@ -32,7 +32,7 @@ type DeployFunction = (
   threshold: number,
 ) => Promise<[TransactionResponse, GnosisSafeManager]>;
 
-function testSafe(deploy: DeployFunction) {
+function testSafeSetup(deploy: DeployFunction) {
   describe("standard safe setup", function () {
     const threshold = 2;
     let safe: Contract;
@@ -111,7 +111,7 @@ describe("Gnosis Safe creation", function () {
       return [response, gnosisSafeManager];
     };
 
-    testSafe(deploy);
+    testSafeSetup(deploy);
 
     it("deploys at expected address", async function () {
       const threshold = 2;
@@ -171,7 +171,7 @@ describe("Gnosis Safe creation", function () {
       return [response, gnosisSafeManager];
     };
 
-    testSafe(deploy);
+    testSafeSetup(deploy);
 
     it("creates two different safes if executing twice", async function () {
       const threshold = 2;
