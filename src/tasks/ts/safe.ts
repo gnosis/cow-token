@@ -6,14 +6,19 @@ import {
   MetaTransaction,
 } from "@gnosis.pm/safe-contracts";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
-import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
+import CompatibilityFallbackHandlerDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/compatibility_fallback_handler.json";
 import CreateCallDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/create_call.json";
 import GnosisSafeDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/gnosis_safe.json";
 import MultiSendDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/multi_send_call_only.json";
 import GnosisSafeProxyFactoryDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/proxy_factory.json";
-import { constants, Contract, ContractReceipt, Signer, Wallet } from "ethers";
-import { Interface } from "ethers/lib/utils";
+import { Contract, Signer, Wallet } from "ethers";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+
+import {
+  createdProxies,
+  prepareSafeWithOwners,
+  SafeDeploymentAddresses,
+} from "../../ts/lib/safe";
 
 export { MultiSendDeployment, CreateCallDeployment };
 
@@ -21,7 +26,8 @@ export type SupportedChainId =
   keyof typeof GnosisSafeProxyFactoryDeployment.networkAddresses &
     keyof typeof GnosisSafeDeployment.networkAddresses &
     keyof typeof MultiSendDeployment.networkAddresses &
-    keyof typeof CreateCallDeployment.networkAddresses;
+    keyof typeof CreateCallDeployment.networkAddresses &
+    keyof typeof CompatibilityFallbackHandlerDeployment.networkAddresses;
 
 export function isChainIdSupported(
   chainId: string,
@@ -32,8 +38,22 @@ export function isChainIdSupported(
     ) &&
     Object.keys(GnosisSafeDeployment.networkAddresses).includes(chainId) &&
     Object.keys(MultiSendDeployment.networkAddresses).includes(chainId) &&
-    Object.keys(CreateCallDeployment.networkAddresses).includes(chainId)
+    Object.keys(CreateCallDeployment.networkAddresses).includes(chainId) &&
+    Object.keys(
+      CompatibilityFallbackHandlerDeployment.networkAddresses,
+    ).includes(chainId)
   );
+}
+
+export function defaultSafeDeploymentAddresses(
+  chainId: SupportedChainId,
+): SafeDeploymentAddresses {
+  return {
+    factory: GnosisSafeProxyFactoryDeployment.networkAddresses[chainId],
+    singleton: GnosisSafeDeployment.networkAddresses[chainId],
+    fallbackHandler:
+      CompatibilityFallbackHandlerDeployment.networkAddresses[chainId],
+  };
 }
 
 export async function execSafeTransaction(
@@ -64,43 +84,21 @@ export async function deployWithOwners(
   if (!isChainIdSupported(chainId)) {
     throw new Error(`Chain id ${chainId} not supported by the Gnosis Safe`);
   }
-  const proxyFactory = await ethers.getContractAt(
-    GnosisSafeProxyFactory.abi,
-    GnosisSafeProxyFactoryDeployment.networkAddresses[chainId],
+  const safeDeploymentAddresses = defaultSafeDeploymentAddresses(chainId);
+  const deployTransaction = await deployer.sendTransaction(
+    await prepareSafeWithOwners(owners, threshold, safeDeploymentAddresses),
   );
-  const GnosisSafeInterface = new Interface(GnosisSafe.abi);
-  const setupOwnersBytecode = GnosisSafeInterface.encodeFunctionData("setup", [
-    owners,
-    threshold,
-    constants.AddressZero,
-    "0x",
-    constants.AddressZero,
-    constants.AddressZero,
-    constants.Zero,
-    constants.AddressZero,
-  ]);
-  const deployTransaction: ContractReceipt = await (
-    await proxyFactory
-      .connect(deployer)
-      .createProxy(
-        GnosisSafeDeployment.networkAddresses[chainId],
-        setupOwnersBytecode,
-      )
-  ).wait();
-  const proxyCreationEvents = deployTransaction.events?.filter(
-    (e) => e.event === "ProxyCreation",
+  const proxies = await createdProxies(
+    deployTransaction,
+    safeDeploymentAddresses.factory,
   );
-  const newSafeAddress: string | undefined =
-    proxyCreationEvents?.[0]?.args?.proxy;
-  if (
-    proxyCreationEvents === undefined ||
-    proxyCreationEvents.length !== 1 ||
-    newSafeAddress === undefined
-  ) {
+  if (proxies.length !== 1) {
     throw new Error(
-      "Error reading proxy creation event when creating new Safe",
+      `Malformed deployment transaction, txhash ${deployTransaction.hash}`,
     );
   }
+
+  const newSafeAddress = proxies[0];
   return new Contract(newSafeAddress, GnosisSafe.abi);
 }
 
