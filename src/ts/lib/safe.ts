@@ -13,6 +13,7 @@ import {
   utils,
 } from "ethers";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
+import { defaultAbiCoder } from "ethers/lib/utils";
 
 export enum SafeOperation {
   Call = 0,
@@ -112,13 +113,17 @@ export async function getFallbackHandler(
   safe: string,
   ethers: HardhatEthersHelpers,
 ): Promise<string> {
+  // The fallback handler is stored at a fixed storage slot in all Gnosis Safes.
+  // https://github.com/gnosis/safe-contracts/blob/da66b45ec87d2fb6da7dfd837b29eacdb9a604c5/contracts/base/FallbackManager.sol#L11-L20
+  // You can see usage examples in the Gnosis Safe tests: 
+  // https://github.com/gnosis/safe-contracts/blob/da66b45ec87d2fb6da7dfd837b29eacdb9a604c5/test/core/GnosisSafe.FallbackManager.spec.ts#L32-L73
   const FALLBACK_HANDLER_STORAGE_SLOT =
     "0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5";
   const storage = await ethers.provider.getStorageAt(
     safe,
     FALLBACK_HANDLER_STORAGE_SLOT,
   );
-  return utils.getAddress(utils.hexlify(utils.arrayify(storage).slice(12, 32)));
+  return utils.getAddress(defaultAbiCoder.decode(["address"], storage)[0]);
 }
 
 export function multisend(
