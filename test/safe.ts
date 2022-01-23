@@ -1,9 +1,12 @@
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
+import CompatibilityFallbackHandler from "@gnosis.pm/safe-contracts/build/artifacts/contracts/handler/CompatibilityFallbackHandler.sol/CompatibilityFallbackHandler.json";
 import CreateCall from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/CreateCall.sol/CreateCall.json";
 import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
 import { Signer, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
+
+import { SafeDeploymentAddresses } from "../src/ts/lib/safe";
 
 export class GnosisSafeManager {
   constructor(
@@ -12,6 +15,7 @@ export class GnosisSafeManager {
     public readonly multisend: Contract,
     public readonly proxyFactory: Contract,
     public readonly createCall: Contract,
+    public readonly fallbackHandler: Contract,
   ) {}
 
   public static async init(deployer: Signer): Promise<GnosisSafeManager> {
@@ -22,12 +26,17 @@ export class GnosisSafeManager {
     );
     const multisend = await waffle.deployContract(deployer, MultiSend);
     const createCall = await waffle.deployContract(deployer, CreateCall);
+    const fallbackHandler = await waffle.deployContract(
+      deployer,
+      CompatibilityFallbackHandler,
+    );
     return new GnosisSafeManager(
       deployer,
       singleton,
       multisend,
       proxyFactory,
       createCall,
+      fallbackHandler,
     );
   }
 
@@ -49,5 +58,13 @@ export class GnosisSafeManager {
       ethers.constants.AddressZero,
     );
     return safe;
+  }
+
+  public getDeploymentAddresses(): SafeDeploymentAddresses {
+    return {
+      singleton: this.singleton.address,
+      factory: this.proxyFactory.address,
+      fallbackHandler: this.fallbackHandler.address,
+    };
   }
 }
