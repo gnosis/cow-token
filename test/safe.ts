@@ -1,4 +1,5 @@
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
+import CreateCall from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/CreateCall.sol/CreateCall.json";
 import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
 import { Signer, Contract } from "ethers";
@@ -10,6 +11,7 @@ export class GnosisSafeManager {
     public readonly singleton: Contract,
     public readonly multisend: Contract,
     public readonly proxyFactory: Contract,
+    public readonly createCall: Contract,
   ) {}
 
   public static async init(deployer: Signer): Promise<GnosisSafeManager> {
@@ -19,7 +21,14 @@ export class GnosisSafeManager {
       GnosisSafeProxyFactory,
     );
     const multisend = await waffle.deployContract(deployer, MultiSend);
-    return new GnosisSafeManager(deployer, singleton, multisend, proxyFactory);
+    const createCall = await waffle.deployContract(deployer, CreateCall);
+    return new GnosisSafeManager(
+      deployer,
+      singleton,
+      multisend,
+      proxyFactory,
+      createCall,
+    );
   }
 
   public async newSafe(owners: string[], threshold: number): Promise<Contract> {

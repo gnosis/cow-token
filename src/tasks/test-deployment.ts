@@ -17,12 +17,14 @@ import {
   computeProofs,
   parseCsvFile,
 } from "../ts";
+import { contractsCreatedWithCreateCall } from "../ts/deploy/safe";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
 import {
   SupportedChainId,
   isChainIdSupported,
   deployWithOwners,
+  CreateCallDeployment,
   MultiSendDeployment,
   execSafeTransaction,
   gnosisSafeAt,
@@ -95,11 +97,11 @@ interface Token {
   instance: Contract;
 }
 
-interface MaybeDeployment {
+interface MaybeDeterministicDeployment {
   address: string;
   transaction: MetaTransaction | null;
 }
-interface Deployment extends MaybeDeployment {
+interface Deployment {
   transaction: MetaTransaction;
 }
 
@@ -325,13 +327,14 @@ async function generateClaimsAndDeploy(
     };
 
   console.log("Generating deploy transactions...");
-  let realTokenDeployment: MaybeDeployment;
+  let realTokenDeployment: MaybeDeterministicDeployment;
   let virtualTokenDeployment: Deployment;
   if (cowToken === undefined) {
     const deployment = await prepareRealAndVirtualDeploymentFromSafe(
       realTokenDeployParams,
       virtualTokenDeployParams,
       MultiSendDeployment.networkAddresses[chainId],
+      CreateCallDeployment.networkAddresses[chainId],
       ethers,
       salt,
     );
@@ -340,7 +343,6 @@ async function generateClaimsAndDeploy(
       transaction: deployment.realTokenDeployTransaction,
     };
     virtualTokenDeployment = {
-      address: deployment.virtualTokenAddress,
       transaction: deployment.virtualTokenDeployTransaction,
     };
     expect(await ethers.provider.getCode(realTokenDeployment.address)).to.equal(
@@ -351,18 +353,14 @@ async function generateClaimsAndDeploy(
       const deployment = await prepareVirtualDeploymentFromSafe(
         { ...virtualTokenDeployParams, realToken: cowToken },
         ethers,
-        salt,
+        CreateCallDeployment.networkAddresses[chainId],
       );
       realTokenDeployment = { address: cowToken, transaction: null };
       virtualTokenDeployment = {
-        address: deployment.virtualTokenAddress,
         transaction: deployment.virtualTokenDeployTransaction,
       };
     }
   }
-  expect(
-    await ethers.provider.getCode(virtualTokenDeployment.address),
-  ).to.equal("0x");
 
   console.log("Clearing old files...");
   await fs.rm(`${OUTPUT_FOLDER}/claims.json`, { recursive: true, force: true });
@@ -377,11 +375,10 @@ async function generateClaimsAndDeploy(
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER}/params.json`,
-    JSON.stringify({
+    deployParamsToString({
+      realTokenDeployParams,
+      virtualTokenDeployParams,
       realTokenAddress: realTokenDeployment.address,
-      virtualTokenAddress: virtualTokenDeployment.address,
-      ...realTokenDeployParams,
-      ...virtualTokenDeployParams,
     }),
   );
   await splitClaimsAndSaveToFolder(claimsWithProof, OUTPUT_FOLDER);
@@ -409,9 +406,48 @@ async function generateClaimsAndDeploy(
     [deployer],
   );
   await expect(deploymentVirtual).to.emit(gnosisDao, "ExecutionSuccess");
-  expect(
-    await ethers.provider.getCode(virtualTokenDeployment.address),
-  ).not.to.equal("0x");
+  const createdContracts = await contractsCreatedWithCreateCall(
+    deploymentVirtual,
+    CreateCallDeployment.networkAddresses[chainId],
+  );
+  expect(createdContracts).to.have.length(1);
+  const virtualTokenAddress = createdContracts[0];
+  expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal("0x");
+
+  console.log("Updating files with deployment information...");
+  await fs.writeFile(
+    `${OUTPUT_FOLDER}/params.json`,
+    deployParamsToString({
+      realTokenDeployParams,
+      virtualTokenDeployParams,
+      realTokenAddress: realTokenDeployment.address,
+      virtualTokenAddress,
+    }),
+  );
+}
+
+interface DeploymentInfo {
+  realTokenDeployParams: RealTokenDeployParams;
+  virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken">;
+  realTokenAddress: string;
+  virtualTokenAddress?: string;
+}
+function deployParamsToString({
+  realTokenDeployParams,
+  virtualTokenDeployParams,
+  realTokenAddress,
+  virtualTokenAddress,
+}: DeploymentInfo): string {
+  return JSON.stringify(
+    {
+      realTokenAddress,
+      virtualTokenAddress,
+      ...realTokenDeployParams,
+      ...virtualTokenDeployParams,
+    },
+    undefined,
+    2,
+  );
 }
 
 export { setupTestDeploymentTask };

@@ -7,6 +7,7 @@ import {
 } from "@gnosis.pm/safe-contracts";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
+import CreateCallDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/create_call.json";
 import GnosisSafeDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/gnosis_safe.json";
 import MultiSendDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/multi_send_call_only.json";
 import GnosisSafeProxyFactoryDeployment from "@gnosis.pm/safe-deployments/src/assets/v1.3.0/proxy_factory.json";
@@ -14,12 +15,13 @@ import { constants, Contract, ContractReceipt, Signer, Wallet } from "ethers";
 import { Interface } from "ethers/lib/utils";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-export { MultiSendDeployment };
+export { MultiSendDeployment, CreateCallDeployment };
 
 export type SupportedChainId =
   keyof typeof GnosisSafeProxyFactoryDeployment.networkAddresses &
     keyof typeof GnosisSafeDeployment.networkAddresses &
-    keyof typeof MultiSendDeployment.networkAddresses;
+    keyof typeof MultiSendDeployment.networkAddresses &
+    keyof typeof CreateCallDeployment.networkAddresses;
 
 export function isChainIdSupported(
   chainId: string,
@@ -29,7 +31,8 @@ export function isChainIdSupported(
       chainId,
     ) &&
     Object.keys(GnosisSafeDeployment.networkAddresses).includes(chainId) &&
-    Object.keys(MultiSendDeployment.networkAddresses).includes(chainId)
+    Object.keys(MultiSendDeployment.networkAddresses).includes(chainId) &&
+    Object.keys(CreateCallDeployment.networkAddresses).includes(chainId)
   );
 }
 
