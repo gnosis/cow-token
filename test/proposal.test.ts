@@ -191,7 +191,7 @@ describe("proposal", function () {
         const expected: RealTokenDeployParams = {
           cowDao: contracts.cowDao.address,
           totalSupply: BigNumber.from(10)
-            .pow(3 * 4 + metadata.real.decimals)
+            .pow(3 * 3 + metadata.real.decimals)
             .toString(),
         };
         expect(

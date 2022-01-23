@@ -35,7 +35,7 @@ const OUTPUT_FOLDER = "./output/test-deployment";
 
 const defaultArgs = {
   userCount: 1000,
-  totalSupply: (10n ** (3n * 4n)).toString(),
+  totalSupply: (10n ** (3n * 3n)).toString(),
   usdcPerCow: "0.15",
   usdcPerGno: "400",
   usdcPerWeth: "4000",
