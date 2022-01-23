@@ -205,7 +205,9 @@ async function getDeploymentBytecode<T extends ContractName>(
   return deployTransaction.data;
 }
 
-async function getDeterministicDeploymentTransaction<T extends ContractName>(
+export async function getDeterministicDeploymentTransaction<
+  T extends ContractName,
+>(
   contract: T,
   params: DeployParams[T],
   ethers: HardhatEthersHelpers,
@@ -218,7 +220,9 @@ async function getDeterministicDeploymentTransaction<T extends ContractName>(
   return { safeTransaction, address };
 }
 
-async function getNonDeterministicDeploymentTransaction<T extends ContractName>(
+export async function getNonDeterministicDeploymentTransaction<
+  T extends ContractName,
+>(
   contract: T,
   params: DeployParams[T],
   createCallAddress: string,

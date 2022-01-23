@@ -2,7 +2,7 @@
 // https://github.com/Zoltu/deterministic-deployment-proxy
 // In particular, the constants can be verified by running the code in the repo.
 
-import { BigNumber, Signer } from "ethers";
+import { BigNumber, Signer, utils } from "ethers";
 import { ethers } from "hardhat";
 
 import { DEPLOYER_CONTRACT } from "../src/ts";
@@ -26,7 +26,10 @@ export async function setupDeployer(ethSource: Signer) {
   await ethers.provider.send("eth_sendRawTransaction", [
     DEPLOYMENT_TRANSACTION,
   ]);
-  if ((await ethers.provider.getCode(DEPLOYER_CONTRACT)).length === 0) {
+  if (
+    utils.arrayify(await ethers.provider.getCode(DEPLOYER_CONTRACT)).length ===
+    0
+  ) {
     throw new Error("Failed to deploy deterministic deployment contract");
   }
 }
