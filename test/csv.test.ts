@@ -88,6 +88,20 @@ describe("CSV parsing", function () {
     expect(await parseCsv(stream)).to.deep.equal(expected);
   });
 
+  it("can have multiple coincident claims", async function () {
+    const stream = Readable.from(`Account,UserOption,Airdrop
+0x4242424242424242424242424242424242424242,,1337
+0x4242424242424242424242424242424242424242,,1337
+0x4242424242424242424242424242424242424242,,1337`);
+    const claim = {
+      account: "0x4242424242424242424242424242424242424242",
+      type: ClaimType.Airdrop,
+      claimableAmount: BigNumber.from(1337),
+    };
+    const expected: Claim[] = [claim, claim, claim];
+    expect(await parseCsv(stream)).to.deep.equal(expected);
+  });
+
   it("converts addresses to checksummed addresses", async function () {
     const stream = Readable.from(`Account,UserOption,Airdrop
 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee,,1337`);
