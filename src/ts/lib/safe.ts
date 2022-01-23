@@ -4,7 +4,14 @@ import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libra
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
 import CreateCall from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/CreateCall.sol/CreateCall.json";
-import { BytesLike, constants, Contract, utils } from "ethers";
+import {
+  BigNumber,
+  BigNumberish,
+  BytesLike,
+  constants,
+  Contract,
+  utils,
+} from "ethers";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 
 export enum SafeOperation {
@@ -48,18 +55,19 @@ export async function prepareDeterministicSafeWithOwners(
     fallbackHandler,
   }: Pick<SafeDeploymentAddresses, "singleton" | "factory"> &
     Partial<SafeDeploymentAddresses>,
-  nonce: BytesLike,
+  nonce: BigNumberish,
   ethers: HardhatEthersHelpers,
 ): Promise<{ to: string; data: string; address: string }> {
-  if (utils.arrayify(nonce).length !== 32) {
-    throw new Error("Invalid salt. Salt should be 32 bytes.");
-  }
   const setupOwnersBytecode = safeSetupData(owners, threshold, fallbackHandler);
   const proxyFactory = new Contract(
     factory,
     GnosisSafeProxyFactory.abi,
   ).connect(ethers.provider);
-  const createProxyInput = [singleton, setupOwnersBytecode, nonce];
+  const createProxyInput = [
+    singleton,
+    setupOwnersBytecode,
+    BigNumber.from(nonce),
+  ];
   const data: string = proxyFactoryIface.encodeFunctionData(
     "createProxyWithNonce",
     createProxyInput,
