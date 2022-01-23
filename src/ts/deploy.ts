@@ -11,7 +11,7 @@ import {
   utils,
 } from "ethers";
 
-import { SafeOperation, multisend } from "./deploy/safe";
+import { SafeOperation, multisend, createTransaction } from "./deploy/safe";
 
 /**
  * The salt used when deterministically deploying smart contracts.
@@ -188,12 +188,11 @@ function deterministicDeploymentToSafeTransaction(
   };
 }
 
-async function getDeploymentTransaction<T extends ContractName>(
+async function getDeploymentBytecode<T extends ContractName>(
   contract: T,
   params: DeployParams[T],
   ethers: HardhatEthersHelpers,
-  salt?: string,
-): Promise<{ safeTransaction: MetaTransaction; address: string }> {
+): Promise<BytesLike> {
   const factory = await ethers.getContractFactory(contract);
   const deployTransaction = factory.getDeployTransaction(
     ...constructorInput(contract, params),
@@ -203,16 +202,38 @@ async function getDeploymentTransaction<T extends ContractName>(
       `Unable to determine deployment transaction for contract ${contract}`,
     );
   }
-  const deployment = { bytecode: deployTransaction.data, salt };
+  return deployTransaction.data;
+}
+
+async function getDeterministicDeploymentTransaction<T extends ContractName>(
+  contract: T,
+  params: DeployParams[T],
+  ethers: HardhatEthersHelpers,
+  salt?: string,
+): Promise<{ safeTransaction: MetaTransaction; address: string }> {
+  const bytecode = await getDeploymentBytecode(contract, params, ethers);
+  const deployment = { bytecode, salt };
   const safeTransaction = deterministicDeploymentToSafeTransaction(deployment);
   const address = deterministicDeploymentAddress(deployment);
   return { safeTransaction, address };
+}
+
+async function getNonDeterministicDeploymentTransaction<T extends ContractName>(
+  contract: T,
+  params: DeployParams[T],
+  createCallAddress: string,
+  ethers: HardhatEthersHelpers,
+): Promise<{ safeTransaction: MetaTransaction }> {
+  const bytecode = await getDeploymentBytecode(contract, params, ethers);
+  const safeTransaction = createTransaction(bytecode, createCallAddress);
+  return { safeTransaction };
 }
 
 export async function prepareRealAndVirtualDeploymentFromSafe(
   realTokenDeployParams: RealTokenDeployParams,
   virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken">,
   multisendAddress: string,
+  createCallAddress: string,
   ethers: HardhatEthersHelpers,
   salt?: string,
 ): Promise<{
@@ -220,23 +241,22 @@ export async function prepareRealAndVirtualDeploymentFromSafe(
   virtualTokenDeployTransaction: MetaTransaction;
   deployTransaction: MetaTransaction;
   realTokenAddress: string;
-  virtualTokenAddress: string;
 }> {
   const {
     safeTransaction: realTokenDeployTransaction,
     address: realTokenAddress,
-  } = await getDeploymentTransaction(
+  } = await getDeterministicDeploymentTransaction(
     ContractName.RealToken,
     realTokenDeployParams,
     ethers,
     salt,
   );
 
-  const { virtualTokenDeployTransaction, virtualTokenAddress } =
+  const { virtualTokenDeployTransaction } =
     await prepareVirtualDeploymentFromSafe(
       { ...virtualTokenDeployParams, realToken: realTokenAddress },
       ethers,
-      salt,
+      createCallAddress,
     );
 
   return {
@@ -247,31 +267,26 @@ export async function prepareRealAndVirtualDeploymentFromSafe(
       multisendAddress,
     ),
     realTokenAddress,
-    virtualTokenAddress,
   };
 }
 
 export async function prepareVirtualDeploymentFromSafe(
   virtualTokenDeployParams: VirtualTokenDeployParams,
   ethers: HardhatEthersHelpers,
-  salt?: string,
+  createCallAddress: string,
 ): Promise<{
   virtualTokenDeployTransaction: MetaTransaction;
-  virtualTokenAddress: string;
 }> {
-  const {
-    safeTransaction: virtualTokenDeployment,
-    address: virtualTokenAddress,
-  } = await getDeploymentTransaction(
-    ContractName.VirtualToken,
-    virtualTokenDeployParams,
-    ethers,
-    salt,
-  );
+  const { safeTransaction: virtualTokenDeployment } =
+    await getNonDeterministicDeploymentTransaction(
+      ContractName.VirtualToken,
+      virtualTokenDeployParams,
+      createCallAddress,
+      ethers,
+    );
 
   return {
     virtualTokenDeployTransaction: virtualTokenDeployment,
-    virtualTokenAddress,
   };
 }
 

@@ -14,6 +14,7 @@ import {
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
 } from "../src/ts";
+import { contractsCreatedWithCreateCall } from "../src/ts/deploy/safe";
 
 import { setupDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
@@ -84,11 +85,11 @@ describe("deployment", () => {
       realTokenDeployTransaction,
       virtualTokenDeployTransaction,
       realTokenAddress,
-      virtualTokenAddress,
     } = await prepareRealAndVirtualDeploymentFromSafe(
       realTokenDeployParams,
       virtualTokenDeployParams,
       safeManager.multisend.address,
+      safeManager.createCall.address,
       hre.ethers,
     );
 
@@ -96,7 +97,6 @@ describe("deployment", () => {
       await ethers.provider.getCode(safeManager.multisend.address),
     ).to.not.equal("0x");
     expect(await ethers.provider.getCode(realTokenAddress)).to.equal("0x");
-    expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
 
     const deploymentReal = await execSafeTransaction(
       safe,
@@ -112,6 +112,13 @@ describe("deployment", () => {
       owners,
     );
     await expect(deploymentVirtual).to.emit(safe, "ExecutionSuccess");
+
+    const createdContracts = await contractsCreatedWithCreateCall(
+      deploymentVirtual,
+      safeManager.createCall.address,
+    );
+    expect(createdContracts).to.have.length(1);
+    const virtualTokenAddress = createdContracts[0];
     expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal(
       "0x",
     );
@@ -130,13 +137,12 @@ describe("deployment", () => {
 
   it("performed from a Gnosis Safe with an existing real token address", async () => {
     const realTokenAddress = "0x" + "1337".repeat(10);
-    const { virtualTokenDeployTransaction, virtualTokenAddress } =
+    const { virtualTokenDeployTransaction } =
       await prepareVirtualDeploymentFromSafe(
         { ...virtualTokenDeployParams, realToken: realTokenAddress },
         hre.ethers,
+        safeManager.createCall.address,
       );
-
-    expect(await ethers.provider.getCode(virtualTokenAddress)).to.equal("0x");
 
     const deploymentVirtual = await execSafeTransaction(
       safe,
@@ -144,6 +150,12 @@ describe("deployment", () => {
       owners,
     );
     await expect(deploymentVirtual).to.emit(safe, "ExecutionSuccess");
+    const createdContracts = await contractsCreatedWithCreateCall(
+      deploymentVirtual,
+      safeManager.createCall.address,
+    );
+    expect(createdContracts).to.have.length(1);
+    const virtualTokenAddress = createdContracts[0];
     expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal(
       "0x",
     );
@@ -164,6 +176,7 @@ describe("deployment", () => {
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,
+        safeManager.createCall.address,
         hre.ethers,
       );
 
@@ -190,20 +203,30 @@ describe("deployment", () => {
         realTokenDeployTransaction,
         virtualTokenDeployTransaction,
         realTokenAddress,
-        virtualTokenAddress,
       } = await prepareRealAndVirtualDeploymentFromSafe(
         realTokenDeployParams,
         virtualTokenDeployParams,
         safeManager.multisend.address,
+        safeManager.createCall.address,
         hre.ethers,
       );
       await execSafeTransaction(safe, realTokenDeployTransaction, owners);
-      await execSafeTransaction(safe, virtualTokenDeployTransaction, owners);
+      const virtualDeploymentResponse = await execSafeTransaction(
+        safe,
+        virtualTokenDeployTransaction,
+        owners,
+      );
 
       realToken = await hre.ethers.getContractAt(
         ContractName.RealToken,
         realTokenAddress,
       );
+      const createdContracts = await contractsCreatedWithCreateCall(
+        virtualDeploymentResponse,
+        safeManager.createCall.address,
+      );
+      expect(createdContracts).to.have.length(1);
+      const virtualTokenAddress = createdContracts[0];
       virtualToken = await hre.ethers.getContractAt(
         ContractName.VirtualToken,
         virtualTokenAddress,
