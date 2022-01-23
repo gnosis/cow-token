@@ -17,7 +17,7 @@ import {
   computeProofs,
   parseCsvFile,
 } from "../ts";
-import { contractsCreatedWithCreateCall } from "../ts/deploy/safe";
+import { contractsCreatedWithCreateCall } from "../ts/lib/safe";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
 import {
