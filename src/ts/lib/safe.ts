@@ -23,6 +23,7 @@ export interface SafeDeploymentAddresses {
   singleton: string;
   factory: string;
   fallbackHandler: string;
+  createCall: string;
 }
 
 const gnosisSafeIface = new utils.Interface(GnosisSafe.abi);

@@ -3,7 +3,8 @@
 /output/
 /lib/
 node_modules/
-coverage.json
+/settings.json
+/coverage.json
 yarn-error.log
 *.tgz
 .mocharc.json

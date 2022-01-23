@@ -65,6 +65,7 @@ export class GnosisSafeManager {
       singleton: this.singleton.address,
       factory: this.proxyFactory.address,
       fallbackHandler: this.fallbackHandler.address,
+      createCall: this.createCall.address,
     };
   }
 }
