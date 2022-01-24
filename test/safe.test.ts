@@ -177,7 +177,7 @@ describe("Gnosis Safe creation", function () {
 
       await creator.sendTransaction({ to, data });
       const safe = gnosisSafeAt(address).connect(executor);
-      const receiver = "0x" + "42".repeat(20);
+      const receiver = "0x" + "2142".repeat(10);
       expect(await ethers.provider.getBalance(receiver)).to.equal(
         constants.Zero,
       );
