@@ -43,6 +43,7 @@ export interface DeterministicDeploymentInfo {
 }
 
 export interface RealTokenDeployParams {
+  initialTokenHolder: string;
   cowDao: string;
   totalSupply: BigNumberish;
 }
@@ -70,7 +71,7 @@ export interface DeployParams {
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
 }
 export type ContructorInput = {
-  [ContractName.RealToken]: [string, BigNumberish];
+  [ContractName.RealToken]: [string, string, BigNumberish];
   [ContractName.VirtualToken]: [
     string,
     string,
@@ -95,9 +96,10 @@ export function constructorInput<T extends ContractName>(
   // by TS.
   switch (contract) {
     case ContractName.RealToken: {
-      const { cowDao, totalSupply } =
+      const { initialTokenHolder, cowDao, totalSupply } =
         params as DeployParams[ContractName.RealToken];
       const result: ContructorInput[ContractName.RealToken] = [
+        initialTokenHolder,
         cowDao,
         totalSupply,
       ];
@@ -301,7 +303,10 @@ export async function getDeployArgsFromRealToken(
   const logs = await realToken.queryFilter(filterMintingTransfers, 0, "latest");
   const events = logs.map((log) => realToken.interface.parseLog(log));
   const totalSupply = BigNumber.from(events[0].args.value).toString();
+  // initialTokenHolder is the receiver of the first mint transfer
+  const initialTokenHolder = events[0].args.to;
   return {
+    initialTokenHolder,
     cowDao: await realToken.cowDao(),
     totalSupply,
   };
