@@ -5,7 +5,7 @@ import { BigNumber } from "ethers";
 import hre, { waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
-import { Settings } from "../src/tasks/deployment";
+import { Settings } from "../src/tasks/common-interfaces";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
   ContractName,
@@ -14,16 +14,18 @@ import {
   metadata,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
-  DeploymentProposalSettings,
-  FinalAddresses,
-  generateProposal,
-  SafeCreationSettings,
-  VirtualTokenCreationSettings,
 } from "../src/ts";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
 } from "../src/ts/lib/safe";
+import {
+  DeploymentProposalSettings,
+  FinalAddresses,
+  generateProposal,
+  SafeCreationSettings,
+  VirtualTokenCreationSettings,
+} from "../src/ts/proposal";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
@@ -60,6 +62,7 @@ describe("proposal", function () {
     teamController: teamConrollerSettings,
     cowToken: {},
     virtualCowToken: virtualTokenCreationSettings,
+    multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
   };
 
   before(async function () {

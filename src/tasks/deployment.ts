@@ -8,29 +8,14 @@ import {
   computeProofs,
   removeSplitClaimFiles,
   splitClaimsAndSaveToFolder,
-  DeploymentProposalSettings,
   generateProposal,
 } from "../ts";
 
+import { Args, Settings } from "./common-interfaces";
 import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/deployment";
-
-interface Args {
-  claims: string;
-  settings: string;
-}
-
-interface VirtualTokenSettings {
-  gnoPrice: string;
-  nativeTokenPrice: string;
-}
-
-export interface Settings
-  extends Omit<DeploymentProposalSettings, "virtualCowToken"> {
-  virtualCowToken: VirtualTokenSettings;
-}
 
 const setupDeployment: () => void = () => {
   task(
@@ -76,7 +61,8 @@ async function generateDeployment(
   const settings = {
     ...inputSettings,
     virtualCowToken: {
-      ...inputSettings.virtualCowToken,
+      gnoPrice: inputSettings.gnoPrice,
+      nativeTokenPrice: inputSettings.nativeTokenPriceOnETH,
       merkleRoot,
       usdcToken: defaultTokens.usdc[chainId],
       gnoToken: defaultTokens.gno[chainId],

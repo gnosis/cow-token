@@ -50,7 +50,7 @@ export interface RealTokenDeployParams {
 
 export interface DeploymentHelperDeployParams {
   foreignToken: string;
-  multiTokenMediatorHome: string;
+  multiTokenMediatorGnosisChain: string;
   merkleRoot: string;
   communityFundsTarget: string;
   gnoToken: string;
@@ -159,7 +159,7 @@ export function constructorInput<T extends ContractName>(
     case ContractName.BridgedTokenDeployer: {
       const {
         foreignToken,
-        multiTokenMediatorHome,
+        multiTokenMediatorGnosisChain,
         merkleRoot,
         communityFundsTarget,
         gnoToken,
@@ -169,7 +169,7 @@ export function constructorInput<T extends ContractName>(
       } = params as DeployParams[ContractName.BridgedTokenDeployer];
       const result: ContructorInput[ContractName.BridgedTokenDeployer] = [
         foreignToken,
-        multiTokenMediatorHome,
+        multiTokenMediatorGnosisChain,
         merkleRoot,
         communityFundsTarget,
         gnoToken,

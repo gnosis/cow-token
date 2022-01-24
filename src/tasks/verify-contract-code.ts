@@ -31,7 +31,7 @@ async function verifyContractCode(
   { virtualTokenAddress }: Args,
   hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
 ) {
-  if (hre.network.name === "xdai") {
+  if (hre.network.name === "gnosischain") {
     throw new Error("Blockscout is currently not supported");
   }
 
