@@ -17,13 +17,13 @@ import {
 import { stringify } from "./utils/formatUtils";
 
 describe("BridgedTokenDeployer", () => {
-  let deploymentHelper: Contract;
+  let bridgedTokenDeployer: Contract;
   let gnoToken: MockContract;
-  let multiTokenMediatorHome: MockContract;
+  let multiTokenMediatorGnosisChain: MockContract;
   let wrappedNativeToken: MockContract;
   let cowProtocolVirtualToken: Contract;
   let BridgedTokenDeployer: ContractFactory;
-  let MultiTokenMediatorHome: Artifact;
+  let MultiTokenMediatorGnosisChain: Artifact;
 
   const [deployer] = waffle.provider.getWallets();
 
@@ -38,12 +38,12 @@ describe("BridgedTokenDeployer", () => {
   beforeEach(async () => {
     gnoToken = await waffle.deployMockContract(deployer, IERC20.abi);
     wrappedNativeToken = await waffle.deployMockContract(deployer, IERC20.abi);
-    MultiTokenMediatorHome = await artifacts.readArtifact(
+    MultiTokenMediatorGnosisChain = await artifacts.readArtifact(
       "BridgedTokensRegistry",
     );
-    multiTokenMediatorHome = await waffle.deployMockContract(
+    multiTokenMediatorGnosisChain = await waffle.deployMockContract(
       deployer,
-      MultiTokenMediatorHome.abi,
+      MultiTokenMediatorGnosisChain.abi,
     );
     BridgedTokenDeployer = (
       await ethers.getContractFactory(ContractName.BridgedTokenDeployer)
@@ -51,7 +51,7 @@ describe("BridgedTokenDeployer", () => {
     deploymentParams = {
       foreignToken,
       merkleRoot,
-      multiTokenMediatorHome: multiTokenMediatorHome.address,
+      multiTokenMediatorGnosisChain: multiTokenMediatorGnosisChain.address,
       gnoToken: gnoToken.address,
       wrappedNativeToken: wrappedNativeToken.address,
       communityFundsTarget,
@@ -62,10 +62,10 @@ describe("BridgedTokenDeployer", () => {
 
   describe("constructor parameters", async function () {
     beforeEach(async function () {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.returns(
+      await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.returns(
         bridgedCowTokenAddress,
       );
-      deploymentHelper = await BridgedTokenDeployer.deploy(
+      bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
         ...constructorInput(
           ContractName.BridgedTokenDeployer,
           deploymentParams,
@@ -74,41 +74,41 @@ describe("BridgedTokenDeployer", () => {
     });
 
     it("has expected merkle root", async () => {
-      expect(await deploymentHelper.merkleRoot()).to.equal(merkleRoot);
+      expect(await bridgedTokenDeployer.merkleRoot()).to.equal(merkleRoot);
     });
 
     it("has expected multiTokenMediator", async () => {
-      expect(await deploymentHelper.multiTokenMediator()).to.equal(
-        multiTokenMediatorHome.address,
+      expect(await bridgedTokenDeployer.multiTokenMediator()).to.equal(
+        multiTokenMediatorGnosisChain.address,
       );
     });
 
-    it("has expected real deploymentHelper", async () => {
-      expect(await deploymentHelper.foreignToken()).to.equal(foreignToken);
+    it("has expected real cowToken", async () => {
+      expect(await bridgedTokenDeployer.foreignToken()).to.equal(foreignToken);
     });
 
     it("sets the expected community funds target", async function () {
-      expect(await deploymentHelper.communityFundsTarget()).to.equal(
+      expect(await bridgedTokenDeployer.communityFundsTarget()).to.equal(
         communityFundsTarget,
       );
     });
 
-    it("sets the expected GNO deploymentHelper", async function () {
-      expect(await deploymentHelper.gnoToken()).to.equal(gnoToken.address);
+    it("sets the expected GNO token", async function () {
+      expect(await bridgedTokenDeployer.gnoToken()).to.equal(gnoToken.address);
     });
 
     it("sets the expected GNO price", async function () {
-      expect(await deploymentHelper.gnoPrice()).to.equal(gnoPrice);
+      expect(await bridgedTokenDeployer.gnoPrice()).to.equal(gnoPrice);
     });
 
-    it("sets the expected wrapped native deploymentHelper", async function () {
-      expect(await deploymentHelper.wrappedNativeToken()).to.equal(
+    it("sets the expected wrapped native token", async function () {
+      expect(await bridgedTokenDeployer.wrappedNativeToken()).to.equal(
         wrappedNativeToken.address,
       );
     });
 
-    it("sets the expected native deploymentHelper price", async function () {
-      expect(await deploymentHelper.nativeTokenPrice()).to.equal(
+    it("sets the expected native token price", async function () {
+      expect(await bridgedTokenDeployer.nativeTokenPrice()).to.equal(
         nativeTokenPrice,
       );
     });
@@ -116,60 +116,62 @@ describe("BridgedTokenDeployer", () => {
 
   describe("deploy", async function () {
     it("reverts if the bridge contract does not yet exists", async () => {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.returns(
+      await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.returns(
         constants.AddressZero,
       );
-      deploymentHelper = await BridgedTokenDeployer.deploy(
+      bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
         ...constructorInput(
           ContractName.BridgedTokenDeployer,
           deploymentParams,
         ),
       );
-      await expect(deploymentHelper.deploy()).to.be.revertedWith(
+      await expect(bridgedTokenDeployer.deploy()).to.be.revertedWith(
         "cowToken not yet bridged",
       );
     });
 
     it("reverts if the call to the bridge contract reverts", async () => {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.revertsWithReason(
+      await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.revertsWithReason(
         "reverted",
       );
-      deploymentHelper = await BridgedTokenDeployer.deploy(
+      bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
         ...constructorInput(
           ContractName.BridgedTokenDeployer,
           deploymentParams,
         ),
       );
-      await expect(deploymentHelper.deploy()).to.be.revertedWith("reverted");
+      await expect(bridgedTokenDeployer.deploy()).to.be.revertedWith(
+        "reverted",
+      );
     });
 
     it("deploys a new contract if the bridge contract exists", async () => {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.returns(
+      await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.returns(
         bridgedCowTokenAddress,
       );
-      deploymentHelper = await BridgedTokenDeployer.deploy(
+      bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
         ...constructorInput(
           ContractName.BridgedTokenDeployer,
           deploymentParams,
         ),
       );
-      await expect(deploymentHelper.deploy()).to.be.not.reverted;
+      await expect(bridgedTokenDeployer.deploy()).to.be.not.reverted;
     });
   });
 
   describe("deployed CowProtocolVirtualToken", async function () {
     beforeEach(async function () {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.returns(
+      await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.returns(
         bridgedCowTokenAddress,
       );
-      deploymentHelper = await BridgedTokenDeployer.deploy(
+      bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
         ...constructorInput(
           ContractName.BridgedTokenDeployer,
           deploymentParams,
         ),
       );
-      const vCowAddress = await deploymentHelper.callStatic.deploy();
-      await deploymentHelper.deploy();
+      const vCowAddress = await bridgedTokenDeployer.callStatic.deploy();
+      await bridgedTokenDeployer.deploy();
       cowProtocolVirtualToken = await ethers.getContractAt(
         "CowProtocolVirtualToken",
         vCowAddress,
