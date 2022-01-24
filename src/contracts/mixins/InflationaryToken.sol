@@ -32,14 +32,13 @@ contract InflationaryToken is ERC20, ERC20Permit {
     }
 
     constructor(
+        address initialTokenHolder,
         address _cowDao,
         uint256 totalSupply,
         string memory erc20Name,
         string memory erc20Symbol
     ) ERC20(erc20Name, erc20Symbol) ERC20Permit(erc20Name) {
-        // The CowDao is responsible for handling the initial distribution of
-        // the token.
-        _mint(_cowDao, totalSupply);
+        _mint(initialTokenHolder, totalSupply);
         cowDao = _cowDao;
         // solhint-disable-next-line not-rely-on-time
         timestampLastMinting = block.timestamp;

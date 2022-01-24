@@ -284,6 +284,7 @@ async function generateClaimsAndDeploy(
   const teamController = teamControllerAddress ?? (await deploySafe()).address;
 
   const realTokenDeployParams: RealTokenDeployParams = {
+    initialTokenHolder: cowDao,
     totalSupply,
     cowDao,
   };
