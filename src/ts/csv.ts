@@ -53,15 +53,13 @@ export function parseCsvFile(csvPath: string): Promise<Claim[]> {
 }
 
 export function writeCsv(claims: Claim[]): Writable {
-  const accounts = Array.from(
-    new Set(claims.map(({ account }) => utils.getAddress(account))),
-  );
-
   const claimsByAccount: Record<string, Claim[]> = {};
-  for (const user of accounts) {
-    claimsByAccount[user] = claims.filter(
-      ({ account }) => account.toLowerCase() === user.toLowerCase(),
-    );
+  for (const claim of claims) {
+    const user = utils.getAddress(claim.account);
+    if (claimsByAccount[user] === undefined) {
+      claimsByAccount[user] = [];
+    }
+    claimsByAccount[user].push(claim);
   }
 
   const headers: (typeof accountLegend | keyof typeof claimLegend)[] = [
