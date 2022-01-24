@@ -309,24 +309,24 @@ async function generateClaimsAndDeploy(
   };
 
   const virtualTokenDeployParams: Omit<VirtualTokenDeployParams, "realToken"> =
-    {
-      merkleRoot,
-      communityFundsTarget: communityFundsTarget,
-      investorFundsTarget: investorFundsTarget,
-      usdcToken: usdc.instance.address,
-      usdcPrice: usdcPerCow,
-      gnoToken: gno.instance.address,
-      gnoPrice: utils
-        .parseUnits("1", gno.decimals)
-        .mul(usdcPerCow)
-        .div(usdcPerGno),
-      wrappedNativeToken: weth.instance.address,
-      nativeTokenPrice: utils
-        .parseUnits("1", weth.decimals)
-        .mul(usdcPerCow)
-        .div(usdcPerWeth),
-      teamController: teamController,
-    };
+  {
+    merkleRoot,
+    communityFundsTarget: communityFundsTarget,
+    investorFundsTarget: investorFundsTarget,
+    usdcToken: usdc.instance.address,
+    usdcPrice: usdcPerCow,
+    gnoToken: gno.instance.address,
+    gnoPrice: utils
+      .parseUnits("1", gno.decimals)
+      .mul(usdcPerCow)
+      .div(usdcPerGno),
+    wrappedNativeToken: weth.instance.address,
+    nativeTokenPrice: utils
+      .parseUnits("1", weth.decimals)
+      .mul(usdcPerCow)
+      .div(usdcPerWeth),
+    teamController: teamController,
+  };
 
   console.log("Generating deploy transactions...");
   let realTokenDeployment: MaybeDeterministicDeployment;
