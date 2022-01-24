@@ -22,7 +22,7 @@ import { skipOnCoverage } from "./test-management";
 
 describe("deployment", () => {
   const [ethSource, deployer, ...owners] = waffle.provider.getWallets();
-  const totalSupply = 1;
+  const totalSupply = "1337";
   let safeManager: GnosisSafeManager;
   let safe: Contract;
 
@@ -314,11 +314,7 @@ describe("deployment", () => {
 
     it("getDeployArgsFromRealToken", async function () {
       const extractedParams = await getDeployArgsFromRealToken(realToken);
-      const expectedResult: Omit<RealTokenDeployParams, "totalSupply"> = {
-        ...realTokenDeployParams,
-      };
-      delete (expectedResult as Record<string, unknown>).totalSupply;
-      expect(extractedParams).to.deep.equal(expectedResult);
+      expect(extractedParams).to.deep.equal(realTokenDeployParams);
     });
 
     it("getDeployArgsFromVirtualToken", async function () {
