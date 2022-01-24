@@ -121,9 +121,12 @@ describe("proposal", function () {
         teamController: gnosisSafeAt(addresses.teamController).connect(
           hre.ethers.provider,
         ),
-        cowToken: (await hre.ethers.getContractFactory(ContractName.RealToken))
-          .attach(addresses.cowToken)
-          .connect(hre.ethers.provider),
+        cowToken: (
+          await hre.ethers.getContractAt(
+            ContractName.RealToken,
+            addresses.cowToken,
+          )
+        ),
         virtualCowToken: (
           await hre.ethers.getContractFactory(ContractName.VirtualToken)
         )
@@ -196,6 +199,7 @@ describe("proposal", function () {
         const totalSupply = await contracts.cowToken.totalSupply();
         const expected: RealTokenDeployParams = {
           cowDao: contracts.cowDao.address,
+          initialTokenHolder: contracts.cowDao.address,
           totalSupply: BigNumber.from(10)
             .pow(3 * 3 + metadata.real.decimals)
             .toString(),

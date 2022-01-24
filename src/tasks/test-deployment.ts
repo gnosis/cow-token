@@ -35,7 +35,9 @@ const OUTPUT_FOLDER = "./output/test-deployment";
 
 const defaultArgs = {
   userCount: 1000,
-  totalSupply: (10n ** (3n * 3n)).toString(),
+  totalSupply: BigNumber.from(10)
+    .pow(3 * 3)
+    .toString(),
   usdcPerCow: "0.15",
   usdcPerGno: "400",
   usdcPerWeth: "4000",
@@ -284,6 +286,7 @@ async function generateClaimsAndDeploy(
   const teamController = teamControllerAddress ?? (await deploySafe()).address;
 
   const realTokenDeployParams: RealTokenDeployParams = {
+    initialTokenHolder: cowDao,
     totalSupply,
     cowDao,
   };

@@ -1,5 +1,5 @@
 import type { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
-import { BigNumber, Contract } from "ethers";
+import { Contract } from "ethers";
 import { task } from "hardhat/config";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -12,7 +12,6 @@ import {
 
 interface Args {
   virtualTokenAddress: string;
-  totalSupply?: string;
 }
 
 const setupVerifyContractCodeTask: () => void = () => {
@@ -24,16 +23,12 @@ const setupVerifyContractCodeTask: () => void = () => {
       "virtualTokenAddress",
       "The address of the virtual vCOW token.",
     )
-    .addOptionalParam(
-      "totalSupply",
-      "The total supply of the real token. If omitted, the current total supply will be used. This parameter needs to be set if the inflation function has already been called.",
-    )
     .setAction(verifyContractCode);
 };
 export { setupVerifyContractCodeTask };
 
 async function verifyContractCode(
-  { virtualTokenAddress, totalSupply }: Args,
+  { virtualTokenAddress }: Args,
   hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
 ) {
   if (hre.network.name === "xdai") {
@@ -72,40 +67,17 @@ async function verifyContractCode(
     .connect(hre.ethers.provider);
 
   console.log(`Verifying real token contract at address ${realToken.address}`);
-  try {
-    await verifyContract(ContractName.RealToken, realToken, hre, {
-      totalSupply:
-        totalSupply === undefined ? undefined : BigNumber.from(totalSupply),
-    });
-  } catch (error) {
-    console.error(error);
-    throw new Error(
-      `Failed to verify real contract.${
-        totalSupply
-          ? ""
-          : " Try to specify the initial total supply with --totalSupply"
-      }`,
-    );
-  }
-}
-
-interface InputDeployParams {
-  totalSupply?: BigNumber | undefined;
+  await verifyContract(ContractName.RealToken, realToken, hre);
 }
 
 async function verifyContract(
   name: ContractName,
   contract: Contract,
   hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
-  { totalSupply }: InputDeployParams = {},
 ) {
-  const deployArgs =
-    name === ContractName.RealToken
-      ? {
-          ...(await getDeployArgsFromRealToken(contract)),
-          totalSupply: totalSupply ?? (await contract.totalSupply()),
-        }
-      : await getDeployArgsFromVirtualToken(contract);
+  const deployArgs = await (name === ContractName.RealToken
+    ? getDeployArgsFromRealToken
+    : getDeployArgsFromVirtualToken)(contract);
 
   // Note: no need to specify which contract to verify as the plugin detects
   // the right contract automatically.
