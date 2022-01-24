@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
-// created from here: https://github.com/omni/omnibridge/blob/b658c7c217e25c13e61ab9fb1a97010a5656b11e/contracts/upgradeable_contracts/components/bridged/BridgedTokensRegistry.sol
+// Interface created from: https://github.com/omni/omnibridge/blob/b658c7c217e25c13e61ab9fb1a97010a5656b11e/contracts/upgradeable_contracts/components/bridged/BridgedTokensRegistry.sol
 pragma solidity ^0.8.10;
 
 interface MultiTokenMediatorInterface {
