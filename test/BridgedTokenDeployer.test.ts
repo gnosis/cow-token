@@ -64,7 +64,10 @@ describe("BridgedTokenDeployer", () => {
         bridgedCowTokenAddress,
       );
       deploymentHelper = await BridgedTokenDeployer.deploy(
-        ...constructorInput(ContractName.BridgedTokenDeployer, deploymentParams),
+        ...constructorInput(
+          ContractName.BridgedTokenDeployer,
+          deploymentParams,
+        ),
       );
     });
 
@@ -115,7 +118,10 @@ describe("BridgedTokenDeployer", () => {
         constants.AddressZero,
       );
       deploymentHelper = await BridgedTokenDeployer.deploy(
-        ...constructorInput(ContractName.BridgedTokenDeployer, deploymentParams),
+        ...constructorInput(
+          ContractName.BridgedTokenDeployer,
+          deploymentParams,
+        ),
       );
       await expect(deploymentHelper.deploy()).to.be.revertedWith(
         "cowToken not yet bridged",
@@ -123,13 +129,16 @@ describe("BridgedTokenDeployer", () => {
     });
 
     it("reverts if the call to the bridge contract reverts", async () => {
-      await multiTokenMediatorHome.mock.bridgedTokenAddress.revertsWithReason("reverted");
-      deploymentHelper = await BridgedTokenDeployer.deploy(
-        ...constructorInput(ContractName.BridgedTokenDeployer, deploymentParams),
-      );
-      await expect(deploymentHelper.deploy()).to.be.revertedWith(
+      await multiTokenMediatorHome.mock.bridgedTokenAddress.revertsWithReason(
         "reverted",
       );
+      deploymentHelper = await BridgedTokenDeployer.deploy(
+        ...constructorInput(
+          ContractName.BridgedTokenDeployer,
+          deploymentParams,
+        ),
+      );
+      await expect(deploymentHelper.deploy()).to.be.revertedWith("reverted");
     });
 
     it("deploys a new contract if the bridge contract exists", async () => {
@@ -137,7 +146,10 @@ describe("BridgedTokenDeployer", () => {
         bridgedCowTokenAddress,
       );
       deploymentHelper = await BridgedTokenDeployer.deploy(
-        ...constructorInput(ContractName.BridgedTokenDeployer, deploymentParams),
+        ...constructorInput(
+          ContractName.BridgedTokenDeployer,
+          deploymentParams,
+        ),
       );
       await expect(deploymentHelper.deploy()).to.be.not.reverted;
     });
@@ -149,7 +161,10 @@ describe("BridgedTokenDeployer", () => {
         bridgedCowTokenAddress,
       );
       deploymentHelper = await BridgedTokenDeployer.deploy(
-        ...constructorInput(ContractName.BridgedTokenDeployer, deploymentParams),
+        ...constructorInput(
+          ContractName.BridgedTokenDeployer,
+          deploymentParams,
+        ),
       );
       const vCowAddress = await deploymentHelper.callStatic.deploy();
       await deploymentHelper.deploy();
@@ -202,7 +217,7 @@ describe("BridgedTokenDeployer", () => {
 function stringify<
   Key extends string,
   Value extends { toString: () => string },
-  >(object: Record<Key, Value>) {
+>(object: Record<Key, Value>) {
   return Object.fromEntries(
     Object.entries(object).map(([key, entry]) => [
       key,
