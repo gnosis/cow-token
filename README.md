@@ -66,7 +66,26 @@ yarn bench:code-size
 
 ### Deploying Contracts
 
-The contracts are expected to be deployed by the Gnosis DAO using the Zodiac module.
+The contracts are deployed by the Gnosis DAO using the Zodiac module.
+Each step in the proposal can be generated with a script.
+
+Here is an example of how to get a complete list of all claims and deployment instructions:
+```
+export INFURA_KEY='insert your Infura key here'
+npx hardhat deployment --network mainnet --claims /path/to/claims.csv --settings /path/to/settings.json
+```
+
+For information on the format of the two input files, you can check out:
+1. [the script generating an example CSV with pseudorandom claims](#example-csv-file-with-claims)
+2. [the example settings.json](example/settings.json)
+
+This script is deterministic and can be used to verify the transactions proposed to the Gnosis DAO.
+
+The output files are in the `output/deployment` folder, which include:
+1. `steps.json`, a list of transactions to be executed from the Gnosis DAO in the proposal.
+2. `addresses.json`, a list of (deterministically generated) contract addresses that will result from executing the deployment onchain.
+3. `claims.json`, a list of all the claims of all user. It contains all information needed by a user to perform a claim onchain. 
+4. `chunks` and `mapping.json`, which contain a reorganized version of the same claims that are available in `claims.json`. This format is easier to handle by a web frontend. The format is very similar to the one used in the Uniswap airdrop.
 
 #### Test deployment
 

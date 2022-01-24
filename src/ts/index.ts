@@ -3,4 +3,5 @@ export * from "./csv";
 export * from "./deploy";
 export * from "./permit";
 export * from "./proposal";
+export * from "./split";
 export * from "./token";

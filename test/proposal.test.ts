@@ -4,6 +4,8 @@ import { expect } from "chai";
 import { BigNumber } from "ethers";
 import hre, { waffle } from "hardhat";
 
+import sampleSettings from "../example/settings.json";
+import { Settings } from "../src/tasks/deployment";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
   ContractName,
@@ -27,6 +29,10 @@ import { setupDeployer as setupDeterministicDeployer } from "./deterministic-dep
 import { GnosisSafeManager } from "./safe";
 
 const [deployer, gnosisDaoOwner, executor] = waffle.provider.getWallets();
+
+// Test at compile time that the example file has the expected format.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _typeCheck: Settings = sampleSettings;
 
 describe("proposal", function () {
   let currentSnapshot: unknown;
