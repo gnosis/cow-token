@@ -69,6 +69,7 @@ describe("DeploymentHelper", () => {
     it("has expected merkle root", async () => {
       expect(await deploymentHelper.merkleRoot()).to.equal(merkleRoot);
     });
+
     it("has expected multiTokenMediator", async () => {
       expect(await deploymentHelper.multiTokenMediator()).to.equal(
         multiTokenMediatorHome.address,
@@ -118,6 +119,7 @@ describe("DeploymentHelper", () => {
         "cowToken not yet bridged",
       );
     });
+
     it("deploys a new contracts if the bridge contract does exists", async () => {
       await multiTokenMediatorHome.mock.bridgedTokenAddress.returns(
         bridgedCowTokenAddress,
