@@ -190,6 +190,7 @@ describe("proposal", function () {
         const totalSupply = await contracts.cowToken.totalSupply();
         const expected: RealTokenDeployParams = {
           cowDao: contracts.cowDao.address,
+          initialTokenHolder: contracts.cowDao.address,
           totalSupply: BigNumber.from(10)
             .pow(3 * 3 + metadata.real.decimals)
             .toString(),

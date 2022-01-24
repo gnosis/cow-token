@@ -86,6 +86,7 @@ export async function generateProposal(
 
   const realTokenDeployParams: RealTokenDeployParams = {
     cowDao,
+    initialTokenHolder: cowDao,
     totalSupply: BigNumber.from(10).pow(3 * 3 + metadata.real.decimals),
   };
   const { address: cowToken, transaction: cowTokenCreationTransaction } =
