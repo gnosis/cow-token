@@ -20,7 +20,12 @@ import {
 import { contractsCreatedWithCreateCall } from "../ts/lib/safe";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { defaultTokens } from "./ts/constants";
+import {
+  defaultTokens,
+  defaultDeploymentArgs,
+  omniBridgeDefaults,
+  OUTPUT_FOLDER,
+} from "./ts/constants";
 import {
   SupportedChainId,
   isChainIdSupported,
@@ -31,15 +36,15 @@ import {
   gnosisSafeAt,
 } from "./ts/safe";
 
-const OUTPUT_FOLDER = "./output/test-deployment";
+export async function getCowTokenContract(
+  address: string,
+  hre: HardhatRuntimeEnvironment,
+): Promise<Contract> {
+  const CowToken = await hre.ethers.getContractFactory("CowProtocolContract");
+  const contract = await CowToken.attach(address);
+  return contract;
+}
 
-const defaultArgs = {
-  userCount: 1000,
-  totalSupply: (10n ** (3n * 4n)).toString(),
-  usdcPerCow: "0.15",
-  usdcPerGno: "400",
-  usdcPerWeth: "4000",
-} as const;
 interface DeployTaskArgs {
   claimCsv: string;
   totalSupply?: string;
@@ -54,6 +59,7 @@ interface DeployTaskArgs {
   communityFundsTarget?: string;
   investorFundsTarget?: string;
   teamController?: string;
+  deploymentHelperGnosisChain?: string;
   cowToken?: string;
 }
 interface CleanArgs {
@@ -71,7 +77,8 @@ interface CleanArgs {
   communityFundsTargetAddress: string | undefined;
   investorFundsTargetAddress: string | undefined;
   teamControllerAddress: string | undefined;
-  cowToken: string | undefined;
+  deploymentHelperGnosisChainAddress: string | undefined;
+  cowTokenAddress: string | undefined;
 }
 
 interface Token {
@@ -139,22 +146,22 @@ async function parseArgs(
     chainId,
     claimCsv: args.claimCsv,
     totalSupply: utils.parseUnits(
-      args.totalSupply ?? defaultArgs.totalSupply,
+      args.totalSupply ?? defaultDeploymentArgs.totalSupply,
       metadata.real.decimals,
     ),
     usdc,
     usdcPerCow: utils.parseUnits(
-      args.usdcPerCow ?? defaultArgs.usdcPerCow,
+      args.usdcPerCow ?? defaultDeploymentArgs.usdcPerCow,
       usdc.decimals,
     ),
     gno,
     usdcPerGno: utils.parseUnits(
-      args.usdcPerGno ?? defaultArgs.usdcPerGno,
+      args.usdcPerGno ?? defaultDeploymentArgs.usdcPerGno,
       usdc.decimals,
     ),
     weth,
     usdcPerWeth: utils.parseUnits(
-      args.usdcPerWeth ?? defaultArgs.usdcPerWeth,
+      args.usdcPerWeth ?? defaultDeploymentArgs.usdcPerWeth,
       usdc.decimals,
     ),
     gnosisDaoAddress: checksummedAddress(args.gnosisDao),
@@ -162,7 +169,10 @@ async function parseArgs(
     communityFundsTargetAddress: checksummedAddress(args.communityFundsTarget),
     investorFundsTargetAddress: checksummedAddress(args.investorFundsTarget),
     teamControllerAddress: checksummedAddress(args.teamController),
-    cowToken: checksummedAddress(args.cowToken),
+    deploymentHelperGnosisChainAddress: checksummedAddress(
+      args.deploymentHelperGnosisChain,
+    ),
+    cowTokenAddress: checksummedAddress(args.cowToken),
   };
 }
 
@@ -178,7 +188,7 @@ const setupTestDeploymentTask: () => void = () => {
     .addOptionalParam(
       "totalSupply",
       "The total supply of real token minted on deployment.",
-      defaultArgs.totalSupply,
+      defaultDeploymentArgs.totalSupply,
       types.string,
     )
     .addOptionalParam("usdcToken", "Address of token USDC.")
@@ -187,19 +197,19 @@ const setupTestDeploymentTask: () => void = () => {
     .addOptionalParam(
       "usdcPerCow",
       "How many USDC a COW is worth.",
-      defaultArgs.usdcPerCow,
+      defaultDeploymentArgs.usdcPerCow,
       types.string,
     )
     .addOptionalParam(
       "usdcPerGno",
       "How many USDC a GNO is worth.",
-      defaultArgs.usdcPerGno,
+      defaultDeploymentArgs.usdcPerGno,
       types.string,
     )
     .addOptionalParam(
       "usdcPerWeth",
       "How many USDC a WETH is worth.",
-      defaultArgs.usdcPerWeth,
+      defaultDeploymentArgs.usdcPerWeth,
       types.string,
     )
     .addOptionalParam(
@@ -221,6 +231,10 @@ const setupTestDeploymentTask: () => void = () => {
     .addOptionalParam(
       "teamController",
       "The address that controls team claims. If left out, a dedicated Gnosis Safe owned by the deployer will be deployed for this purpose.",
+    )
+    .addOptionalParam(
+      "deploymentHelperGnosisChain",
+      "The address of the contract that contains the code for the gnosis chain deployment",
     )
     .addOptionalParam(
       "cowToken",
@@ -247,7 +261,8 @@ async function generateClaimsAndDeploy(
     communityFundsTargetAddress,
     investorFundsTargetAddress,
     teamControllerAddress,
-    cowToken,
+    deploymentHelperGnosisChainAddress,
+    cowTokenAddress,
   }: CleanArgs,
   hre: HardhatRuntimeEnvironment,
 ) {
@@ -276,7 +291,11 @@ async function generateClaimsAndDeploy(
   // The remaining addresses don't need to be Gnosis Safes. We deploy Gnosis
   // Safes by default to make the deployment more similar to the expected final
   // deployment.
-  const cowDao = cowDaoAddress ?? (await deploySafe()).address;
+  const cowDao =
+    cowDaoAddress ??
+    (await deployWithOwners([gnosisDao.address], 1, deployer, hre)).connect(
+      ethers.provider,
+    ).address;
   const communityFundsTarget =
     communityFundsTargetAddress ?? (await deploySafe()).address;
   const investorFundsTarget =
@@ -284,6 +303,7 @@ async function generateClaimsAndDeploy(
   const teamController = teamControllerAddress ?? (await deploySafe()).address;
 
   const realTokenDeployParams: RealTokenDeployParams = {
+    initialTokenHolder: gnosisDao.address,
     totalSupply,
     cowDao,
   };
@@ -311,7 +331,7 @@ async function generateClaimsAndDeploy(
   console.log("Generating deploy transactions...");
   let realTokenDeployment: MaybeDeterministicDeployment;
   let virtualTokenDeployment: Deployment;
-  if (cowToken === undefined) {
+  if (cowTokenAddress === undefined) {
     const deployment = await prepareRealAndVirtualDeploymentFromSafe(
       realTokenDeployParams,
       virtualTokenDeployParams,
@@ -333,11 +353,11 @@ async function generateClaimsAndDeploy(
   } else {
     {
       const deployment = await prepareVirtualDeploymentFromSafe(
-        { ...virtualTokenDeployParams, realToken: cowToken },
+        { ...virtualTokenDeployParams, realToken: cowTokenAddress },
         ethers,
         CreateCallDeployment.networkAddresses[chainId],
       );
-      realTokenDeployment = { address: cowToken, transaction: null };
+      realTokenDeployment = { address: cowTokenAddress, transaction: null };
       virtualTokenDeployment = {
         transaction: deployment.virtualTokenDeployTransaction,
       };
@@ -406,6 +426,96 @@ async function generateClaimsAndDeploy(
       virtualTokenAddress,
     }),
   );
+
+  expect(await ethers.provider.getCode(virtualTokenAddress)).not.to.equal("0x");
+  if (deploymentHelperGnosisChainAddress !== undefined) {
+    if (chainId !== "1" && chainId !== "56") {
+      throw new Error(
+        `ArbitraryMessageBridge to gnosis chain not available for your selected network with id ${chainId}`,
+      );
+    }
+    const cowToken = await ethers.getContractAt(
+      "CowProtocolToken",
+      realTokenDeployment.address,
+    );
+    const amountToRelay = ethers.utils.parseEther("1");
+    const multiTokenMediator = await hre.ethers.getContractAt(
+      "OmniBridgeInterface",
+      omniBridgeDefaults[chainId].multiTokenMediatorForeign,
+    );
+
+    console.log("Approving bridging contract");
+    const approvalTx = {
+      to: cowToken.address,
+      value: 0,
+      data: cowToken.interface.encodeFunctionData("approve", [
+        multiTokenMediator.address,
+        amountToRelay,
+      ]),
+      operation: 0,
+    };
+    await execSafeTransaction(gnosisDao.connect(deployer), approvalTx, [
+      deployer,
+    ]);
+
+    console.log("Send tokens to gnosis-chain");
+    const relayTx = {
+      to: multiTokenMediator.address,
+      value: 0,
+      data: multiTokenMediator.interface.encodeFunctionData("relayTokens", [
+        cowToken.address,
+        utils.getAddress("0x" + "00".repeat(19) + "01"),
+        amountToRelay,
+      ]),
+      operation: 0,
+    };
+    await execSafeTransaction(gnosisDao.connect(deployer), relayTx, [deployer]);
+
+    console.log("Trigger gnosis chain deployment");
+    const ambForeign = await hre.ethers.getContractAt(
+      "AMBInterface",
+      omniBridgeDefaults[chainId].ambForeign,
+    );
+
+    const deploymentHelperGnosisChain = await hre.ethers.getContractAt(
+      "DeploymentHelper",
+      deploymentHelperGnosisChainAddress,
+    );
+
+    const deploymentViaBridgeTx = {
+      to: ambForeign.address,
+      value: 0,
+      data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
+        deploymentHelperGnosisChainAddress,
+        deploymentHelperGnosisChain.interface.encodeFunctionData("deploy", [
+          cowToken.address,
+        ]),
+        3000000, // Max value is 5M, 3M should be sufficient for vCowToken deployment.
+      ]),
+      operation: 0,
+    };
+    await execSafeTransaction(
+      gnosisDao.connect(deployer),
+      deploymentViaBridgeTx,
+      [deployer],
+    );
+
+    console.log("Transfer most cowToken into cowDao");
+    const transferToken = {
+      to: cowToken.address,
+      value: 0,
+      data: cowToken.interface.encodeFunctionData("transfer", [
+        cowDao,
+        totalSupply.sub(amountToRelay),
+      ]),
+      operation: 0,
+    };
+    await execSafeTransaction(gnosisDao.connect(deployer), transferToken, [
+      deployer,
+    ]);
+  } else {
+    console.log("Skipping the relay to Gnosis chain");
+  }
 }
 
 interface DeploymentInfo {

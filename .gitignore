@@ -1,7 +1,17 @@
+<<<<<<< HEAD
+build/
+coverage/
+deployments/*/solcInputs
+deployments/localhost/
+env/
+output/
+lib/
+=======
 /build/
 /coverage/
 /output/
 /lib/
+>>>>>>> main
 node_modules/
 coverage.json
 yarn-error.log

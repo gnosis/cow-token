@@ -51,6 +51,7 @@ async function standardDeployment(
   // Deploying of the CowToken
   const CowSwapToken = await ethers.getContractFactory(ContractName.RealToken);
   const realTokenDeploymentParams: RealTokenDeployParams = {
+    initialTokenHolder: deploymentParameters.cowDao.address,
     cowDao: deploymentParameters.cowDao.address,
     totalSupply: deploymentParameters.initialCowSupply,
   };

@@ -43,10 +43,24 @@ export interface DeterministicDeploymentInfo {
 }
 
 export interface RealTokenDeployParams {
+  initialTokenHolder: string;
   cowDao: string;
   totalSupply: BigNumberish;
 }
 
+export interface DeploymentHelperDeployParams {
+  multiTokenMediatorHome: string;
+  merkleRoot: string;
+  communityFundsTarget: string;
+  investorFundsTarget: string;
+  usdcToken: string;
+  usdcPrice: BigNumberish;
+  gnoToken: string;
+  gnoPrice: BigNumberish;
+  wrappedNativeToken: string;
+  nativeTokenPrice: BigNumberish;
+  teamController: string;
+}
 export interface VirtualTokenDeployParams {
   merkleRoot: string;
   realToken: string;
@@ -64,14 +78,29 @@ export interface VirtualTokenDeployParams {
 export enum ContractName {
   RealToken = "CowProtocolToken",
   VirtualToken = "CowProtocolVirtualToken",
+  DeploymentHelper = "DeploymentHelper",
 }
 export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
+  [ContractName.DeploymentHelper]: DeploymentHelperDeployParams;
 }
 export type ContructorInput = {
-  [ContractName.RealToken]: [string, BigNumberish];
+  [ContractName.RealToken]: [string, string, BigNumberish];
   [ContractName.VirtualToken]: [
+    string,
+    string,
+    string,
+    string,
+    string,
+    BigNumber,
+    string,
+    BigNumber,
+    string,
+    BigNumber,
+    string,
+  ];
+  [ContractName.DeploymentHelper]: [
     string,
     string,
     string,
@@ -95,9 +124,10 @@ export function constructorInput<T extends ContractName>(
   // by TS.
   switch (contract) {
     case ContractName.RealToken: {
-      const { cowDao, totalSupply } =
+      const { initialTokenHolder, cowDao, totalSupply } =
         params as DeployParams[ContractName.RealToken];
       const result: ContructorInput[ContractName.RealToken] = [
+        initialTokenHolder,
         cowDao,
         totalSupply,
       ];
@@ -120,6 +150,35 @@ export function constructorInput<T extends ContractName>(
       const result: ContructorInput[ContractName.VirtualToken] = [
         merkleRoot,
         realToken,
+        communityFundsTarget,
+        investorFundsTarget,
+        usdcToken,
+        BigNumber.from(usdcPrice),
+        gnoToken,
+        BigNumber.from(gnoPrice),
+        wrappedNativeToken,
+        BigNumber.from(nativeTokenPrice),
+        teamController,
+      ];
+      return result as ContructorInput[T];
+    }
+    case ContractName.DeploymentHelper: {
+      const {
+        multiTokenMediatorHome,
+        merkleRoot,
+        communityFundsTarget,
+        investorFundsTarget,
+        usdcToken,
+        usdcPrice,
+        gnoToken,
+        gnoPrice,
+        wrappedNativeToken,
+        nativeTokenPrice,
+        teamController,
+      } = params as DeployParams[ContractName.DeploymentHelper];
+      const result: ContructorInput[ContractName.DeploymentHelper] = [
+        multiTokenMediatorHome,
+        merkleRoot,
         communityFundsTarget,
         investorFundsTarget,
         usdcToken,
@@ -178,7 +237,7 @@ export function deterministicDeploymentAddress({
   );
 }
 
-function deterministicDeploymentToSafeTransaction(
+export function deterministicDeploymentToSafeTransaction(
   deploymentInfo: DeterministicDeploymentInfo,
 ): MetaTransaction {
   return {
@@ -293,7 +352,17 @@ export async function prepareVirtualDeploymentFromSafe(
 export async function getDeployArgsFromRealToken(
   realToken: Contract,
 ): Promise<Omit<RealTokenDeployParams, "totalSupply">> {
+  const filterMintingTransfers = realToken.filters.Transfer(
+    "0x0000000000000000000000000000000000000000",
+    null,
+    null,
+  );
+  const logs = await realToken.queryFilter(filterMintingTransfers, 0, "latest");
+  const events = logs.map((log) => realToken.interface.parseLog(log));
+  // initialTokenHolder is the receiver of the first mint transfer
+  const initialTokenHolder = events[0].args.to;
   return {
+    initialTokenHolder,
     cowDao: await realToken.cowDao(),
   };
 }
