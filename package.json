@@ -61,7 +61,7 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.3.6",
     "solhint-plugin-prettier": "^0.0.5",
-    "solidity-coverage": "^0.7.17",
+    "solidity-coverage": "^0.7.18",
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4",
     "yargs": "^17.3.1"
