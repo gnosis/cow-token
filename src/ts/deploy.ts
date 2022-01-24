@@ -75,12 +75,12 @@ export interface VirtualTokenDeployParams {
 export enum ContractName {
   RealToken = "CowProtocolToken",
   VirtualToken = "CowProtocolVirtualToken",
-  DeploymentHelper = "DeploymentHelper",
+  BridgedTokenDeployer = "BridgedTokenDeployer",
 }
 export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
-  [ContractName.DeploymentHelper]: DeploymentHelperDeployParams;
+  [ContractName.BridgedTokenDeployer]: DeploymentHelperDeployParams;
 }
 export type ContructorInput = {
   [ContractName.RealToken]: [string, string, BigNumberish];
@@ -97,7 +97,7 @@ export type ContructorInput = {
     BigNumber,
     string,
   ];
-  [ContractName.DeploymentHelper]: [
+  [ContractName.BridgedTokenDeployer]: [
     string,
     string,
     string,
@@ -156,7 +156,7 @@ export function constructorInput<T extends ContractName>(
       ];
       return result as ContructorInput[T];
     }
-    case ContractName.DeploymentHelper: {
+    case ContractName.BridgedTokenDeployer: {
       const {
         foreignToken,
         multiTokenMediatorHome,
@@ -166,8 +166,8 @@ export function constructorInput<T extends ContractName>(
         gnoPrice,
         wrappedNativeToken,
         nativeTokenPrice,
-      } = params as DeployParams[ContractName.DeploymentHelper];
-      const result: ContructorInput[ContractName.DeploymentHelper] = [
+      } = params as DeployParams[ContractName.BridgedTokenDeployer];
+      const result: ContructorInput[ContractName.BridgedTokenDeployer] = [
         foreignToken,
         multiTokenMediatorHome,
         merkleRoot,
