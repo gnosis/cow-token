@@ -1,22 +1,24 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { expect, use } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { BigNumber, Contract, utils, Wallet } from "ethers";
+import { BigNumber, constants, Contract, utils, Wallet } from "ethers";
 import hre, { ethers, waffle } from "hardhat";
 
-import { gnosisSafeAt } from "../src/tasks/ts/safe";
+import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
   createdProxies,
   prepareDeterministicSafeWithOwners,
   prepareSafeWithOwners,
   getFallbackHandler,
+  SafeOperation,
 } from "../src/ts/lib/safe";
 
 import { GnosisSafeManager } from "./safe";
 
 use(chaiAsPromised);
 
-const [deployer, creator, ...owners] = waffle.provider.getWallets();
+const [deployer, creator, ethSource, executor, ...owners] =
+  waffle.provider.getWallets();
 
 async function safeAddress(
   response: TransactionResponse,
@@ -153,6 +155,43 @@ describe("Gnosis Safe creation", function () {
       await expect(
         creator.sendTransaction({ to, data, gasLimit }),
       ).to.eventually.be.rejectedWith("Create2 call failed");
+    });
+
+    it("funds sent before the safe address has code are avalable after deploying the safe", async function () {
+      const threshold = 2;
+      const { to, data, address } = await prepareDeterministicSafeWithOwners(
+        owners.map((w) => w.address.toLowerCase()),
+        threshold,
+        gnosisSafeManager.getDeploymentAddresses(),
+        utils.id("42"),
+        ethers,
+      );
+
+      expect(await ethers.provider.getCode(address)).to.equal("0x");
+      const value = utils.parseEther("1337");
+      await ethSource.sendTransaction({
+        to: address,
+        value,
+      });
+      expect(await ethers.provider.getBalance(address)).to.equal(value);
+
+      await creator.sendTransaction({ to, data });
+      const safe = gnosisSafeAt(address).connect(executor);
+      const receiver = "0x" + "42".repeat(20);
+      expect(await ethers.provider.getBalance(receiver)).to.equal(
+        constants.Zero,
+      );
+      await execSafeTransaction(
+        safe,
+        {
+          to: receiver,
+          data: "0x",
+          operation: SafeOperation.Call,
+          value,
+        },
+        owners,
+      );
+      expect(await ethers.provider.getBalance(receiver)).to.equal(value);
     });
   });
 
