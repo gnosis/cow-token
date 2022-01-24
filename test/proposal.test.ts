@@ -121,11 +121,9 @@ describe("proposal", function () {
         teamController: gnosisSafeAt(addresses.teamController).connect(
           hre.ethers.provider,
         ),
-        cowToken: (
-          await hre.ethers.getContractAt(
-            ContractName.RealToken,
-            addresses.cowToken,
-          )
+        cowToken: await hre.ethers.getContractAt(
+          ContractName.RealToken,
+          addresses.cowToken,
         ),
         virtualCowToken: (
           await hre.ethers.getContractFactory(ContractName.VirtualToken)
