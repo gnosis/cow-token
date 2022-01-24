@@ -37,6 +37,7 @@ export interface DeploymentProposalSettings {
   teamController: SafeCreationSettings;
   cowToken: RealTokenCreationSettings;
   virtualCowToken: VirtualTokenCreationSettings;
+  multiTokenMediatorGnosisChain: string;
 }
 
 export type JsonMetaTransaction = Record<

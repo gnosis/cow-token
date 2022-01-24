@@ -4,10 +4,12 @@ import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 
 import dotenv from "dotenv";
+import { utils } from "ethers";
 import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { setupTasks } from "./src/tasks";
+import { setupDeploymentHelperTask } from "./src/tasks/deployment-of-deployment-helper";
 import { setupTestConfigs } from "./test/test-management";
 
 const argv = yargs
@@ -29,6 +31,7 @@ const {
   MOCHA_CONF,
   NODE_URL,
   ETHERSCAN_API_KEY,
+  GAS_PRICE_GWEI,
 } = process.env;
 
 const DEFAULT_MNEMONIC =
@@ -61,6 +64,7 @@ const { mocha, initialBaseFeePerGas, optimizerDetails } =
   setupTestConfigs(MOCHA_CONF);
 
 setupTasks();
+setupDeploymentHelperTask();
 
 export default {
   mocha,
@@ -100,9 +104,22 @@ export default {
       chainId: 4,
     },
     xdai: {
-      url: "https://xdai.poanetwork.dev",
       ...sharedNetworkConfig,
-      chainId: 100,
+      url: "https://rpc.gnosischain.com",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
+    },
+    binancesmartchain: {
+      ...sharedNetworkConfig,
+      url: "https://bsc-dataseed.binance.org/",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
     },
   },
   namedAccounts: {

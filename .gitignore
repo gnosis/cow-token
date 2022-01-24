@@ -1,7 +1,8 @@
-/build/
-/coverage/
-/output/
-/lib/
+build/
+coverage/
+env/
+output/
+lib/
 node_modules/
 coverage.json
 yarn-error.log
