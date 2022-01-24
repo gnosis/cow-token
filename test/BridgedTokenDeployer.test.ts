@@ -140,7 +140,9 @@ describe("BridgedTokenDeployer", () => {
           deploymentParams,
         ),
       );
-      await expect(bridgedTokenDeployer.deploy()).to.be.revertedWith("reverted");
+      await expect(bridgedTokenDeployer.deploy()).to.be.revertedWith(
+        "reverted",
+      );
     });
 
     it("deploys a new contract if the bridge contract exists", async () => {

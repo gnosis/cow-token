@@ -14,18 +14,16 @@ import {
   metadata,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
-} from "../src/ts";
-import {
-  contractsCreatedWithCreateCall,
-  getFallbackHandler,
-} from "../src/ts/lib/safe";
-import {
   DeploymentProposalSettings,
   FinalAddresses,
   generateProposal,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
-} from "../src/ts/proposal";
+} from "../src/ts";
+import {
+  contractsCreatedWithCreateCall,
+  getFallbackHandler,
+} from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
