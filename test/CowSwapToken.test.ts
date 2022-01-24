@@ -21,6 +21,7 @@ describe("CowProtocolToken", () => {
       ContractName.RealToken,
     );
     const constructorParams: RealTokenDeployParams = {
+      initialTokenHolder: "0x" + "42".repeat(20),
       cowDao: cowDao.address,
       totalSupply,
     };

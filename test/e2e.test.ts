@@ -27,6 +27,7 @@ interface DeploymentData {
   deploymentTimestamp: number;
 }
 interface DeploymentParameters {
+  initialTokenHolder: Wallet;
   deployer: Wallet;
   cowDao: Wallet;
   investorFundsTarget: Wallet;
@@ -51,6 +52,7 @@ async function standardDeployment(
   // Deploying of the CowToken
   const CowSwapToken = await ethers.getContractFactory(ContractName.RealToken);
   const realTokenDeploymentParams: RealTokenDeployParams = {
+    initialTokenHolder: deploymentParameters.initialTokenHolder.address,
     cowDao: deploymentParameters.cowDao.address,
     totalSupply: deploymentParameters.initialCowSupply,
   };
@@ -99,6 +101,7 @@ describe("e2e-tests", () => {
     deployer,
     user,
     userNotEligible,
+    initialTokenHolder,
     cowDao,
     communityFundsTarget,
     investorFundsTarget,
@@ -134,6 +137,7 @@ describe("e2e-tests", () => {
     claims = provenClaims.claims;
 
     const deploymentParameters: DeploymentParameters = {
+      initialTokenHolder,
       deployer,
       cowDao,
       communityFundsTarget,
@@ -178,7 +182,7 @@ describe("e2e-tests", () => {
 
     // Send cowTokens to the vCowToken
     await deploymentData.cowToken
-      .connect(cowDao)
+      .connect(initialTokenHolder)
       .transfer(deploymentData.vCowToken.address, initialCowSupply);
 
     // Perform a swapAll
@@ -210,6 +214,7 @@ describe("e2e-tests", () => {
     claims = provenClaims.claims;
 
     const deploymentParameters: DeploymentParameters = {
+      initialTokenHolder,
       deployer,
       cowDao,
       communityFundsTarget,
@@ -260,7 +265,7 @@ describe("e2e-tests", () => {
 
     // Send cowTokens to the vCowToken
     await deploymentData.cowToken
-      .connect(cowDao)
+      .connect(initialTokenHolder)
       .transfer(deploymentData.vCowToken.address, claim.claimableAmount.div(2));
 
     // Perform a swapAll
@@ -304,6 +309,7 @@ describe("e2e-tests", () => {
     provenClaims = computeProofs([claim]);
     claims = provenClaims.claims;
     const deploymentParameters: DeploymentParameters = {
+      initialTokenHolder,
       deployer,
       cowDao,
       communityFundsTarget,
@@ -346,7 +352,7 @@ describe("e2e-tests", () => {
 
     // Send cowTokens to the vCowToken
     await deploymentData.cowToken
-      .connect(cowDao)
+      .connect(initialTokenHolder)
       .transfer(deploymentData.vCowToken.address, initialCowSupply);
 
     // Perform a swapAll
