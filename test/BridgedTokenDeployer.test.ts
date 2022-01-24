@@ -14,6 +14,8 @@ import {
   VirtualTokenDeployParams,
 } from "../src/ts";
 
+import { stringify } from "./utils/formatUtils";
+
 describe("BridgedTokenDeployer", () => {
   let deploymentHelper: Contract;
   let gnoToken: MockContract;
@@ -213,15 +215,3 @@ describe("BridgedTokenDeployer", () => {
     });
   });
 });
-
-function stringify<
-  Key extends string,
-  Value extends { toString: () => string },
->(object: Record<Key, Value>) {
-  return Object.fromEntries(
-    Object.entries(object).map(([key, entry]) => [
-      key,
-      (entry as Value).toString(),
-    ]),
-  );
-}

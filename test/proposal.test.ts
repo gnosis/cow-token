@@ -27,6 +27,7 @@ import {
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
+import { stringify } from "./utils/formatUtils";
 
 const [deployer, gnosisDaoOwner, executor] = waffle.provider.getWallets();
 
@@ -242,15 +243,3 @@ describe("proposal", function () {
     });
   });
 });
-
-function stringify<
-  Key extends string,
-  Value extends { toString: () => string },
->(object: Record<Key, Value>) {
-  return Object.fromEntries(
-    Object.entries(object).map(([key, entry]) => [
-      key,
-      (entry as Value).toString(),
-    ]),
-  );
-}
