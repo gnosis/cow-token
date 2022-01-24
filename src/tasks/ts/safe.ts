@@ -53,6 +53,7 @@ export function defaultSafeDeploymentAddresses(
     singleton: GnosisSafeDeployment.networkAddresses[chainId],
     fallbackHandler:
       CompatibilityFallbackHandlerDeployment.networkAddresses[chainId],
+    createCall: CreateCallDeployment.networkAddresses[chainId],
   };
 }
 
