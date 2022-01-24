@@ -24,7 +24,7 @@ fail_if_unset AWS_SECRET_ACCESS_KEY
 fail_if_unset AWS_REGION
 
 git_username="GitHub Actions"
-git_useremail="GitHub-Actions@GPv2-contracts"
+git_useremail="GitHub-Actions@CoW-Token"
 
 package_name="$(jq --raw-output .name ./package.json)"
 version="$(jq --raw-output .version ./package.json)"
