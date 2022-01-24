@@ -45,7 +45,7 @@ contract DeploymentHelper {
         teamController = _teamController;
     }
 
-    function deploy(address foreignToken) external {
+    function deploy(address foreignToken) external returns (address) {
         address bridgeToken = MultiTokenMediatorInterface(multiTokenMediator)
             .bridgedTokenAddress(foreignToken);
 
@@ -54,9 +54,7 @@ contract DeploymentHelper {
         // Hence, the cowDAO is activating the deployment process
         require(bridgeToken != address(0), "cowToken not yet bridged");
 
-        //todo: Gnosis Safe deployments
-
-        new CowProtocolVirtualToken(
+        CowProtocolVirtualToken vCowToken = new CowProtocolVirtualToken(
             merkleRoot,
             bridgeToken,
             communityFundsTarget,
@@ -69,5 +67,6 @@ contract DeploymentHelper {
             nativeTokenPrice,
             teamController
         );
+        return address(vCowToken);
     }
 }
