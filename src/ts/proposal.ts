@@ -18,11 +18,13 @@ import {
 import { metadata } from "./token";
 
 export interface SafeCreationSettings {
+  expectedAddress?: string;
   threshold: number;
   owners: string[];
   nonce?: string;
 }
 export interface RealTokenCreationSettings {
+  expectedAddress?: string;
   salt?: string;
 }
 export interface VirtualTokenCreationSettings {

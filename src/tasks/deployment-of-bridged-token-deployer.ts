@@ -13,6 +13,7 @@ import {
   ContractName,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
+import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
 import { defaultTokens, nativeTokenPriceGnosisChain } from "./ts/constants";
@@ -63,35 +64,47 @@ async function generateDeployment(
 
   const settings = {
     ...inputSettings,
-    virtualCowToken: {
-      gnoPrice: "0",
-      nativeTokenPrice: "0",
-      merkleRoot: constants.HashZero,
-      usdcToken: constants.AddressZero,
-      gnoToken: constants.AddressZero,
-      wrappedNativeToken: constants.AddressZero,
-    },
+    virtualCowToken: dummyVirtualTokenCreationSettings,
     multiTokenMediatorGnosisChain: constants.AddressZero,
   };
 
   // In the following function, we are generating the addresses, as they would
   // be generated within the mainnet deployment script - but with many zero
   // addresses and hashes, as displayed in the settings definition
-  // Hence, its very important generateProposal generates the same address
-  // for the cowDao and cowToken anyways.
-  // We have the unit test: invariance of cowDao and cowToken that checks that.
-  const { addresses } = await generateProposal(
+  // Hence, we rely on the fact that the addresses computed by generateProposal
+  // for the cowDao and cowToken do not depend on the virtual token deployment
+  // parameters.
+  // For double security, one can also provide the expected values in as expected
+  // setting variables
+  const {
+    addresses: { cowToken, cowDao },
+  } = await generateProposal(
     settings,
     defaultSafeDeploymentAddresses(chainId),
     hre.ethers,
   );
+  if (settings.cowToken.expectedAddress !== cowToken) {
+    if (settings.cowToken.expectedAddress !== undefined) {
+      throw new Error("Expected cowToken address must be defined");
+    } else {
+      console.warn("settings.cowToken.expectedAddress was not defined");
+    }
+  }
+
+  if (settings.cowDao.expectedAddress !== cowDao) {
+    if (settings.cowDao.expectedAddress !== undefined) {
+      throw new Error("Expected cowDao address must be defined");
+    } else {
+      console.warn("settings.cowToken.expectedAddress was not defined");
+    }
+  }
 
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
-    foreignToken: addresses.cowToken,
+    foreignToken: cowToken,
     multiTokenMediatorGnosisChain:
       settings.bridge.multiTokenMediatorGnosisChain,
     merkleRoot,
-    communityFundsTarget: addresses.cowDao,
+    communityFundsTarget: cowDao,
     gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
     nativeTokenPrice: nativeTokenPriceGnosisChain,
