@@ -1,17 +1,18 @@
 import type { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
-import { Contract } from "ethers";
 import { task } from "hardhat/config";
 import type { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
   constructorInput,
   ContractName,
+  DeployParams,
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
 } from "../ts";
 
 interface Args {
-  virtualTokenAddress: string;
+  virtualTokenAddress?: string;
+  forwarderAddress?: string;
 }
 
 const setupVerifyContractCodeTask: () => void = () => {
@@ -19,8 +20,12 @@ const setupVerifyContractCodeTask: () => void = () => {
     "verify-contract-code",
     "Verify the contract code on the network's block exporer.",
   )
-    .addPositionalParam(
+    .addOptionalParam(
       "virtualTokenAddress",
+      "The address of the virtual vCOW token.",
+    )
+    .addOptionalParam(
+      "forwarderAddress",
       "The address of the virtual vCOW token.",
     )
     .setAction(verifyContractCode);
@@ -28,19 +33,33 @@ const setupVerifyContractCodeTask: () => void = () => {
 export { setupVerifyContractCodeTask };
 
 async function verifyContractCode(
-  { virtualTokenAddress }: Args,
-  hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
+  { virtualTokenAddress, forwarderAddress }: Args,
+  hre: HardhatRuntimeEnvironment,
 ) {
   if (hre.network.name === "xdai") {
     throw new Error("Blockscout is currently not supported");
   }
 
+  if (virtualTokenAddress !== undefined) {
+    await verifyVirtualToken(virtualTokenAddress, hre);
+  }
+
+  if (forwarderAddress !== undefined) {
+    await verifyContract(ContractName.Forwarder, forwarderAddress, hre);
+  }
+}
+
+async function verifyVirtualToken(
+  virtualTokenAddress: string,
+  hre: HardhatRuntimeEnvironment,
+) {
+  // Check that the contract is indeed the virtual token and not another token
+  // (as for example the real token).
   const virtualToken = (
     await hre.ethers.getContractFactory(ContractName.VirtualToken)
   )
     .attach(virtualTokenAddress)
     .connect(hre.ethers.provider);
-
   try {
     const tokenSymbol = await virtualToken.symbol();
     if (tokenSymbol !== "vCOW") {
@@ -55,29 +74,42 @@ async function verifyContractCode(
     );
   }
 
-  console.log(
-    `Verifying virtual token contract at address ${virtualToken.address}`,
-  );
-  await verifyContract(ContractName.VirtualToken, virtualToken, hre);
+  await verifyContract(ContractName.VirtualToken, virtualToken.address, hre);
 
-  const realToken = (
-    await hre.ethers.getContractFactory(ContractName.RealToken)
-  )
-    .attach(await virtualToken.cowToken())
-    .connect(hre.ethers.provider);
-
-  console.log(`Verifying real token contract at address ${realToken.address}`);
-  await verifyContract(ContractName.RealToken, realToken, hre);
+  const realTokenAddress = await virtualToken.cowToken();
+  await verifyContract(ContractName.RealToken, realTokenAddress, hre);
 }
 
 async function verifyContract(
   name: ContractName,
-  contract: Contract,
+  address: string,
   hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
 ) {
-  const deployArgs = await (name === ContractName.RealToken
-    ? getDeployArgsFromRealToken
-    : getDeployArgsFromVirtualToken)(contract);
+  console.log(`Verifying contract ${name} at address ${address}`);
+  const contract = (await hre.ethers.getContractFactory(ContractName.RealToken))
+    .attach(address)
+    .connect(hre.ethers.provider);
+
+  let deployArgs: DeployParams[ContractName];
+  switch (name) {
+    case ContractName.RealToken: {
+      deployArgs = await getDeployArgsFromRealToken(contract);
+      break;
+    }
+    case ContractName.VirtualToken: {
+      deployArgs = await getDeployArgsFromVirtualToken(contract);
+      break;
+    }
+    case ContractName.Forwarder: {
+      deployArgs = {};
+      break;
+    }
+    default: {
+      throw new Error(
+        `Contract verification for ${name} is currently not implemented`,
+      );
+    }
+  }
 
   // Note: no need to specify which contract to verify as the plugin detects
   // the right contract automatically.
