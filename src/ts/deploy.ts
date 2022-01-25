@@ -48,6 +48,16 @@ export interface RealTokenDeployParams {
   totalSupply: BigNumberish;
 }
 
+export interface DeploymentHelperDeployParams {
+  foreignToken: string;
+  multiTokenMediatorGnosisChain: string;
+  merkleRoot: string;
+  communityFundsTarget: string;
+  gnoToken: string;
+  gnoPrice: BigNumberish;
+  wrappedNativeToken: string;
+  nativeTokenPrice: BigNumberish;
+}
 export interface VirtualTokenDeployParams {
   merkleRoot: string;
   realToken: string;
@@ -65,10 +75,12 @@ export interface VirtualTokenDeployParams {
 export enum ContractName {
   RealToken = "CowProtocolToken",
   VirtualToken = "CowProtocolVirtualToken",
+  BridgedTokenDeployer = "BridgedTokenDeployer",
 }
 export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
+  [ContractName.BridgedTokenDeployer]: DeploymentHelperDeployParams;
 }
 export type ContructorInput = {
   [ContractName.RealToken]: [string, string, BigNumberish];
@@ -84,6 +96,16 @@ export type ContructorInput = {
     string,
     BigNumber,
     string,
+  ];
+  [ContractName.BridgedTokenDeployer]: [
+    string,
+    string,
+    string,
+    string,
+    string,
+    BigNumber,
+    string,
+    BigNumber,
   ];
 };
 
@@ -131,6 +153,29 @@ export function constructorInput<T extends ContractName>(
         wrappedNativeToken,
         BigNumber.from(nativeTokenPrice),
         teamController,
+      ];
+      return result as ContructorInput[T];
+    }
+    case ContractName.BridgedTokenDeployer: {
+      const {
+        foreignToken,
+        multiTokenMediatorGnosisChain,
+        merkleRoot,
+        communityFundsTarget,
+        gnoToken,
+        gnoPrice,
+        wrappedNativeToken,
+        nativeTokenPrice,
+      } = params as DeployParams[ContractName.BridgedTokenDeployer];
+      const result: ContructorInput[ContractName.BridgedTokenDeployer] = [
+        foreignToken,
+        multiTokenMediatorGnosisChain,
+        merkleRoot,
+        communityFundsTarget,
+        gnoToken,
+        BigNumber.from(gnoPrice),
+        wrappedNativeToken,
+        BigNumber.from(nativeTokenPrice),
       ];
       return result as ContructorInput[T];
     }
