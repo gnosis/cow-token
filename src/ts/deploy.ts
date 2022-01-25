@@ -82,7 +82,7 @@ export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
   [ContractName.BridgedTokenDeployer]: DeploymentHelperDeployParams;
-  [ContractName.Forwarder]: {};
+  [ContractName.Forwarder]: Record<string, never>;
 }
 export type ContructorInput = {
   [ContractName.RealToken]: [string, string, BigNumberish];
