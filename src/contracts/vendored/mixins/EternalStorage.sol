@@ -3,7 +3,6 @@
 // <https://raw.githubusercontent.com/omni/omnibridge/b658c7c217e25c13e61ab9fb1a97010a5656b11e/contracts/upgradeability/EternalStorage.sol>
 pragma solidity ^0.8.10;
 
-
 /**
  * @title EternalStorage
  * @dev This contract holds all the necessary state variables to carry out the storage of any contract.
