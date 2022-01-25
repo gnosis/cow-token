@@ -19,5 +19,5 @@ export const defaultTokens = {
   },
 } as const;
 
-// The native price of Gnosis Chain is the price of XDAI = 10**18
+// The price of the native token in Gnosis Chain is the price of XDAI = 10**18
 export const nativeTokenPriceGnosisChain = utils.parseEther("1");
