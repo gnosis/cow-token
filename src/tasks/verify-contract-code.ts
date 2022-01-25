@@ -86,7 +86,7 @@ async function verifyContract(
   hre: HardhatRuntimeEnvironment & { ethers: HardhatEthersHelpers },
 ) {
   console.log(`Verifying contract ${name} at address ${address}`);
-  const contract = (await hre.ethers.getContractFactory(ContractName.RealToken))
+  const contract = (await hre.ethers.getContractFactory(name))
     .attach(address)
     .connect(hre.ethers.provider);
 
