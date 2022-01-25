@@ -80,7 +80,10 @@ async function generateDeployment(
     addresses: { cowToken, cowDao },
   } = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId),
+    {
+      ...defaultSafeDeploymentAddresses(chainId),
+      forwarder: constants.AddressZero,
+    },
     hre.ethers,
   );
   if (settings.cowToken.expectedAddress !== cowToken) {

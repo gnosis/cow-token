@@ -17,6 +17,8 @@ import {
 } from "./lib/safe";
 import { metadata } from "./token";
 
+import { callIfContractExists } from ".";
+
 export interface SafeCreationSettings {
   expectedAddress?: string;
   threshold: number;
@@ -43,6 +45,10 @@ export interface DeploymentProposalSettings {
   bridge: BridgeParameter;
 }
 
+export interface DeploymentAddresses extends SafeDeploymentAddresses {
+  forwarder: string;
+}
+
 export type JsonMetaTransaction = Record<
   keyof Omit<MetaTransaction, "operation">,
   string
@@ -60,22 +66,18 @@ export interface Proposal {
 
 export async function generateProposal(
   settings: DeploymentProposalSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<Proposal> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
-    await setupDeterministicSafe(
-      settings.cowDao,
-      safeDeploymentAddresses,
-      ethers,
-    );
+    await setupDeterministicSafe(settings.cowDao, deploymentAddresses, ethers);
 
   const {
     address: teamController,
     transaction: teamControllerCreationTransaction,
   } = await setupDeterministicSafe(
     settings.teamController,
-    safeDeploymentAddresses,
+    deploymentAddresses,
     ethers,
   );
 
@@ -84,7 +86,7 @@ export async function generateProposal(
     transaction: investorFundsTargetCreationTransaction,
   } = await setupDeterministicSafe(
     { owners: [cowDao], threshold: 1 },
-    safeDeploymentAddresses,
+    deploymentAddresses,
     ethers,
   );
 
@@ -94,7 +96,12 @@ export async function generateProposal(
     totalSupply: BigNumber.from(10).pow(3 * 3 + metadata.real.decimals),
   };
   const { address: cowToken, transaction: cowTokenCreationTransaction } =
-    await setupRealToken(settings.cowToken, realTokenDeployParams, ethers);
+    await setupRealToken(
+      settings.cowToken,
+      deploymentAddresses,
+      realTokenDeployParams,
+      ethers,
+    );
 
   const virtualTokenDeployParams: VirtualTokenDeployParams = {
     ...settings.virtualCowToken,
@@ -107,7 +114,7 @@ export async function generateProposal(
   const { transaction: virtualCowTokenCreationTransaction } =
     await setupVirtualToken(
       virtualTokenDeployParams,
-      safeDeploymentAddresses,
+      deploymentAddresses,
       ethers,
     );
 
@@ -130,24 +137,39 @@ export async function generateProposal(
 
 async function setupDeterministicSafe(
   settings: SafeCreationSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<{ address: string; transaction: MetaTransaction }> {
   const { to, data, address } = await prepareDeterministicSafeWithOwners(
     settings.owners,
     settings.threshold,
-    safeDeploymentAddresses,
+    deploymentAddresses,
     BigNumber.from(settings.nonce ?? 0),
     ethers,
   );
+  const deploymentTransaction = {
+    to,
+    data,
+    operation: SafeOperation.Call,
+    value: "0",
+  };
+  const forwarder = await ethers.getContractAt(
+    ContractName.Forwarder,
+    deploymentAddresses.forwarder,
+  );
   return {
     address,
-    transaction: { to, data, operation: SafeOperation.Call, value: "0" },
+    transaction: callIfContractExists({
+      addressToTest: address,
+      transaction: deploymentTransaction,
+      forwarder,
+    }),
   };
 }
 
 async function setupRealToken(
   settings: RealTokenCreationSettings,
+  deploymentAddresses: DeploymentAddresses,
   params: RealTokenDeployParams,
   ethers: HardhatEthersHelpers,
 ): Promise<{ address: string; transaction: MetaTransaction }> {
@@ -162,9 +184,18 @@ async function setupRealToken(
       ethers,
       salt,
     );
+
+  const forwarder = await ethers.getContractAt(
+    ContractName.Forwarder,
+    deploymentAddresses.forwarder,
+  );
   return {
     address,
-    transaction,
+    transaction: callIfContractExists({
+      addressToTest: address,
+      transaction,
+      forwarder,
+    }),
   };
 }
 

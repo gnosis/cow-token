@@ -7,6 +7,7 @@ import hre, { waffle } from "hardhat";
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
+  DEFAULT_FORWARDER,
   ContractName,
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
@@ -26,6 +27,7 @@ import {
 } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
+import { setupForwarder } from "./forwarder";
 import { GnosisSafeManager } from "./safe";
 import { stringify } from "./utils/formatUtils";
 
@@ -65,6 +67,7 @@ describe("proposal", function () {
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
+    await setupForwarder(deployer);
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
   });
 
@@ -91,7 +94,10 @@ describe("proposal", function () {
     before(async function () {
       const { steps, addresses } = await generateProposal(
         settings,
-        gnosisSafeManager.getDeploymentAddresses(),
+        {
+          ...gnosisSafeManager.getDeploymentAddresses(),
+          forwarder: DEFAULT_FORWARDER,
+        },
         hre.ethers,
       );
 

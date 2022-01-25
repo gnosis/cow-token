@@ -1,14 +1,18 @@
 import { Contract, ContractFactory } from "@ethersproject/contracts";
+import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import { expect } from "chai";
 import { constants, utils } from "ethers";
 import { Interface } from "ethers/lib/utils";
 import { waffle, ethers } from "hardhat";
 
 import {
+  callIfContractExists,
   ContractName,
+  DEFAULT_FORWARDER,
   getDeterministicDeploymentTransaction,
   getForwardIfNoCodeAtInput,
 } from "../src/ts";
+import { SafeOperation } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 
@@ -115,5 +119,79 @@ describe("Forwarder", function () {
       data: safeTransaction.data,
     });
     expect(await ethers.provider.getCode(address)).not.to.equal("0x");
+  });
+});
+
+describe("safeForwardIfNoCodeAt", function () {
+  const basicMetatransaction: MetaTransaction = {
+    to: constants.AddressZero,
+    data: "0x",
+    operation: SafeOperation.Call,
+    value: 0,
+  };
+
+  it("wraps call around the forwarder", async function () {
+    const ForwardFactory = (
+      await ethers.getContractFactory("Forwarder")
+    ).connect(deployer);
+    const forwarder = await ForwardFactory.deploy();
+
+    const addressToTest = "0x" + "42".repeat(20);
+    const transaction: MetaTransaction = {
+      data: "0xca11da7a",
+      to: "0x" + "21".repeat(20),
+      operation: SafeOperation.Call,
+      value: 0,
+    };
+
+    expect(
+      callIfContractExists({ addressToTest, transaction, forwarder }),
+    ).to.deep.equal({
+      data: forwarder.interface.encodeFunctionData(
+        "forwardIfNoCodeAt",
+        getForwardIfNoCodeAtInput({ addressToTest, transaction: transaction }),
+      ),
+      to: forwarder.address,
+      operation: SafeOperation.Call,
+      value: constants.Zero,
+    });
+  });
+
+  it("reverts if operation is delegatecall", function () {
+    expect(() =>
+      callIfContractExists({
+        addressToTest: constants.AddressZero,
+        transaction: {
+          ...basicMetatransaction,
+          operation: SafeOperation.DelegateCall,
+        },
+        forwarder: "unused" as unknown as Contract,
+      }),
+    ).to.throw(Error, "Forwarder can only forward pure calls");
+  });
+
+  it("reverts if value is nonzero", function () {
+    expect(() =>
+      callIfContractExists({
+        addressToTest: constants.AddressZero,
+        transaction: {
+          ...basicMetatransaction,
+          value: 1,
+        },
+        forwarder: "unused" as unknown as Contract,
+      }),
+    ).to.throw(Error, "Forwarder cannot forward any ETH value");
+  });
+});
+
+describe("default forwarder", function () {
+  it("has expected address", async function () {
+    const { address } = await getDeterministicDeploymentTransaction(
+      ContractName.Forwarder,
+      {},
+      ethers,
+      constants.HashZero,
+    );
+    expect(DEFAULT_FORWARDER).to.equal(address);
   });
 });

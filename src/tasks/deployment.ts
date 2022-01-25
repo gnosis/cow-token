@@ -4,6 +4,7 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  DEFAULT_FORWARDER,
   parseCsvFile,
   computeProofs,
   removeSplitClaimFiles,
@@ -71,7 +72,10 @@ async function generateDeployment(
   };
   const { steps, addresses } = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId),
+    {
+      ...defaultSafeDeploymentAddresses(chainId),
+      forwarder: DEFAULT_FORWARDER,
+    },
     hre.ethers,
   );
 
