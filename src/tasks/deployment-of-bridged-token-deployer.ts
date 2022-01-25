@@ -75,9 +75,11 @@ async function generateDeployment(
   };
 
   // In the following function, we are generating the addresses, as they would
-  // be generated within the mainnet deployment script.
-  // Hence, its very important that the
-  //'invariance of cowDao and cowToken addresses' unit test always holds
+  // be generated within the mainnet deployment script - but with many zero
+  // addresses and hashes, as displayed in the settings definition
+  // Hence, its very important generateProposal generates the same address
+  // for the cowDao and cowToken anyways.
+  // We have the unit test: invariance of cowDao and cowToken that checks that.
   const { addresses } = await generateProposal(
     settings,
     defaultSafeDeploymentAddresses(chainId),
@@ -93,7 +95,7 @@ async function generateDeployment(
     gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
     nativeTokenPrice: nativeTokenPriceGnosisChain,
-    wrappedNativeToken: settings.virtualCowToken.wrappedNativeToken,
+    wrappedNativeToken: defaultTokens.weth[chainId],
   };
 
   const BridgedTokenDeployer = await hre.ethers.getContractFactory(
