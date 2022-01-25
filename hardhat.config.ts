@@ -4,6 +4,7 @@ import "solidity-coverage";
 import "@nomiclabs/hardhat-etherscan";
 
 import dotenv from "dotenv";
+import { utils } from "ethers";
 import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
@@ -29,6 +30,7 @@ const {
   MOCHA_CONF,
   NODE_URL,
   ETHERSCAN_API_KEY,
+  GAS_PRICE_GWEI,
 } = process.env;
 
 const DEFAULT_MNEMONIC =
@@ -99,9 +101,14 @@ export default {
       ...sharedNetworkConfig,
       chainId: 4,
     },
-    xdai: {
-      url: "https://xdai.poanetwork.dev",
+    gnosischain: {
       ...sharedNetworkConfig,
+      url: "https://rpc.gnosischain.com",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
+        : "auto",
       chainId: 100,
     },
   },

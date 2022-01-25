@@ -1,4 +1,5 @@
 import { setupDeployment } from "./deployment";
+import { setupBridgedTokenDeployerTask } from "./deployment-of-bridged-token-deployer";
 import { setupTestClaimsTask } from "./test-claims";
 import { setupTestDeploymentTask } from "./test-deployment";
 import { setupVerifyContractCodeTask } from "./verify-contract-code";
@@ -8,4 +9,5 @@ export function setupTasks(): void {
   setupTestClaimsTask();
   setupTestDeploymentTask();
   setupVerifyContractCodeTask();
+  setupBridgedTokenDeployerTask();
 }

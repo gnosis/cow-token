@@ -9,6 +9,7 @@ import {
   VirtualTokenDeployParams,
   ContractName,
 } from "./deploy";
+import { BridgeParameter } from "./lib/common-interfaces";
 import {
   prepareDeterministicSafeWithOwners,
   SafeDeploymentAddresses,
@@ -17,11 +18,13 @@ import {
 import { metadata } from "./token";
 
 export interface SafeCreationSettings {
+  expectedAddress?: string;
   threshold: number;
   owners: string[];
   nonce?: string;
 }
 export interface RealTokenCreationSettings {
+  expectedAddress?: string;
   salt?: string;
 }
 export interface VirtualTokenCreationSettings {
@@ -37,6 +40,7 @@ export interface DeploymentProposalSettings {
   teamController: SafeCreationSettings;
   cowToken: RealTokenCreationSettings;
   virtualCowToken: VirtualTokenCreationSettings;
+  bridge: BridgeParameter;
 }
 
 export type JsonMetaTransaction = Record<

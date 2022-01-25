@@ -1,5 +1,6 @@
 /build/
 /coverage/
+/env/
 /output/
 /lib/
 node_modules/
@@ -8,3 +9,4 @@ yarn-error.log
 *.tgz
 .mocharc.json
 .env
+settings.json
