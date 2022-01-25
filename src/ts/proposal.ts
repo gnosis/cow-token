@@ -1,6 +1,6 @@
 import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
-import { BigNumber, utils } from "ethers";
+import { BigNumber, Contract, utils } from "ethers";
 
 import {
   getDeterministicDeploymentTransaction,
@@ -124,37 +124,20 @@ export async function generateProposal(
       ethers,
     );
   const cowTokenContract = await ethers.getContractAt(
-    "CowProtocolToken",
+    ContractName.RealToken,
     cowToken,
   );
-  const multiTokenMediator = await ethers.getContractAt(
-    "IOmnibridge",
-    settings.bridge.multiTokenMediatorETH,
-  );
-  const approvalOmniBridgeTx = {
-    to: cowToken,
-    value: 0,
-    data: cowTokenContract.interface.encodeFunctionData("approve", [
-      settings.bridge.multiTokenMediatorETH,
-      amountToRelay,
-    ]),
-    operation: 0,
-  };
-
-  const relayTestFundsToOmniBridgeTx = {
-    to: settings.bridge.multiTokenMediatorETH,
-    value: 0,
-    data: multiTokenMediator.interface.encodeFunctionData("relayTokens", [
-      cowToken,
+  const [approvalOmniBridgeTx, relayTestFundsToOmniBridgeTx] =
+    await generateBridgeTokenToGnosisChainTx(
+      cowTokenContract,
+      settings,
+      ethers,
       cowDao,
-      amountToRelay,
-    ]),
-    operation: 0,
-  };
+    );
 
   const transferCowTokenToCowDao = {
     to: cowToken,
-    value: 0,
+    value: "0",
     data: cowTokenContract.interface.encodeFunctionData("transfer", [
       cowDao,
       totalSupply.sub(amountToRelay),
@@ -179,13 +162,9 @@ export async function generateProposal(
       virtualCowTokenCreationTransaction: transformMetaTransaction(
         virtualCowTokenCreationTransaction,
       ),
-      approvalOmniBridgeTx: transformMetaTransaction(approvalOmniBridgeTx),
-      relayTestFundsToOmniBridgeTx: transformMetaTransaction(
-        relayTestFundsToOmniBridgeTx,
-      ),
-      transferCowTokenToCowDao: transformMetaTransaction(
-        transferCowTokenToCowDao,
-      ),
+      approvalOmniBridgeTx,
+      relayTestFundsToOmniBridgeTx,
+      transferCowTokenToCowDao,
     },
     addresses: {
       cowDao,
@@ -196,6 +175,38 @@ export async function generateProposal(
   };
 }
 
+async function generateBridgeTokenToGnosisChainTx(
+  cowTokenContract: Contract,
+  settings: DeploymentProposalSettings,
+  ethers: HardhatEthersHelpers,
+  cowDao: string,
+): Promise<JsonMetaTransaction[]> {
+  const multiTokenMediator = await ethers.getContractAt(
+    "IOmnibridge",
+    settings.bridge.multiTokenMediatorETH,
+  );
+  const approvalOmniBridgeTx = {
+    to: cowTokenContract.address,
+    value: "0",
+    data: cowTokenContract.interface.encodeFunctionData("approve", [
+      settings.bridge.multiTokenMediatorETH,
+      amountToRelay,
+    ]),
+    operation: 0,
+  };
+
+  const relayTestFundsToOmniBridgeTx = {
+    to: settings.bridge.multiTokenMediatorETH,
+    value: "0",
+    data: multiTokenMediator.interface.encodeFunctionData("relayTokens", [
+      cowTokenContract.address,
+      cowDao,
+      amountToRelay,
+    ]),
+    operation: 0,
+  };
+  return [approvalOmniBridgeTx, relayTestFundsToOmniBridgeTx];
+}
 function transformMetaTransaction(tx: MetaTransaction): JsonMetaTransaction {
   return { ...tx, value: tx.value.toString() };
 }

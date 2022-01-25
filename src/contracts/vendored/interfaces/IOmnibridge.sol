@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Vendored from omnibridge, see:
-// <https://github.com/omni/omnibridge/blob/master/contracts/interfaces/IOmnibridge.sol>
+// <https://raw.githubusercontent.com/omni/omnibridge/master/contracts/interfaces/IOmnibridge.sol>
 pragma solidity ^0.8.10;
 
 interface IOmnibridge {

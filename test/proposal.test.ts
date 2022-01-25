@@ -1,9 +1,8 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
-import { MockContract } from "ethereum-waffle";
 import { BigNumber } from "ethers";
-import hre, { artifacts, waffle } from "hardhat";
+import hre, { ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
@@ -43,18 +42,18 @@ const _typeCheck: Settings = sampleSettings;
 describe("proposal", function () {
   let currentSnapshot: unknown;
   let gnosisSafeManager: GnosisSafeManager;
-  let multiTokenMediatorETH: MockContract;
+  let multiTokenMediatorETH: Contract;
   let gnosisDao: Contract;
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
-    const IOmnibridge = await artifacts.readArtifact("IOmnibridge");
-    multiTokenMediatorETH = await waffle.deployMockContract(
-      deployer,
-      IOmnibridge.abi,
+    const OmniBridgeTransferSimulator = await ethers.getContractFactory(
+      "OmniBridgeTransferSimulator",
     );
-    await multiTokenMediatorETH.mock.relayTokens.returns();
+    multiTokenMediatorETH = await OmniBridgeTransferSimulator.connect(
+      deployer,
+    ).deploy();
     gnosisDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
     ).connect(executor);
@@ -242,23 +241,44 @@ describe("proposal", function () {
         ).to.equal(totalSupply.sub(amountToRelay));
       });
 
-      it("has approval to send tokens to bridge", async function () {
+      it("approval has been used in transfer", async function () {
         expect(
           await contracts.cowToken.allowance(
             gnosisDao.address,
             multiTokenMediatorETH.address,
           ),
-        ).to.equal(amountToRelay);
+        ).to.equal(0);
       });
     });
 
-    describe("Attention: Following test is missing: bridge relay", function () {
-      it("has been called on function relayTokens", async function () {
+    describe("bridge relay", function () {
+      it("has been called on function relayTokens, tokens were transferred", async function () {
         // Usually, one would just test it like this:
         // expect('relayTokens').to.be.calledOnContractWith(multiTokenMediatorETH, [contracts.cowDao.address, settings.cowDao, settings.bridge.amountToRelay]);
         // but unfortunately, hardhat is not yet supporting it.
         // https://github.com/nomiclabs/hardhat/issues/1135
-        // Todo: create mainnet hardfork test in the next PR.
+        // Hence, we are testing with custom multiTokenMediatorETH implementation
+
+        const filterTransfers = contracts.cowToken.filters.Transfer(
+          gnosisDao.address,
+          multiTokenMediatorETH.address,
+          null,
+        );
+        let logs = await contracts.cowToken.queryFilter(
+          filterTransfers,
+          0,
+          "latest",
+        );
+        expect(logs.length).to.be.equal(1);
+        expect(logs[0].args?.value).to.be.equal(amountToRelay);
+        const filteringReceiver = multiTokenMediatorETH.filters.Receiver(null);
+        logs = await multiTokenMediatorETH.queryFilter(
+          filteringReceiver,
+          0,
+          "latest",
+        );
+        expect(logs.length).to.be.equal(1);
+        expect(logs[0].args).to.deep.equal([contracts.cowDao.address]);
       });
     });
 
