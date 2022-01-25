@@ -11,8 +11,8 @@ import {
 } from "../ts";
 
 interface Args {
-  virtualTokenAddress?: string;
-  forwarderAddress?: string;
+  virtualToken?: string;
+  forwarder?: string;
 }
 
 const setupVerifyContractCodeTask: () => void = () => {
@@ -20,32 +20,26 @@ const setupVerifyContractCodeTask: () => void = () => {
     "verify-contract-code",
     "Verify the contract code on the network's block exporer.",
   )
-    .addOptionalParam(
-      "virtualTokenAddress",
-      "The address of the virtual vCOW token.",
-    )
-    .addOptionalParam(
-      "forwarderAddress",
-      "The address of the virtual vCOW token.",
-    )
+    .addOptionalParam("virtualToken", "The address of the virtual vCOW token.")
+    .addOptionalParam("forwarder", "The address of the virtual vCOW token.")
     .setAction(verifyContractCode);
 };
 export { setupVerifyContractCodeTask };
 
 async function verifyContractCode(
-  { virtualTokenAddress, forwarderAddress }: Args,
+  { virtualToken, forwarder }: Args,
   hre: HardhatRuntimeEnvironment,
 ) {
   if (hre.network.name === "xdai") {
     throw new Error("Blockscout is currently not supported");
   }
 
-  if (virtualTokenAddress !== undefined) {
-    await verifyVirtualToken(virtualTokenAddress, hre);
+  if (virtualToken !== undefined) {
+    await verifyVirtualToken(virtualToken, hre);
   }
 
-  if (forwarderAddress !== undefined) {
-    await verifyContract(ContractName.Forwarder, forwarderAddress, hre);
+  if (forwarder !== undefined) {
+    await verifyContract(ContractName.Forwarder, forwarder, hre);
   }
 }
 
