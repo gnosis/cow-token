@@ -76,11 +76,13 @@ export enum ContractName {
   RealToken = "CowProtocolToken",
   VirtualToken = "CowProtocolVirtualToken",
   BridgedTokenDeployer = "BridgedTokenDeployer",
+  Forwarder = "Forwarder",
 }
 export interface DeployParams {
   [ContractName.RealToken]: RealTokenDeployParams;
   [ContractName.VirtualToken]: VirtualTokenDeployParams;
   [ContractName.BridgedTokenDeployer]: DeploymentHelperDeployParams;
+  [ContractName.Forwarder]: Record<string, never>;
 }
 export type ContructorInput = {
   [ContractName.RealToken]: [string, string, BigNumberish];
@@ -107,6 +109,7 @@ export type ContructorInput = {
     string,
     BigNumber,
   ];
+  [ContractName.Forwarder]: [];
 };
 
 export function constructorInput<T extends ContractName>(
@@ -179,6 +182,9 @@ export function constructorInput<T extends ContractName>(
       ];
       return result as ContructorInput[T];
     }
+
+    case ContractName.Forwarder:
+      return [] as ContructorInput[T];
     default: {
       throw new Error(`Invalid contract name: ${contract}`);
     }

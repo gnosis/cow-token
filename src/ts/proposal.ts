@@ -2,7 +2,6 @@ import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 import { BigNumber, utils } from "ethers";
 
-import { BridgeParameter } from "./common-interfaces";
 import {
   getDeterministicDeploymentTransaction,
   getNonDeterministicDeploymentTransaction,
@@ -10,6 +9,8 @@ import {
   VirtualTokenDeployParams,
   ContractName,
 } from "./deploy";
+import { BridgeParameter } from "./lib/common-interfaces";
+import { amountToRelay } from "./lib/constants";
 import {
   prepareDeterministicSafeWithOwners,
   SafeDeploymentAddresses,
@@ -18,11 +19,13 @@ import {
 import { metadata } from "./token";
 
 export interface SafeCreationSettings {
+  expectedAddress?: string;
   threshold: number;
   owners: string[];
   nonce?: string;
 }
 export interface RealTokenCreationSettings {
+  expectedAddress?: string;
   salt?: string;
 }
 export interface VirtualTokenCreationSettings {
@@ -133,7 +136,7 @@ export async function generateProposal(
     value: 0,
     data: cowTokenContract.interface.encodeFunctionData("approve", [
       settings.bridge.multiTokenMediatorETH,
-      settings.bridge.amountToRelay,
+      amountToRelay,
     ]),
     operation: 0,
   };
@@ -144,7 +147,7 @@ export async function generateProposal(
     data: multiTokenMediator.interface.encodeFunctionData("relayTokens", [
       cowToken,
       cowDao,
-      settings.bridge.amountToRelay,
+      amountToRelay,
     ]),
     operation: 0,
   };
@@ -154,7 +157,7 @@ export async function generateProposal(
     value: 0,
     data: cowTokenContract.interface.encodeFunctionData("transfer", [
       cowDao,
-      totalSupply.sub(settings.bridge.amountToRelay),
+      totalSupply.sub(amountToRelay),
     ]),
     operation: 0,
   };

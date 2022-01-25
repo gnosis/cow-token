@@ -1,3 +1,5 @@
+import { utils } from "ethers";
+
 export const defaultTokens = {
   usdc: {
     "1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -16,3 +18,9 @@ export const defaultTokens = {
     "4": "0xd0Dab4E640D95E9E8A47545598c33e31bDb53C7c",
   },
 } as const;
+
+// The price of the native token in Gnosis Chain is the price of XDAI = 10**18
+export const nativeTokenPriceGnosisChain = utils.parseEther("1");
+
+// the amount of tokens to relay to the omni bridge at deployment time
+export const amountToRelay = utils.parseEther("1");

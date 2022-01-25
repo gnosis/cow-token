@@ -11,9 +11,9 @@ import {
   generateProposal,
   deploymentStepsIntoArray,
 } from "../ts";
-import { Args, Settings } from "../ts/common-interfaces";
+import { Args, Settings } from "../ts/lib/common-interfaces";
+import { defaultTokens } from "../ts/lib/constants";
 
-import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/deployment";
@@ -62,8 +62,8 @@ async function generateDeployment(
   const settings = {
     ...inputSettings,
     virtualCowToken: {
-      gnoPrice: inputSettings.gnoPrice,
-      nativeTokenPrice: inputSettings.nativeTokenPriceOnETH,
+      gnoPrice: inputSettings.virtualCowToken.gnoPrice,
+      nativeTokenPrice: inputSettings.virtualCowToken.nativeTokenPrice,
       merkleRoot,
       usdcToken: defaultTokens.usdc[chainId],
       gnoToken: defaultTokens.gno[chainId],

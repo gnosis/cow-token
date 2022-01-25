@@ -1,21 +1,22 @@
-import { DeploymentProposalSettings } from "../ts";
+import { DeploymentProposalSettings } from "..";
 
 export interface Args {
   claims: string;
   settings: string;
 }
 
+export interface VirtualTokenSettings {
+  gnoPrice: string;
+  nativeTokenPrice: string;
+}
+
 export interface BridgeParameter {
   multiTokenMediatorGnosisChain: string;
   multiTokenMediatorETH: string;
-  amountToRelay: string;
+
 }
 
 export interface Settings
   extends Omit<DeploymentProposalSettings, "virtualCowToken"> {
-  gnosisDao: string;
-  gnoPrice: string;
-  nativeTokenPriceOnETH: string;
-  nativeTokenPriceOnGnosisChain: string;
-  bridge: BridgeParameter;
+  virtualCowToken: VirtualTokenSettings;
 }

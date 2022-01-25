@@ -2,7 +2,7 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
-import { BigNumber, utils } from "ethers";
+import { BigNumber } from "ethers";
 import hre, { artifacts, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
@@ -15,7 +15,8 @@ import {
   RealTokenDeployParams,
   VirtualTokenDeployParams,
 } from "../src/ts";
-import { BridgeParameter, Settings } from "../src/ts/common-interfaces";
+import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
+import { amountToRelay } from "../src/ts/lib/constants";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
@@ -99,7 +100,6 @@ describe("proposal", function () {
       const bridgeParameters: BridgeParameter = {
         multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
         multiTokenMediatorETH: multiTokenMediatorETH.address,
-        amountToRelay: utils.parseEther("1").toString(),
       };
       settings = {
         gnosisDao: gnosisDao.address,
@@ -239,7 +239,7 @@ describe("proposal", function () {
         const totalSupply = await contracts.cowToken.totalSupply();
         expect(
           await contracts.cowToken.balanceOf(contracts.cowDao.address),
-        ).to.equal(totalSupply.sub(settings.bridge.amountToRelay));
+        ).to.equal(totalSupply.sub(amountToRelay));
       });
 
       it("has approval to send tokens to bridge", async function () {
@@ -248,7 +248,7 @@ describe("proposal", function () {
             gnosisDao.address,
             multiTokenMediatorETH.address,
           ),
-        ).to.equal(settings.bridge.amountToRelay);
+        ).to.equal(amountToRelay);
       });
     });
 

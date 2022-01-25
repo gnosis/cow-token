@@ -9,7 +9,6 @@ import type { HttpNetworkUserConfig } from "hardhat/types";
 import yargs from "yargs";
 
 import { setupTasks } from "./src/tasks";
-import { setupBridgedTokenDeployerTask } from "./src/tasks/deployment-of-bridged-token-deployer";
 import { setupTestConfigs } from "./test/test-management";
 
 const argv = yargs
@@ -64,7 +63,6 @@ const { mocha, initialBaseFeePerGas, optimizerDetails } =
   setupTestConfigs(MOCHA_CONF);
 
 setupTasks();
-setupBridgedTokenDeployerTask();
 
 export default {
   mocha,
@@ -111,6 +109,7 @@ export default {
             utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
           )
         : "auto",
+      chainId: 100,
     },
   },
   namedAccounts: {

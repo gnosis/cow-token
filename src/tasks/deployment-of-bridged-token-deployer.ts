@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 
+import { constants } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -11,10 +12,14 @@ import {
   constructorInput,
   ContractName,
 } from "../ts";
-import { Args, Settings } from "../ts/common-interfaces";
+import { Args, Settings } from "../ts/lib/common-interfaces";
+import {
+  defaultTokens,
+  nativeTokenPriceGnosisChain,
+} from "../ts/lib/constants";
+import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 export const OUTPUT_FOLDER_GC = "./output/deployment-gc";
@@ -62,32 +67,52 @@ async function generateDeployment(
 
   const settings = {
     ...inputSettings,
-    virtualCowToken: {
-      gnoPrice: inputSettings.gnoPrice,
-      nativeTokenPrice: inputSettings.nativeTokenPriceOnGnosisChain,
-      merkleRoot,
-      usdcToken: defaultTokens.usdc[chainId],
-      gnoToken: defaultTokens.gno[chainId],
-      wrappedNativeToken: defaultTokens.weth[chainId],
-    },
+    virtualCowToken: dummyVirtualTokenCreationSettings,
+    multiTokenMediatorGnosisChain: constants.AddressZero,
   };
 
-  const { addresses } = await generateProposal(
+  // In the following function, we are generating the addresses, as they would
+  // be generated within the mainnet deployment script - but with many zero
+  // addresses and hashes, as displayed in the settings definition
+  // Hence, we rely on the fact that the addresses computed by generateProposal
+  // for the cowDao and cowToken do not depend on the virtual token deployment
+  // parameters.
+  // For double security, one can also provide the expected values in as expected
+  // setting variables
+  const {
+    addresses: { cowToken, cowDao },
+  } = await generateProposal(
     settings,
     defaultSafeDeploymentAddresses(chainId),
     hre.ethers,
   );
 
+  if (settings.cowToken.expectedAddress !== cowToken) {
+    if (settings.cowToken.expectedAddress !== undefined) {
+      throw new Error("Expected cowToken address must be defined");
+    } else {
+      console.warn("settings.cowToken.expectedAddress was not defined");
+    }
+  }
+
+  if (settings.cowDao.expectedAddress !== cowDao) {
+    if (settings.cowDao.expectedAddress !== undefined) {
+      throw new Error("Expected cowDao address must be defined");
+    } else {
+      console.warn("settings.cowToken.expectedAddress was not defined");
+    }
+  }
+
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
-    foreignToken: addresses.cowToken,
+    foreignToken: cowToken,
     multiTokenMediatorGnosisChain:
       settings.bridge.multiTokenMediatorGnosisChain,
     merkleRoot,
-    communityFundsTarget: addresses.cowDao,
-    gnoToken: settings.virtualCowToken.gnoToken,
+    communityFundsTarget: cowDao,
+    gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
-    nativeTokenPrice: settings.virtualCowToken.nativeTokenPrice,
-    wrappedNativeToken: settings.virtualCowToken.wrappedNativeToken,
+    nativeTokenPrice: nativeTokenPriceGnosisChain,
+    wrappedNativeToken: defaultTokens.weth[chainId],
   };
 
   const BridgedTokenDeployer = await hre.ethers.getContractFactory(
