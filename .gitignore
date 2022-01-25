@@ -3,6 +3,7 @@
 /env/
 /output/
 /lib/
+/vanity/target/
 node_modules/
 coverage.json
 yarn-error.log
