@@ -2,12 +2,11 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import hre, { waffle } from "hardhat";
+import hre, { ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
-  DEFAULT_FORWARDER,
   ContractName,
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
@@ -27,7 +26,6 @@ import {
 } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
-import { setupForwarder } from "./forwarder";
 import { GnosisSafeManager } from "./safe";
 import { stringify } from "./utils/formatUtils";
 
@@ -39,6 +37,7 @@ const _typeCheck: Settings = sampleSettings;
 
 describe("proposal", function () {
   let currentSnapshot: unknown;
+  let forwarder: Contract;
   let gnosisSafeManager: GnosisSafeManager;
 
   const cowDaoSettings: SafeCreationSettings = {
@@ -67,7 +66,9 @@ describe("proposal", function () {
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
-    await setupForwarder(deployer);
+    forwarder = await (
+      await ethers.getContractFactory(ContractName.Forwarder, deployer)
+    ).deploy();
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
   });
 
@@ -96,7 +97,7 @@ describe("proposal", function () {
         settings,
         {
           ...gnosisSafeManager.getDeploymentAddresses(),
-          forwarder: DEFAULT_FORWARDER,
+          forwarder: forwarder.address,
         },
         hre.ethers,
       );

@@ -15,6 +15,7 @@ import {
 import { SafeOperation } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
+import { skipOnCoverage } from "./test-management";
 
 const [deployer] = waffle.provider.getWallets();
 
@@ -185,7 +186,11 @@ describe("safeForwardIfNoCodeAt", function () {
 });
 
 describe("default forwarder", function () {
-  it("has expected address", async function () {
+  it("has expected address [skip-in-coverage]", async function () {
+    // Needs to be skipped in coverage as inserting the artifacts to check lines
+    // for coverage changes the bytecode, and with it the final address.
+    skipOnCoverage.call(this);
+
     const { address } = await getDeterministicDeploymentTransaction(
       ContractName.Forwarder,
       {},
