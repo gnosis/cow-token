@@ -115,7 +115,7 @@ describe("BridgedTokenDeployer", () => {
   });
 
   describe("deploy", async function () {
-    it("reverts if the bridge contract does not yet exists", async () => {
+    it("reverts if the bridged contract does not yet exists", async () => {
       await multiTokenMediatorGnosisChain.mock.bridgedTokenAddress.returns(
         constants.AddressZero,
       );

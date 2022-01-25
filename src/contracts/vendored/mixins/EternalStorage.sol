@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Vendored from omnibridge, see:
-// <https://github.com/omni/omnibridge/blob/b658c7c217e25c13e61ab9fb1a97010a5656b11e/contracts/upgradeability/EternalStorage.sol>
+// <https://raw.githubusercontent.com/omni/omnibridge/b658c7c217e25c13e61ab9fb1a97010a5656b11e/contracts/upgradeability/EternalStorage.sol>
 pragma solidity ^0.8.10;
-
 
 /**
  * @title EternalStorage
