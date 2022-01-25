@@ -5,7 +5,6 @@ import { BigNumber } from "ethers";
 import hre, { waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
-import { Settings } from "../src/tasks/common-interfaces";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
   ContractName,
@@ -20,6 +19,7 @@ import {
   SafeCreationSettings,
   VirtualTokenCreationSettings,
 } from "../src/ts";
+import { Settings } from "../src/ts/lib/common-interfaces";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
@@ -60,7 +60,7 @@ describe("proposal", function () {
     teamController: teamConrollerSettings,
     cowToken: {},
     virtualCowToken: virtualTokenCreationSettings,
-    multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+    bridge: { multiTokenMediatorGnosisChain: "0x" + "01".repeat(20) },
   };
 
   before(async function () {

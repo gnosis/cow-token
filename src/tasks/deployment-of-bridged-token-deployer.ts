@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 
+import { constants } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -11,10 +12,10 @@ import {
   constructorInput,
   ContractName,
 } from "../ts";
+import { Args, Settings } from "../ts/lib/common-interfaces";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { Args, Settings } from "./common-interfaces";
-import { defaultTokens } from "./ts/constants";
+import { defaultTokens, nativeTokenPriceGnosisChain } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 export const OUTPUT_FOLDER_GC = "./output/deployment-gc";
@@ -63,15 +64,20 @@ async function generateDeployment(
   const settings = {
     ...inputSettings,
     virtualCowToken: {
-      gnoPrice: inputSettings.gnoPrice,
-      nativeTokenPrice: inputSettings.nativeTokenPriceOnGnosisChain,
-      merkleRoot,
-      usdcToken: defaultTokens.usdc[chainId],
-      gnoToken: defaultTokens.gno[chainId],
-      wrappedNativeToken: defaultTokens.weth[chainId],
+      gnoPrice: "0",
+      nativeTokenPrice: "0",
+      merkleRoot: constants.HashZero,
+      usdcToken: constants.AddressZero,
+      gnoToken: constants.AddressZero,
+      wrappedNativeToken: constants.AddressZero,
     },
+    multiTokenMediatorGnosisChain: constants.AddressZero,
   };
 
+  // In the following function, we are generating the addresses, as they would
+  // be generated within the mainnet deployment script.
+  // Hence, its very important that the
+  //'invariance of cowDao and cowToken addresses' unit test always holds
   const { addresses } = await generateProposal(
     settings,
     defaultSafeDeploymentAddresses(chainId),
@@ -80,12 +86,13 @@ async function generateDeployment(
 
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
     foreignToken: addresses.cowToken,
-    multiTokenMediatorGnosisChain: settings.multiTokenMediatorGnosisChain,
+    multiTokenMediatorGnosisChain:
+      settings.bridge.multiTokenMediatorGnosisChain,
     merkleRoot,
     communityFundsTarget: addresses.cowDao,
-    gnoToken: settings.virtualCowToken.gnoToken,
+    gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
-    nativeTokenPrice: settings.virtualCowToken.nativeTokenPrice,
+    nativeTokenPrice: nativeTokenPriceGnosisChain,
     wrappedNativeToken: settings.virtualCowToken.wrappedNativeToken,
   };
 

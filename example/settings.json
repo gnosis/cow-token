@@ -22,8 +22,11 @@
   "cowToken": {
     "salt": "0x0000000000000000000000000000000000000000000000000000000000001337"
   },
-  "gnoPrice": "375000000000000",
-  "nativeTokenPriceOnETH": "37500000000000",
-  "nativeTokenPriceOnGnosisChain": "37500000000000",
-  "multiTokenMediatorGnosisChain": "0x8888888888888888888888888888888888888888"
+  "virtualCowToken": {
+    "gnoPrice": "375000000000000",
+    "nativeTokenPrice": "37500000000000"
+  },
+  "bridge": {
+    "multiTokenMediatorGnosisChain": "0x8888888888888888888888888888888888888888"
+  }
 }

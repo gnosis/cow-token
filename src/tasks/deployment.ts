@@ -10,8 +10,8 @@ import {
   splitClaimsAndSaveToFolder,
   generateProposal,
 } from "../ts";
+import { Args, Settings } from "../ts/lib/common-interfaces";
 
-import { Args, Settings } from "./common-interfaces";
 import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
@@ -61,8 +61,8 @@ async function generateDeployment(
   const settings = {
     ...inputSettings,
     virtualCowToken: {
-      gnoPrice: inputSettings.gnoPrice,
-      nativeTokenPrice: inputSettings.nativeTokenPriceOnETH,
+      gnoPrice: inputSettings.virtualCowToken.gnoPrice,
+      nativeTokenPrice: inputSettings.virtualCowToken.nativeTokenPrice,
       merkleRoot,
       usdcToken: defaultTokens.usdc[chainId],
       gnoToken: defaultTokens.gno[chainId],
