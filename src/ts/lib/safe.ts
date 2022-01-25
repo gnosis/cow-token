@@ -1,5 +1,9 @@
 import type { TransactionResponse } from "@ethersproject/abstract-provider";
-import { MetaTransaction, encodeMultiSend } from "@gnosis.pm/safe-contracts";
+import {
+  MetaTransaction,
+  encodeMultiSend,
+  calculateProxyAddress,
+} from "@gnosis.pm/safe-contracts";
 import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
 import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
@@ -65,16 +69,17 @@ export async function prepareDeterministicSafeWithOwners(
     factory,
     GnosisSafeProxyFactory.abi,
   ).connect(ethers.provider);
-  const createProxyInput = [
+  const createProxyInput: [string, string, string] = [
     singleton,
     setupOwnersBytecode,
-    BigNumber.from(nonce),
+    BigNumber.from(nonce).toString(),
   ];
   const data: string = proxyFactoryIface.encodeFunctionData(
     "createProxyWithNonce",
     createProxyInput,
   );
-  const address = await proxyFactory.callStatic.createProxyWithNonce(
+  const address = await calculateProxyAddress(
+    proxyFactory,
     ...createProxyInput,
   );
   return { to: proxyFactory.address, data, address };
@@ -116,7 +121,7 @@ export async function getFallbackHandler(
 ): Promise<string> {
   // The fallback handler is stored at a fixed storage slot in all Gnosis Safes.
   // https://github.com/gnosis/safe-contracts/blob/da66b45ec87d2fb6da7dfd837b29eacdb9a604c5/contracts/base/FallbackManager.sol#L11-L20
-  // You can see usage examples in the Gnosis Safe tests: 
+  // You can see usage examples in the Gnosis Safe tests:
   // https://github.com/gnosis/safe-contracts/blob/da66b45ec87d2fb6da7dfd837b29eacdb9a604c5/test/core/GnosisSafe.FallbackManager.spec.ts#L32-L73
   const FALLBACK_HANDLER_STORAGE_SLOT =
     "0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5";

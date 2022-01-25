@@ -53,12 +53,15 @@ export type JsonMetaTransaction = Record<
   keyof Omit<MetaTransaction, "operation">,
   string
 > & { operation: number };
-export interface FinalAddresses {
-  cowDao: string;
-  teamController: string;
-  investorFundsTarget: string;
-  cowToken: string;
-}
+export const deterministicallyComputedAddresses = [
+  "cowDao",
+  "teamController",
+  "investorFundsTarget",
+  "cowToken",
+] as const;
+export type DeterministicallyComputedAddress =
+  typeof deterministicallyComputedAddresses[number];
+export type FinalAddresses = Record<DeterministicallyComputedAddress, string>;
 export interface Proposal {
   steps: JsonMetaTransaction[];
   addresses: FinalAddresses;

@@ -1,7 +1,7 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
-import { BigNumber } from "ethers";
+import { BigNumber, Signer, utils } from "ethers";
 import hre, { ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
@@ -18,11 +18,15 @@ import {
   generateProposal,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
+  DeterministicallyComputedAddress,
+  deterministicallyComputedAddresses,
+  getDeterministicDeploymentTransaction,
 } from "../src/ts";
 import { Settings } from "../src/ts/lib/common-interfaces";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
+  prepareDeterministicSafeWithOwners,
 } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
@@ -249,5 +253,123 @@ describe("proposal", function () {
         expect(stringify(onchainDeploymentParams)).to.deep.equal(expected);
       });
     });
+  });
+
+  describe("if the following contract is deployed in advance, it still deploys", function () {
+    // We set up `earlierDeployment` so that for every deterministically
+    // computed address in the proposal we get a way to deterministically deploy
+    // that address as well as the expected deployment address.
+    // The function will be called in advance to predeploy the contract.
+    type DeployTransaction = (signer: Signer) => Promise<void>;
+    let earlierDeployments: Record<
+      DeterministicallyComputedAddress,
+      [string, DeployTransaction]
+    >;
+
+    // Change the salt to avoid conflicts with other tests (TODO: global fix!).
+    const modifiedSettings = {
+      ...settings,
+      cowDao: { ...settings.cowDao },
+      teamController: { ...settings.teamController },
+    };
+    modifiedSettings.cowDao.nonce = utils.hexZeroPad("0x31337", 32);
+    modifiedSettings.teamController.nonce = utils.hexZeroPad("0x31337", 32);
+
+    before(async function () {
+      async function deterministicDeploySafe({
+        owners,
+        threshold,
+        nonce,
+      }: SafeCreationSettings): Promise<[string, DeployTransaction]> {
+        const { to, data, address } = await prepareDeterministicSafeWithOwners(
+          owners,
+          threshold,
+          gnosisSafeManager.getDeploymentAddresses(),
+          BigNumber.from(nonce ?? 0),
+          ethers,
+        );
+        return [
+          address,
+          async function (deployer: Signer) {
+            await deployer.sendTransaction({ to, data });
+          },
+        ];
+      }
+
+      async function deterministicDeployCowToken(
+        params: Omit<RealTokenDeployParams, "totalSupply">,
+      ): Promise<[string, DeployTransaction]> {
+        const {
+          address,
+          safeTransaction: { to, data },
+        } = await getDeterministicDeploymentTransaction(
+          ContractName.RealToken,
+          {
+            totalSupply: BigNumber.from(10).pow(3 * 3 + metadata.real.decimals),
+            ...params,
+          },
+          ethers,
+        );
+        return [
+          address,
+          async function (deployer: Signer) {
+            await deployer.sendTransaction({ to, data });
+          },
+        ];
+      }
+
+      const cowDao = await deterministicDeploySafe(modifiedSettings.cowDao);
+      earlierDeployments = {
+        cowDao,
+        teamController: await deterministicDeploySafe(
+          modifiedSettings.teamController,
+        ),
+        investorFundsTarget: await deterministicDeploySafe({
+          threshold: 1,
+          owners: [cowDao[0]],
+        }),
+        cowToken: await deterministicDeployCowToken({
+          cowDao: cowDao[0],
+          initialTokenHolder: cowDao[0],
+        }),
+      };
+    });
+
+    for (const deterministicAddress of deterministicallyComputedAddresses) {
+      it(deterministicAddress, async function () {
+        const [predeployedAddress, predeploy] =
+          earlierDeployments[deterministicAddress];
+        expect(await ethers.provider.getCode(predeployedAddress)).to.equal(
+          "0x",
+        );
+        await predeploy(deployer);
+        expect(await ethers.provider.getCode(predeployedAddress)).not.to.equal(
+          "0x",
+        );
+
+        const { steps, addresses } = await generateProposal(
+          modifiedSettings,
+          {
+            ...gnosisSafeManager.getDeploymentAddresses(),
+            forwarder: forwarder.address,
+          },
+          hre.ethers,
+        );
+
+        // A failure at this step indicates that the current predeploy
+        // transaction should be updated as it doesn't deploy the expected
+        // contract.
+        expect(addresses[deterministicAddress]).to.equal(predeployedAddress);
+
+        const gnosisDao = await (
+          await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
+        ).connect(executor);
+
+        for (const step of steps) {
+          await expect(execSafeTransaction(gnosisDao, step, [gnosisDaoOwner]))
+            .not.to.be.reverted;
+        }
+      });
+    }
   });
 });
