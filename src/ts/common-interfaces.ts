@@ -5,10 +5,17 @@ export interface Args {
   settings: string;
 }
 
+export interface BridgeParameter {
+  multiTokenMediatorGnosisChain: string;
+  multiTokenMediatorETH: string;
+  amountToRelay: string;
+}
+
 export interface Settings
   extends Omit<DeploymentProposalSettings, "virtualCowToken"> {
+  gnosisDao: string;
   gnoPrice: string;
   nativeTokenPriceOnETH: string;
   nativeTokenPriceOnGnosisChain: string;
-  multiTokenMediatorGnosisChain: string;
+  bridge: BridgeParameter;
 }

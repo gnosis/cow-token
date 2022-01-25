@@ -11,9 +11,9 @@ import {
   constructorInput,
   ContractName,
 } from "../ts";
+import { Args, Settings } from "../ts/common-interfaces";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { Args, Settings } from "./common-interfaces";
 import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
@@ -80,7 +80,8 @@ async function generateDeployment(
 
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
     foreignToken: addresses.cowToken,
-    multiTokenMediatorGnosisChain: settings.multiTokenMediatorGnosisChain,
+    multiTokenMediatorGnosisChain:
+      settings.bridge.multiTokenMediatorGnosisChain,
     merkleRoot,
     communityFundsTarget: addresses.cowDao,
     gnoToken: settings.virtualCowToken.gnoToken,

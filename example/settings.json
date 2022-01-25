@@ -1,4 +1,5 @@
 {
+  "gnosisDao": "0x1111111111111111111111111111111111111111",
   "cowDao": {
     "threshold": 3,
     "owners": [
@@ -25,5 +26,9 @@
   "gnoPrice": "375000000000000",
   "nativeTokenPriceOnETH": "37500000000000",
   "nativeTokenPriceOnGnosisChain": "37500000000000",
-  "multiTokenMediatorGnosisChain": "0x8888888888888888888888888888888888888888"
+  "bridge": {
+    "multiTokenMediatorGnosisChain": "0xf6A78083ca3e2a662D6dd1703c939c8aCE2e268d",
+    "amountToRelay": "1000000000000000000",
+    "multiTokenMediatorETH": "0x88ad09518695c6c3712AC10a214bE5109a655671"
+  }
 }
