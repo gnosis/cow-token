@@ -20,8 +20,14 @@ const setupVerifyContractCodeTask: () => void = () => {
     "verify-contract-code",
     "Verify the contract code on the network's block exporer.",
   )
-    .addOptionalParam("virtualToken", "The address of the virtual vCOW token.")
-    .addOptionalParam("forwarder", "The address of the virtual vCOW token.")
+    .addOptionalParam(
+      "virtualToken",
+      "The address of the deployed virtual vCOW token.",
+    )
+    .addOptionalParam(
+      "forwarder",
+      "The address of the deployed forwarder contract.",
+    )
     .setAction(verifyContractCode);
 };
 export { setupVerifyContractCodeTask };
