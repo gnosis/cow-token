@@ -14,12 +14,15 @@ import "../CowProtocolVirtualToken.sol";
 contract BridgedTokenDeployer {
     /// @dev The token address of the CowToken on the Ethereum chain
     address public immutable foreignToken;
-    /// @dev Multi Token Mediator from the ombi-bridge. It is used to get the
+    /// @dev Multi Token Mediator from the omni-bridge. It is used to get the
     /// the address of the bridged CowToken
     address public immutable multiTokenMediator;
+
+    /// @dev The following variables are the same as in the CowProtocolVirtualToken
+    /// contract
     /// @dev The merkle root of the Merkle tree from all claims for the gnosis chain
     bytes32 public immutable merkleRoot;
-    /// @dev The proceeds from selling options to the community will be sent to,
+    /// @dev The proceeds from selling options to the community will be sent to
     /// this address.
     address payable public communityFundsTarget;
     /// @dev Address of the GNO token. It is a form of payment for users who
