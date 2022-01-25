@@ -1,8 +1,9 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
+import { MockContract } from "ethereum-waffle";
 import { BigNumber } from "ethers";
-import hre, { ethers, waffle } from "hardhat";
+import hre, { artifacts, ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
@@ -19,8 +20,10 @@ import { amountToRelay } from "../src/ts/lib/constants";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
+  SafeDeploymentAddresses,
 } from "../src/ts/lib/safe";
 import {
+  createTxForBridgedSafeSetup,
   DeploymentProposalSettings,
   deploymentStepsIntoArray,
   FinalAddresses,
@@ -33,7 +36,8 @@ import { setupDeployer as setupDeterministicDeployer } from "./deterministic-dep
 import { GnosisSafeManager } from "./safe";
 import { stringify } from "./utils/formatUtils";
 
-const [deployer, gnosisDaoOwner, executor] = waffle.provider.getWallets();
+const [deployer, gnosisDaoOwner, executor, ambExecutor] =
+  waffle.provider.getWallets();
 
 // Test at compile time that the example file has the expected format.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -44,6 +48,8 @@ describe("proposal", function () {
   let gnosisSafeManager: GnosisSafeManager;
   let multiTokenMediatorETH: Contract;
   let gnosisDao: Contract;
+  let arbitraryMessageBridge: MockContract;
+  const messageID = "0x" + "39".repeat(32);
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
@@ -54,6 +60,12 @@ describe("proposal", function () {
     multiTokenMediatorETH = await OmniBridgeTransferSimulator.connect(
       deployer,
     ).deploy();
+    const IAMB = await artifacts.readArtifact("IAMB");
+    arbitraryMessageBridge = await waffle.deployMockContract(
+      deployer,
+      IAMB.abi,
+    );
+    await arbitraryMessageBridge.mock.requireToPassMessage.returns(messageID);
     gnosisDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
     ).connect(executor);
@@ -99,6 +111,7 @@ describe("proposal", function () {
       const bridgeParameters: BridgeParameter = {
         multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
         multiTokenMediatorETH: multiTokenMediatorETH.address,
+        arbitraryMessageBridgeETH: arbitraryMessageBridge.address,
       };
       settings = {
         gnosisDao: gnosisDao.address,
@@ -110,6 +123,7 @@ describe("proposal", function () {
       };
       const { steps, addresses } = await generateProposal(
         settings,
+        gnosisSafeManager.getDeploymentAddresses(),
         gnosisSafeManager.getDeploymentAddresses(),
         hre.ethers,
       );
@@ -303,6 +317,133 @@ describe("proposal", function () {
         };
         expect(stringify(onchainDeploymentParams)).to.deep.equal(expected);
       });
+    });
+  });
+});
+
+describe("proposal", function () {
+  let gnosisSafeManager: GnosisSafeManager;
+  let gnosisDao: Contract;
+  let arbitraryMessageBridge: MockContract;
+  const messageID = "0x" + "39".repeat(32);
+
+  before(async function () {
+    await setupDeterministicDeployer(deployer);
+    gnosisSafeManager = await GnosisSafeManager.initDeterministic(deployer);
+    const IAMB = await artifacts.readArtifact("IAMB");
+    arbitraryMessageBridge = await waffle.deployMockContract(
+      deployer,
+      IAMB.abi,
+    );
+    await arbitraryMessageBridge.mock.requireToPassMessage.returns(messageID);
+    gnosisDao = await (
+      await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
+    ).connect(executor);
+  });
+  const cowDaoSettings: SafeCreationSettings = {
+    owners: [1, 2, 3, 4, 5].map((i) => "0x".padEnd(42, i.toString())),
+    threshold: 5,
+  };
+  const teamConrollerSettings: SafeCreationSettings = {
+    owners: [6, 7, 8].map((i) => "0x".padEnd(42, i.toString())),
+    threshold: 2,
+  };
+  const virtualTokenCreationSettings: VirtualTokenCreationSettings = {
+    merkleRoot: "0x" + "42".repeat(32),
+    usdcToken: "0x0000" + "42".repeat(17) + "01",
+    gnoToken: "0x0000" + "42".repeat(17) + "02",
+    gnoPrice: "31337",
+    wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
+    nativeTokenPrice: "42424242",
+  };
+
+  let settings: DeploymentProposalSettings;
+  describe("relay of safe deployment", function () {
+    let gnosisSafeDefaults: SafeDeploymentAddresses;
+    before(async function () {
+      const bridgeParameters: BridgeParameter = {
+        multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+        multiTokenMediatorETH: "0x" + "02".repeat(20),
+        arbitraryMessageBridgeETH: arbitraryMessageBridge.address,
+      };
+      settings = {
+        gnosisDao: gnosisDao.address,
+        cowDao: cowDaoSettings,
+        teamController: teamConrollerSettings,
+        cowToken: {},
+        virtualCowToken: virtualTokenCreationSettings,
+        bridge: bridgeParameters,
+      };
+      gnosisSafeDefaults = gnosisSafeManager.getDeploymentAddresses();
+    });
+    const expectedCowDaoAddress = "0x6a54ef9C6BE1aF4099336C3bDBBDf690d0B67A7c";
+    it("has the correct target address", async function () {
+      const bridgedGnosisSafeDeployment = await createTxForBridgedSafeSetup(
+        expectedCowDaoAddress,
+        {
+          arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH,
+        },
+        settings.cowDao,
+        gnosisSafeDefaults,
+        hre.ethers,
+      );
+      expect(bridgedGnosisSafeDeployment.to).to.be.equal(
+        settings.bridge.arbitraryMessageBridgeETH,
+      );
+    });
+    it("fails if address is not correct", async function () {
+      await expect(
+        createTxForBridgedSafeSetup(
+          "0x" + "42".repeat(20),
+          {
+            arbitraryMessageBridgeETH:
+              settings.bridge.arbitraryMessageBridgeETH,
+          },
+          settings.cowDao,
+          gnosisSafeDefaults,
+          hre.ethers,
+        ),
+      ).to.be.rejectedWith(Error);
+    });
+    it("has the txData that allows to deploy the safe with correct threshold and owners", async function () {
+      const bridgedGnosisSafeDeployment = await createTxForBridgedSafeSetup(
+        expectedCowDaoAddress,
+        {
+          arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH,
+        },
+        settings.cowDao,
+        gnosisSafeDefaults,
+        hre.ethers,
+      );
+      expect(
+        await hre.ethers.provider.getCode(expectedCowDaoAddress),
+      ).to.be.equal("0x");
+      const cutoffData = 266;
+      const cutoffTo = 34;
+      const tx = {
+        from: ambExecutor.address,
+        to:
+          "0x" +
+          bridgedGnosisSafeDeployment.data.substring(cutoffTo, 40 + cutoffTo),
+        data:
+          "0x" +
+          bridgedGnosisSafeDeployment.data.substring(
+            cutoffData,
+            1288 + cutoffData,
+          ),
+        gasPrice: 545019933,
+        gasLimit: 3008448,
+      };
+      const signed = await ambExecutor.signTransaction(tx);
+      await hre.ethers.provider.sendTransaction(signed);
+      expect(
+        await hre.ethers.provider.getCode(expectedCowDaoAddress),
+      ).not.to.equal("0x");
+      const newSafe = gnosisSafeAt(expectedCowDaoAddress).connect(
+        hre.ethers.provider,
+      );
+      expect(await newSafe.getOwners()).to.deep.equal(settings.cowDao.owners);
+      expect(await newSafe.getThreshold()).to.equal(settings.cowDao.threshold);
     });
   });
 });

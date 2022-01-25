@@ -73,6 +73,7 @@ async function generateDeployment(
   const { steps, addresses } = await generateProposal(
     settings,
     defaultSafeDeploymentAddresses(chainId),
+    defaultSafeDeploymentAddresses("100"),
     hre.ethers,
   );
 

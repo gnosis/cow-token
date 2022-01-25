@@ -64,6 +64,7 @@ export interface DeploymentSteps {
   approvalOmniBridgeTx: JsonMetaTransaction;
   relayTestFundsToOmniBridgeTx: JsonMetaTransaction;
   transferCowTokenToCowDao: JsonMetaTransaction;
+  relayCowDaoDeployment: JsonMetaTransaction;
 }
 export interface Proposal {
   steps: DeploymentSteps;
@@ -72,13 +73,14 @@ export interface Proposal {
 
 export async function generateProposal(
   settings: DeploymentProposalSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  safeDeploymentAddressesETH: SafeDeploymentAddresses,
+  safeDeploymentAddressesGnosisChain: SafeDeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<Proposal> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
     await setupDeterministicSafe(
       settings.cowDao,
-      safeDeploymentAddresses,
+      safeDeploymentAddressesETH,
       ethers,
     );
 
@@ -87,7 +89,7 @@ export async function generateProposal(
     transaction: teamControllerCreationTransaction,
   } = await setupDeterministicSafe(
     settings.teamController,
-    safeDeploymentAddresses,
+    safeDeploymentAddressesETH,
     ethers,
   );
 
@@ -96,7 +98,7 @@ export async function generateProposal(
     transaction: investorFundsTargetCreationTransaction,
   } = await setupDeterministicSafe(
     { owners: [cowDao], threshold: 1 },
-    safeDeploymentAddresses,
+    safeDeploymentAddressesETH,
     ethers,
   );
 
@@ -120,7 +122,7 @@ export async function generateProposal(
   const { transaction: virtualCowTokenCreationTransaction } =
     await setupVirtualToken(
       virtualTokenDeployParams,
-      safeDeploymentAddresses,
+      safeDeploymentAddressesETH,
       ethers,
     );
   const cowTokenContract = await ethers.getContractAt(
@@ -145,6 +147,18 @@ export async function generateProposal(
     operation: 0,
   };
 
+  // In the following we create the same cowDao safe also on gnosis
+  // chain. This works only, because the owners, threshold, the
+  // fallback handler, the singleton, the factory are exactly the 
+  // same with the same addresses on ethereum and gnosis chain.
+  const relayCowDaoDeployment = await createTxForBridgedSafeSetup(
+    cowDao,
+    { arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH },
+    settings.cowDao,
+    safeDeploymentAddressesGnosisChain,
+    ethers,
+  );
+
   return {
     steps: {
       cowDaoCreationTransaction: transformMetaTransaction(
@@ -165,6 +179,7 @@ export async function generateProposal(
       approvalOmniBridgeTx,
       relayTestFundsToOmniBridgeTx,
       transferCowTokenToCowDao,
+      relayCowDaoDeployment: transformMetaTransaction(relayCowDaoDeployment),
     },
     addresses: {
       cowDao,
@@ -210,6 +225,44 @@ async function generateBridgeTokenToGnosisChainTx(
 function transformMetaTransaction(tx: MetaTransaction): JsonMetaTransaction {
   return { ...tx, value: tx.value.toString() };
 }
+
+export interface BridgeSettings {
+  arbitraryMessageBridgeETH: string;
+}
+export async function createTxForBridgedSafeSetup(
+  cowDaoAddress: string,
+  bridgeSettings: BridgeSettings,
+  safeSettings: SafeCreationSettings,
+  safeDeploymentAddresses: SafeDeploymentAddresses,
+  ethers: HardhatEthersHelpers,
+): Promise<MetaTransaction> {
+  const { to, data, address } = await prepareDeterministicSafeWithOwners(
+    safeSettings.owners,
+    safeSettings.threshold,
+    safeDeploymentAddresses,
+    BigNumber.from(safeSettings.nonce ?? 0),
+    ethers,
+  );
+  if (address !== cowDaoAddress) {
+    throw new Error("unexpected address for cowDao");
+  }
+  const ambForeign = await ethers.getContractAt(
+    "IAMB",
+    bridgeSettings.arbitraryMessageBridgeETH,
+  );
+  const deploySafeDeterministicOnGnosisChain = {
+    to: ambForeign.address,
+    value: "0",
+    data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
+      to,
+      data,
+      2000000, // Max value is 5M, 2M should be sufficient for gnosis safe deployment.
+    ]),
+    operation: 0,
+  };
+  return deploySafeDeterministicOnGnosisChain;
+}
+
 async function setupDeterministicSafe(
   settings: SafeCreationSettings,
   safeDeploymentAddresses: SafeDeploymentAddresses,
@@ -279,6 +332,7 @@ export function deploymentStepsIntoArray(
     approvalOmniBridgeTx,
     relayTestFundsToOmniBridgeTx,
     transferCowTokenToCowDao,
+    relayCowDaoDeployment,
   } = steps;
   return [
     cowDaoCreationTransaction,
@@ -289,5 +343,6 @@ export function deploymentStepsIntoArray(
     approvalOmniBridgeTx,
     relayTestFundsToOmniBridgeTx,
     transferCowTokenToCowDao,
+    relayCowDaoDeployment,
   ];
 }
