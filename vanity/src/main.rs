@@ -69,7 +69,7 @@ fn main() {
         }
         Contract::Token => {
             let parameters = miner::search_address(
-                CowToken::new(settings.cow_dao, settings.cow_token),
+                CowToken::new(settings.gnosis_dao, settings.cow_dao, settings.cow_token),
                 &args.prefix.0,
             );
             println!("salt: {:?}", parameters.salt);

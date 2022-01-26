@@ -28,18 +28,22 @@ pub struct CowToken {
 
 impl CowToken {
     /// Creates a new COW token from deployment parameters.
-    pub fn new(dao_parameters: SafeParameters, parameters: TokenParameters) -> Self {
-        let dao_address = Safe::new(dao_parameters).creation_address();
-        Self::with_dao(dao_address, parameters)
+    pub fn new(
+        gnosis_dao: Address,
+        cow_dao_parameters: SafeParameters,
+        parameters: TokenParameters,
+    ) -> Self {
+        let cow_dao = Safe::new(cow_dao_parameters).creation_address();
+        Self::with_dao(gnosis_dao, cow_dao, parameters)
     }
 
     /// Creates a new COW token from the specified DAO safe address and
     /// parameters.
-    fn with_dao(dao_address: Address, parameters: TokenParameters) -> CowToken {
+    fn with_dao(gnosis_dao: Address, cow_dao: Address, parameters: TokenParameters) -> CowToken {
         let create2 = Create2::new(
             DEPLOYER,
             parameters.salt,
-            init_code(dao_address, dao_address, TOTAL_SUPPLY.into()),
+            init_code(gnosis_dao, cow_dao, TOTAL_SUPPLY.into()),
         );
 
         Self { create2 }
@@ -115,7 +119,8 @@ mod tests {
         // Taken from calling `getDeterministicDeploymentTransaction` with the
         // test parameters used here.
         let address = CowToken::with_dao(
-            address!("da00424242424242424242424242424242424242"),
+            address!("9da0424242424242424242424242424242424242"),
+            address!("cda0424242424242424242424242424242424242"),
             TokenParameters {
                 salt: digest!("5a175a175a175a175a175a175a175a175a175a175a175a175a175a175a175a17"),
             },
@@ -125,7 +130,7 @@ mod tests {
 
         assert_eq!(
             address,
-            address!("77Fd1525d0E468838B252Fbb84eA1d6Be429C557"),
+            address!("8229E361AFf3d0F27eDD63D891f17e59338cA4Bc"),
         );
     }
 }

@@ -8,6 +8,7 @@ use std::{fs::File, io, path::Path};
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
+    pub gnosis_dao: Address,
     pub cow_dao: SafeParameters,
     pub team_controller: SafeParameters,
     pub cow_token: TokenParameters,
