@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Args } from "../ts/lib/common-interfaces";
 
-import { generateDeployment } from "./ts/proposal";
+import { generateDeployment, readSettings } from "./ts/proposal";
 
 const OUTPUT_FOLDER = "./output/deployment";
 
@@ -22,9 +22,10 @@ const setupDeployment: () => void = () => {
       "settings",
       "Path to the JSON file that contains the deployment settings.",
     )
-    .setAction((args: Args, hre: HardhatRuntimeEnvironment) =>
-      generateDeployment(args, hre, OUTPUT_FOLDER),
-    );
+    .setAction(async (args: Args, hre: HardhatRuntimeEnvironment) => {
+      const settings = await readSettings(args.settings);
+      return generateDeployment(settings, args.claims, hre, OUTPUT_FOLDER);
+    });
 };
 
 export { setupDeployment };

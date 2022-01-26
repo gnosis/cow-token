@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { Args } from "../ts/lib/common-interfaces";
 
-import { generateDeployment } from "./ts/proposal";
+import { generateDeployment, readSettings } from "./ts/proposal";
 
 const OUTPUT_FOLDER = "./output/test-execute-proposal";
 
@@ -29,8 +29,12 @@ async function executeProposal(
   args: Args,
   hre: HardhatRuntimeEnvironment,
 ): Promise<void> {
+  const settings = await readSettings(args.settings);
+  const [gnosisDao] = await hre.ethers.getSigners();
+  settings.gnosisDao = gnosisDao.address;
   const { addresses, steps } = await generateDeployment(
-    args,
+    settings,
+    args.claims,
     hre,
     OUTPUT_FOLDER,
   );
@@ -44,7 +48,6 @@ async function executeProposal(
       .join("\n"),
   );
 
-  const [gnosisDao] = await hre.ethers.getSigners();
   console.log(`Using deployer ${gnosisDao.address} as the Gnosis DAO`);
 
   for (const { to, data } of steps) {

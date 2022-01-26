@@ -10,13 +10,23 @@ import {
   generateProposal,
   Proposal,
 } from "../../ts";
-import { Args, Settings } from "../../ts/lib/common-interfaces";
+import { Settings } from "../../ts/lib/common-interfaces";
 import { defaultTokens } from "../../ts/lib/constants";
 
 import { defaultSafeDeploymentAddresses } from "./safe";
 
+export async function readSettings(settingFile: string): Promise<Settings> {
+  console.log("Processing input files...");
+  // TODO: validate settings
+  const inputSettings: Settings = JSON.parse(
+    await fs.readFile(settingFile, "utf8"),
+  );
+  return inputSettings;
+}
+
 export async function generateDeployment(
-  { claims: claimCsv, settings: settingsJson }: Args,
+  inputSettings: Settings,
+  claimCsv: string,
   hre: HardhatRuntimeEnvironment,
   outputFolder: string,
 ): Promise<Proposal> {
@@ -27,12 +37,6 @@ export async function generateDeployment(
     throw new Error(`Chain id ${chainIdUntyped} not supported`);
   }
   const chainId = chainIdUntyped as "1" | "4" | "100" | "31337";
-
-  console.log("Processing input files...");
-  // TODO: validate settings
-  const inputSettings: Settings = JSON.parse(
-    await fs.readFile(settingsJson, "utf8"),
-  );
   const claims = await parseCsvFile(claimCsv);
 
   console.log("Generating Merkle proofs...");
@@ -44,14 +48,16 @@ export async function generateDeployment(
       gnoPrice: inputSettings.virtualCowToken.gnoPrice,
       nativeTokenPrice: inputSettings.virtualCowToken.nativeTokenPrice,
       merkleRoot,
-      usdcToken: defaultTokens.usdc[chainId === "31337" ? '1' : chainId],
-      gnoToken: defaultTokens.gno[chainId === "31337" ? '1' : chainId],
-      wrappedNativeToken: defaultTokens.weth[chainId === "31337" ? '1' : chainId],
+      usdcToken: defaultTokens.usdc[chainId === "31337" ? "1" : chainId],
+      gnoToken: defaultTokens.gno[chainId === "31337" ? "1" : chainId],
+      wrappedNativeToken:
+        defaultTokens.weth[chainId === "31337" ? "1" : chainId],
     },
   };
   const proposal = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId === "31337" ? '1' : chainId),
+    defaultSafeDeploymentAddresses(chainId === "31337" ? "1" : chainId),
+    defaultSafeDeploymentAddresses("100"),
     hre.ethers,
   );
   const { steps, addresses } = proposal;

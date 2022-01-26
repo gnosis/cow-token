@@ -91,8 +91,7 @@ export default {
       blockGasLimit: 12.5e6,
       initialBaseFeePerGas,
       forking: {
-        url:
-          "https://eth-mainnet.alchemyapi.io/v2/InqJMyBXARYCr8eaH0xuw3se-lVEiV4w",
+        url: "https://eth-mainnet.alchemyapi.io/v2/InqJMyBXARYCr8eaH0xuw3se-lVEiV4w",
         blockNumber: 14081400,
       },
     },
@@ -111,8 +110,8 @@ export default {
       url: "https://rpc.gnosischain.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-        )
+            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+          )
         : "auto",
       chainId: 100,
     },
