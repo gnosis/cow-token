@@ -44,20 +44,28 @@ describe("deployment of bridgedTokenDeployer", () => {
           wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
           nativeTokenPrice: "42424242",
         };
-
+      const gnosisDao = "0x" + "29".repeat(20);
       const settingsStandard: DeploymentProposalSettings = {
+        gnosisDao: gnosisDao,
         cowDao: cowDaoSettings,
         teamController: teamConrollerSettingsStandard,
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettingsStandard,
-        bridge: { multiTokenMediatorGnosisChain: "0x" + "01".repeat(20) },
+        bridge: {
+          multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+          multiTokenMediatorETH: "0x" + "01".repeat(20),
+        },
       };
       const settingsSimplified: DeploymentProposalSettings = {
+        gnosisDao: gnosisDao,
         cowDao: cowDaoSettings,
         teamController: dummyteamConrollerSettings,
         cowToken: {},
         virtualCowToken: dummyVirtualTokenCreationSettings,
-        bridge: { multiTokenMediatorGnosisChain: "0x" + "00".repeat(20) },
+        bridge: {
+          multiTokenMediatorGnosisChain: "0x" + "00".repeat(20),
+          multiTokenMediatorETH: "0x" + "00".repeat(20),
+        },
       };
 
       const { addresses: addressesStandard } = await generateProposal(

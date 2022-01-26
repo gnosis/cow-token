@@ -3,8 +3,8 @@ import { expect } from "chai";
 import { Contract, utils } from "ethers";
 import hre, { ethers } from "hardhat";
 
-import { defaultTokens } from "../../src/tasks/ts/constants";
 import { DEPLOYER_CONTRACT } from "../../src/ts";
+import { defaultTokens } from "../../src/ts/lib/constants";
 
 import { forkMainnet, stopMainnetFork } from "./chain-fork";
 
