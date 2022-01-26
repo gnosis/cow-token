@@ -182,7 +182,9 @@ export async function generateProposalAsStruct(
     safeDeploymentAddressesETH.fallbackHandler !==
       safeDeploymentAddressesGnosisChain.fallbackHandler
   ) {
-    throw new Error("testing");
+    throw new Error(
+      "The safeDeploymentAddress are not the same on the two different networks",
+    );
   }
   const relayCowDaoDeployment = await createTxForBridgedSafeSetup(
     cowDao,
@@ -288,7 +290,7 @@ export async function createTxForBridgedSafeSetup(
     data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
       to,
       data,
-      2000000, // Max value is 5M, 2M should be sufficient for gnosis safe deployment.
+      1500000, // Max value is 2M on ETH->xDAI bridge, 1.5M should be sufficient for gnosis safe deployment.
     ]),
     operation: 0,
   };
