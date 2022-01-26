@@ -394,7 +394,6 @@ describe("proposal", function () {
       );
     });
     it("createTxForBridgedSafeSetup calls the bridge correctly on requireToPassMessage", async function () {
-
       const bridgedGnosisSafeDeployment = await createTxForBridgedSafeSetup(
         expectedCowDaoAddress,
         {
@@ -411,18 +410,22 @@ describe("proposal", function () {
           .arrayify(bridgedGnosisSafeDeployment.data)
           .slice(functionSignatureBytes),
       );
-      await arbitraryMessageBridge.mock.requireToPassMessage.withArgs(to, data, gasLimit).reverts();
-      await expect(execSafeTransaction(
-        gnosisDao,
-        bridgedGnosisSafeDeployment,
-        [gnosisDaoOwner],
-      )).to.be.reverted
-      await arbitraryMessageBridge.mock.requireToPassMessage.withArgs(to, data, gasLimit).returns(messageID);
-      await expect(execSafeTransaction(
-        gnosisDao,
-        bridgedGnosisSafeDeployment,
-        [gnosisDaoOwner],
-      )).to.not.be.reverted
+      await arbitraryMessageBridge.mock.requireToPassMessage
+        .withArgs(to, data, gasLimit)
+        .reverts();
+      await expect(
+        execSafeTransaction(gnosisDao, bridgedGnosisSafeDeployment, [
+          gnosisDaoOwner,
+        ]),
+      ).to.be.reverted;
+      await arbitraryMessageBridge.mock.requireToPassMessage
+        .withArgs(to, data, gasLimit)
+        .returns(messageID);
+      await expect(
+        execSafeTransaction(gnosisDao, bridgedGnosisSafeDeployment, [
+          gnosisDaoOwner,
+        ]),
+      ).to.not.be.reverted;
     });
 
     it("fails if address is not correct", async function () {
