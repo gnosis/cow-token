@@ -76,6 +76,10 @@ async function generateDeployment(
       ...defaultSafeDeploymentAddresses(chainId),
       forwarder: DEFAULT_FORWARDER,
     },
+    {
+      ...defaultSafeDeploymentAddresses("100"),
+      forwarder: DEFAULT_FORWARDER,
+    },
     hre.ethers,
   );
 

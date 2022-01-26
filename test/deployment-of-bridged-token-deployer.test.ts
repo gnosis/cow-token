@@ -9,6 +9,7 @@ import {
   generateProposal,
 } from "../src/ts";
 import {
+  dummyBridgeParameters,
   dummyteamConrollerSettings,
   dummyVirtualTokenCreationSettings,
 } from "../src/ts/lib/dummy-instantiation";
@@ -51,10 +52,7 @@ describe("deployment of bridgedTokenDeployer", () => {
         teamController: teamConrollerSettingsStandard,
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettingsStandard,
-        bridge: {
-          multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
-          multiTokenMediatorETH: "0x" + "01".repeat(20),
-        },
+        bridge: dummyBridgeParameters,
       };
       const settingsSimplified: DeploymentProposalSettings = {
         gnosisDao: gnosisDao,
@@ -62,26 +60,27 @@ describe("deployment of bridgedTokenDeployer", () => {
         teamController: dummyteamConrollerSettings,
         cowToken: {},
         virtualCowToken: dummyVirtualTokenCreationSettings,
-        bridge: {
-          multiTokenMediatorGnosisChain: "0x" + "00".repeat(20),
-          multiTokenMediatorETH: "0x" + "00".repeat(20),
-        },
+        bridge: dummyBridgeParameters,
       };
 
+      const deploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: "0x" + "f0".repeat(20),
+      };
       const { addresses: addressesStandard } = await generateProposal(
         settingsStandard,
-        {
-          ...gnosisSafeManager.getDeploymentAddresses(),
-          forwarder: constants.AddressZero,
-        },
+        deploymentAddresses,
+        deploymentAddresses,
         hre.ethers,
       );
+      const dummyDeploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: constants.AddressZero,
+      };
       const { addresses: addressesSimplified } = await generateProposal(
         settingsSimplified,
-        {
-          ...gnosisSafeManager.getDeploymentAddresses(),
-          forwarder: "0x" + "f0".repeat(20),
-        },
+        dummyDeploymentAddresses,
+        dummyDeploymentAddresses,
         hre.ethers,
       );
       expect(addressesStandard.cowDao).to.be.equal(addressesSimplified.cowDao);

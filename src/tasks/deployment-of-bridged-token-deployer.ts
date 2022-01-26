@@ -87,6 +87,10 @@ async function generateDeployment(
       ...defaultSafeDeploymentAddresses(chainId),
       forwarder: constants.AddressZero,
     },
+    {
+      ...defaultSafeDeploymentAddresses("100"),
+      forwarder: constants.AddressZero,
+    },
     hre.ethers,
   );
 
