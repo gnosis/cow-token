@@ -18,6 +18,8 @@ import {
 } from "./lib/safe";
 import { metadata } from "./token";
 
+import { callIfContractExists } from ".";
+
 export interface SafeCreationSettings {
   expectedAddress?: string;
   threshold: number;
@@ -45,16 +47,25 @@ export interface DeploymentProposalSettings {
   bridge: BridgeParameter;
 }
 
+export interface DeploymentAddresses extends SafeDeploymentAddresses {
+  forwarder: string;
+}
+
 export type JsonMetaTransaction = Record<
   keyof Omit<MetaTransaction, "operation">,
   string
 > & { operation: number };
-export interface FinalAddresses {
-  cowDao: string;
-  teamController: string;
-  investorFundsTarget: string;
-  cowToken: string;
-}
+
+export const deterministicallyComputedAddresses = [
+  "cowDao",
+  "teamController",
+  "investorFundsTarget",
+  "cowToken",
+] as const;
+export type DeterministicallyComputedAddress =
+  typeof deterministicallyComputedAddresses[number];
+export type FinalAddresses = Record<DeterministicallyComputedAddress, string>;
+
 export interface DeploymentSteps {
   cowDaoCreationTransaction: JsonMetaTransaction;
   teamControllerCreationTransaction: JsonMetaTransaction;
@@ -78,14 +89,14 @@ export interface Proposal {
 
 export async function generateProposal(
   settings: DeploymentProposalSettings,
-  safeDeploymentAddressesETH: SafeDeploymentAddresses,
-  safeDeploymentAddressesGnosisChain: SafeDeploymentAddresses,
+  deploymentAddressesETH: DeploymentAddresses,
+  deploymentAddressesGnosisChain: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<Proposal> {
   const proposal = await generateProposalAsStruct(
     settings,
-    safeDeploymentAddressesETH,
-    safeDeploymentAddressesGnosisChain,
+    deploymentAddressesETH,
+    deploymentAddressesGnosisChain,
     ethers,
   );
   return {
@@ -96,14 +107,14 @@ export async function generateProposal(
 
 export async function generateProposalAsStruct(
   settings: DeploymentProposalSettings,
-  safeDeploymentAddressesETH: SafeDeploymentAddresses,
-  safeDeploymentAddressesGnosisChain: SafeDeploymentAddresses,
+  deploymentAddressesETH: DeploymentAddresses,
+  deploymentAddressesGnosisChain: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<ProposalAsStruct> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
     await setupDeterministicSafe(
       settings.cowDao,
-      safeDeploymentAddressesETH,
+      deploymentAddressesETH,
       ethers,
     );
 
@@ -112,7 +123,7 @@ export async function generateProposalAsStruct(
     transaction: teamControllerCreationTransaction,
   } = await setupDeterministicSafe(
     settings.teamController,
-    safeDeploymentAddressesETH,
+    deploymentAddressesETH,
     ethers,
   );
 
@@ -121,7 +132,7 @@ export async function generateProposalAsStruct(
     transaction: investorFundsTargetCreationTransaction,
   } = await setupDeterministicSafe(
     { owners: [cowDao], threshold: 1 },
-    safeDeploymentAddressesETH,
+    deploymentAddressesETH,
     ethers,
   );
 
@@ -132,7 +143,12 @@ export async function generateProposalAsStruct(
     totalSupply,
   };
   const { address: cowToken, transaction: cowTokenCreationTransaction } =
-    await setupRealToken(settings.cowToken, realTokenDeployParams, ethers);
+    await setupRealToken(
+      settings.cowToken,
+      deploymentAddressesETH,
+      realTokenDeployParams,
+      ethers,
+    );
 
   const virtualTokenDeployParams: VirtualTokenDeployParams = {
     ...settings.virtualCowToken,
@@ -145,7 +161,7 @@ export async function generateProposalAsStruct(
   const { transaction: virtualCowTokenCreationTransaction } =
     await setupVirtualToken(
       virtualTokenDeployParams,
-      safeDeploymentAddressesETH,
+      deploymentAddressesETH,
       ethers,
     );
   const cowTokenContract = await ethers.getContractAt(
@@ -175,12 +191,11 @@ export async function generateProposalAsStruct(
   // fallback handler, the singleton, the factory are exactly the
   // same with the same addresses on ethereum and gnosis chain.
   if (
-    safeDeploymentAddressesETH.singleton !==
-      safeDeploymentAddressesGnosisChain.singleton ||
-    safeDeploymentAddressesETH.factory !==
-      safeDeploymentAddressesGnosisChain.factory ||
-    safeDeploymentAddressesETH.fallbackHandler !==
-      safeDeploymentAddressesGnosisChain.fallbackHandler
+    deploymentAddressesETH.singleton !==
+      deploymentAddressesGnosisChain.singleton ||
+    deploymentAddressesETH.factory !== deploymentAddressesGnosisChain.factory ||
+    deploymentAddressesETH.fallbackHandler !==
+      deploymentAddressesGnosisChain.fallbackHandler
   ) {
     throw new Error(
       "The safeDeploymentAddress are not the same on the two different networks",
@@ -190,7 +205,7 @@ export async function generateProposalAsStruct(
     cowDao,
     { arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH },
     settings.cowDao,
-    safeDeploymentAddressesGnosisChain,
+    deploymentAddressesGnosisChain,
     ethers,
   );
 
@@ -267,18 +282,22 @@ export async function createTxForBridgedSafeSetup(
   cowDaoAddress: string,
   bridgeSettings: BridgeSettings,
   safeSettings: SafeCreationSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<MetaTransaction> {
-  const { to, data, address } = await prepareDeterministicSafeWithOwners(
-    safeSettings.owners,
-    safeSettings.threshold,
-    safeDeploymentAddresses,
-    BigNumber.from(safeSettings.nonce ?? 0),
+  const { transaction, address } = await setupDeterministicSafe(
+    safeSettings,
+    deploymentAddresses,
     ethers,
   );
   if (address !== cowDaoAddress) {
     throw new Error("unexpected address for cowDao");
+  }
+  if (
+    transaction.operation !== SafeOperation.Call ||
+    !BigNumber.from(transaction.value).eq(0)
+  ) {
+    throw new Error("Transaction not supported by the message bridge.");
   }
   const ambForeign = await ethers.getContractAt(
     "IAMB",
@@ -288,8 +307,8 @@ export async function createTxForBridgedSafeSetup(
     to: ambForeign.address,
     value: "0",
     data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
-      to,
-      data,
+      transaction.to,
+      transaction.data,
       1500000, // Max value is 2M on ETH->xDAI bridge, 1.5M should be sufficient for gnosis safe deployment.
     ]),
     operation: 0,
@@ -299,24 +318,39 @@ export async function createTxForBridgedSafeSetup(
 
 async function setupDeterministicSafe(
   settings: SafeCreationSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<{ address: string; transaction: MetaTransaction }> {
   const { to, data, address } = await prepareDeterministicSafeWithOwners(
     settings.owners,
     settings.threshold,
-    safeDeploymentAddresses,
+    deploymentAddresses,
     BigNumber.from(settings.nonce ?? 0),
     ethers,
   );
+  const deploymentTransaction = {
+    to,
+    data,
+    operation: SafeOperation.Call,
+    value: "0",
+  };
+  const forwarder = await ethers.getContractAt(
+    ContractName.Forwarder,
+    deploymentAddresses.forwarder,
+  );
   return {
     address,
-    transaction: { to, data, operation: SafeOperation.Call, value: "0" },
+    transaction: callIfContractExists({
+      addressToTest: address,
+      transaction: deploymentTransaction,
+      forwarder,
+    }),
   };
 }
 
 async function setupRealToken(
   settings: RealTokenCreationSettings,
+  deploymentAddresses: DeploymentAddresses,
   params: RealTokenDeployParams,
   ethers: HardhatEthersHelpers,
 ): Promise<{ address: string; transaction: MetaTransaction }> {
@@ -331,9 +365,18 @@ async function setupRealToken(
       ethers,
       salt,
     );
+
+  const forwarder = await ethers.getContractAt(
+    ContractName.Forwarder,
+    deploymentAddresses.forwarder,
+  );
   return {
     address,
-    transaction,
+    transaction: callIfContractExists({
+      addressToTest: address,
+      transaction,
+      forwarder,
+    }),
   };
 }
 

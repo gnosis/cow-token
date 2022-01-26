@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import {
+  DEFAULT_FORWARDER,
   parseCsvFile,
   computeProofs,
   removeSplitClaimFiles,
@@ -51,8 +52,14 @@ export async function generateDeployment(
   };
   const proposal = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId),
-    defaultSafeDeploymentAddresses("100"),
+    {
+      ...defaultSafeDeploymentAddresses(chainId),
+      forwarder: DEFAULT_FORWARDER,
+    },
+    {
+      ...defaultSafeDeploymentAddresses("100"),
+      forwarder: DEFAULT_FORWARDER,
+    },
     hre.ethers,
   );
   const { steps, addresses } = proposal;

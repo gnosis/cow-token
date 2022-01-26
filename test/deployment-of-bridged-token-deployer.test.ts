@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { constants } from "ethers";
 import hre, { waffle } from "hardhat";
 
 import {
@@ -62,16 +63,24 @@ describe("deployment of bridgedTokenDeployer", () => {
         bridge: dummyBridgeParameters,
       };
 
+      const deploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: "0x" + "f0".repeat(20),
+      };
       const { addresses: addressesStandard } = await generateProposal(
         settingsStandard,
-        gnosisSafeManager.getDeploymentAddresses(),
-        gnosisSafeManager.getDeploymentAddresses(),
+        deploymentAddresses,
+        deploymentAddresses,
         hre.ethers,
       );
+      const dummyDeploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: constants.AddressZero,
+      };
       const { addresses: addressesSimplified } = await generateProposal(
         settingsSimplified,
-        gnosisSafeManager.getDeploymentAddresses(),
-        gnosisSafeManager.getDeploymentAddresses(),
+        dummyDeploymentAddresses,
+        dummyDeploymentAddresses,
         hre.ethers,
       );
       expect(addressesStandard.cowDao).to.be.equal(addressesSimplified.cowDao);
