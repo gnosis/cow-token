@@ -297,7 +297,7 @@ export async function createTxForBridgedSafeSetup(
     transaction.operation !== SafeOperation.Call ||
     !BigNumber.from(transaction.value).eq(0)
   ) {
-    throw new Error("Trnasaction not supported by the message bridge.");
+    throw new Error("Transaction not supported by the message bridge.");
   }
   const ambForeign = await ethers.getContractAt(
     "IAMB",
