@@ -8,7 +8,7 @@ import {
   DeployParams,
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
-  getDeployArgsFromBridgeTokenDeployer,
+  getDeployArgsFromBridgedTokenDeployer,
 } from "../ts";
 
 interface Args {
@@ -114,7 +114,7 @@ async function verifyContract(
       break;
     }
     case ContractName.BridgedTokenDeployer: {
-      deployArgs = await getDeployArgsFromBridgeTokenDeployer(contract);
+      deployArgs = await getDeployArgsFromBridgedTokenDeployer(contract);
       break;
     }
     default: {
