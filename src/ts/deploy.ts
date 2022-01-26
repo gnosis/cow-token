@@ -395,7 +395,7 @@ export async function getDeployArgsFromVirtualToken(
   );
 }
 
-export async function getDeployArgsFromBridgeTokenDeployer(
+export async function getDeployArgsFromBridgedTokenDeployer(
   bridgedTokenDeployer: Contract,
 ): Promise<DeploymentHelperDeployParams> {
   const promisedParameters: Record<
