@@ -2,7 +2,8 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
-import { BigNumber } from "ethers";
+import { BigNumber, utils } from "ethers";
+import { defaultAbiCoder } from "ethers/lib/utils";
 import hre, { artifacts, ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
@@ -66,6 +67,7 @@ describe("proposal", function () {
       IAMB.abi,
     );
     await arbitraryMessageBridge.mock.requireToPassMessage.returns(messageID);
+
     gnosisDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
     ).connect(executor);
@@ -418,21 +420,21 @@ describe("proposal", function () {
       expect(
         await hre.ethers.provider.getCode(expectedCowDaoAddress),
       ).to.be.equal("0x");
-      const cutoffData = 266;
-      const cutoffTo = 34;
+
+      const functionSignatureBytes = 4;
+      const [to, data, gasLimit] = defaultAbiCoder.decode(
+        ["address", "bytes", "uint256"],
+        utils
+          .arrayify(bridgedGnosisSafeDeployment.data)
+          .slice(functionSignatureBytes),
+      );
+
       const tx = {
         from: ambExecutor.address,
-        to:
-          "0x" +
-          bridgedGnosisSafeDeployment.data.substring(cutoffTo, 40 + cutoffTo),
-        data:
-          "0x" +
-          bridgedGnosisSafeDeployment.data.substring(
-            cutoffData,
-            1288 + cutoffData,
-          ),
+        to,
+        data,
         gasPrice: 545019933,
-        gasLimit: 3008448,
+        gasLimit,
       };
       const signed = await ambExecutor.signTransaction(tx);
       await hre.ethers.provider.sendTransaction(signed);
