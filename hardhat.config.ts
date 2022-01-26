@@ -123,6 +123,9 @@ export default {
     gasPrice: 21,
   },
   etherscan: {
-    apiKey: ETHERSCAN_API_KEY,
+    apiKey: {
+      xdai: "any api key is good currently",
+      mainnet: ETHERSCAN_API_KEY,
+    },
   },
 };

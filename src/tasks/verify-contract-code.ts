@@ -8,11 +8,13 @@ import {
   DeployParams,
   getDeployArgsFromRealToken,
   getDeployArgsFromVirtualToken,
+  getDeployArgsFromBridgeTokenDeployer,
 } from "../ts";
 
 interface Args {
   virtualToken?: string;
   forwarder?: string;
+  bridgedTokenDeployer?: string;
 }
 
 const setupVerifyContractCodeTask: () => void = () => {
@@ -28,24 +30,31 @@ const setupVerifyContractCodeTask: () => void = () => {
       "forwarder",
       "The address of the deployed forwarder contract.",
     )
+    .addOptionalParam(
+      "bridgedTokenDeployer",
+      "The address of the deployed bridgedTokenDeployer contract.",
+    )
     .setAction(verifyContractCode);
 };
 export { setupVerifyContractCodeTask };
 
 async function verifyContractCode(
-  { virtualToken, forwarder }: Args,
+  { virtualToken, forwarder, bridgedTokenDeployer }: Args,
   hre: HardhatRuntimeEnvironment,
 ) {
-  if (hre.network.name === "gnosischain") {
-    throw new Error("Blockscout is currently not supported");
-  }
-
   if (virtualToken !== undefined) {
     await verifyVirtualToken(virtualToken, hre);
   }
 
   if (forwarder !== undefined) {
     await verifyContract(ContractName.Forwarder, forwarder, hre);
+  }
+  if (bridgedTokenDeployer !== undefined) {
+    await verifyContract(
+      ContractName.BridgedTokenDeployer,
+      bridgedTokenDeployer,
+      hre,
+    );
   }
 }
 
@@ -102,6 +111,10 @@ async function verifyContract(
     }
     case ContractName.Forwarder: {
       deployArgs = {};
+      break;
+    }
+    case ContractName.BridgedTokenDeployer: {
+      deployArgs = await getDeployArgsFromBridgeTokenDeployer(contract);
       break;
     }
     default: {
