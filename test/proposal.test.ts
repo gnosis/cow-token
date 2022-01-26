@@ -21,10 +21,10 @@ import { amountToRelay } from "../src/ts/lib/constants";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
-  SafeDeploymentAddresses,
 } from "../src/ts/lib/safe";
 import {
   createTxForBridgedSafeSetup,
+  DeploymentAddresses,
   DeploymentProposalSettings,
   deploymentStepsIntoArray,
   FinalAddresses,
@@ -335,11 +335,18 @@ describe("proposal", function () {
 describe("proposal", function () {
   let gnosisSafeManager: GnosisSafeManager;
   let gnosisDao: Contract;
+  let forwarder: Contract;
   let arbitraryMessageBridge: MockContract;
   const messageID = "0x" + "39".repeat(32);
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
+
+    const ForwardFactory = (
+      await ethers.getContractFactory("Forwarder")
+    ).connect(deployer);
+    forwarder = await ForwardFactory.deploy();
+
     gnosisSafeManager = await GnosisSafeManager.initDeterministic(deployer);
     const IAMB = await artifacts.readArtifact("IAMB");
     arbitraryMessageBridge = await waffle.deployMockContract(
@@ -369,7 +376,7 @@ describe("proposal", function () {
 
   let settings: DeploymentProposalSettings;
   describe("relay of safe deployment", function () {
-    let gnosisSafeDefaults: SafeDeploymentAddresses;
+    let deploymentAddresses: DeploymentAddresses;
     before(async function () {
       const bridgeParameters: BridgeParameter = {
         multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
@@ -384,7 +391,10 @@ describe("proposal", function () {
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
       };
-      gnosisSafeDefaults = gnosisSafeManager.getDeploymentAddresses();
+      deploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: forwarder.address,
+      };
     });
     const expectedCowDaoAddress = "0x6a54ef9C6BE1aF4099336C3bDBBDf690d0B67A7c";
     it("has the correct target address", async function () {
@@ -394,7 +404,7 @@ describe("proposal", function () {
           arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH,
         },
         settings.cowDao,
-        gnosisSafeDefaults,
+        deploymentAddresses,
         hre.ethers,
       );
       expect(bridgedGnosisSafeDeployment.to).to.be.equal(
@@ -408,7 +418,7 @@ describe("proposal", function () {
           arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH,
         },
         settings.cowDao,
-        gnosisSafeDefaults,
+        deploymentAddresses,
         hre.ethers,
       );
       const functionSignatureBytes = 4;
@@ -445,7 +455,7 @@ describe("proposal", function () {
               settings.bridge.arbitraryMessageBridgeETH,
           },
           settings.cowDao,
-          gnosisSafeDefaults,
+          deploymentAddresses,
           hre.ethers,
         ),
       ).to.be.rejectedWith(Error);
@@ -460,7 +470,7 @@ describe("proposal", function () {
           arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH,
         },
         settings.cowDao,
-        gnosisSafeDefaults,
+        deploymentAddresses,
         hre.ethers,
       );
       expect(

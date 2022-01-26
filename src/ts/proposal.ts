@@ -277,18 +277,22 @@ export async function createTxForBridgedSafeSetup(
   cowDaoAddress: string,
   bridgeSettings: BridgeSettings,
   safeSettings: SafeCreationSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<MetaTransaction> {
-  const { to, data, address } = await prepareDeterministicSafeWithOwners(
-    safeSettings.owners,
-    safeSettings.threshold,
-    safeDeploymentAddresses,
-    BigNumber.from(safeSettings.nonce ?? 0),
+  const { transaction, address } = await setupDeterministicSafe(
+    safeSettings,
+    deploymentAddresses,
     ethers,
   );
   if (address !== cowDaoAddress) {
     throw new Error("unexpected address for cowDao");
+  }
+  if (
+    transaction.operation !== SafeOperation.Call ||
+    !BigNumber.from(transaction.value).eq(0)
+  ) {
+    throw new Error("Trnasaction not supported by the message bridge.");
   }
   const ambForeign = await ethers.getContractAt(
     "IAMB",
@@ -298,8 +302,8 @@ export async function createTxForBridgedSafeSetup(
     to: ambForeign.address,
     value: "0",
     data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
-      to,
-      data,
+      transaction.to,
+      transaction.data,
       1500000, // Max value is 2M on ETH->xDAI bridge, 1.5M should be sufficient for gnosis safe deployment.
     ]),
     operation: 0,
