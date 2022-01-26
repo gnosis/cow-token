@@ -4,6 +4,7 @@ import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
 import { BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
+
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
@@ -65,7 +66,6 @@ describe("proposal", function () {
       IAMB.abi,
     );
     await arbitraryMessageBridge.mock.requireToPassMessage.returns(messageID);
-
     gnosisDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
     ).connect(executor);

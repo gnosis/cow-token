@@ -176,11 +176,11 @@ export async function generateProposalAsStruct(
   // same with the same addresses on ethereum and gnosis chain.
   if (
     safeDeploymentAddressesETH.singleton !==
-    safeDeploymentAddressesGnosisChain.singleton ||
+      safeDeploymentAddressesGnosisChain.singleton ||
     safeDeploymentAddressesETH.factory !==
-    safeDeploymentAddressesGnosisChain.factory ||
+      safeDeploymentAddressesGnosisChain.factory ||
     safeDeploymentAddressesETH.fallbackHandler !==
-    safeDeploymentAddressesGnosisChain.fallbackHandler
+      safeDeploymentAddressesGnosisChain.fallbackHandler
   ) {
     throw new Error("testing");
   }
