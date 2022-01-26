@@ -88,7 +88,7 @@ export async function generateProposal(
 ): Promise<Proposal> {
   const proposal = await generateProposalAsStruct(
     settings,
-    safeDeploymentAddresses,
+    deploymentAddresses,
     ethers,
   );
   return {
@@ -99,7 +99,7 @@ export async function generateProposal(
 
 export async function generateProposalAsStruct(
   settings: DeploymentProposalSettings,
-  safeDeploymentAddresses: SafeDeploymentAddresses,
+  deploymentAddresses: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<ProposalAsStruct> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
