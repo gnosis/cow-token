@@ -24,7 +24,7 @@ import {
   DeploymentProposalSettings,
   deploymentStepsIntoArray,
   FinalAddresses,
-  generateProposal,
+  generateProposalAsStruct,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
 } from "../src/ts/proposal";
@@ -108,7 +108,7 @@ describe("proposal", function () {
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
       };
-      const { steps, addresses } = await generateProposal(
+      const { steps, addresses } = await generateProposalAsStruct(
         settings,
         gnosisSafeManager.getDeploymentAddresses(),
         hre.ethers,

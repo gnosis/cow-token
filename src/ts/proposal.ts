@@ -65,8 +65,13 @@ export interface DeploymentSteps {
   relayTestFundsToOmniBridgeTx: JsonMetaTransaction;
   transferCowTokenToCowDao: JsonMetaTransaction;
 }
-export interface Proposal {
+export interface ProposalAsStruct {
   steps: DeploymentSteps;
+  addresses: FinalAddresses;
+}
+
+export interface Proposal {
+  steps: JsonMetaTransaction[];
   addresses: FinalAddresses;
 }
 
@@ -75,6 +80,22 @@ export async function generateProposal(
   safeDeploymentAddresses: SafeDeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<Proposal> {
+  const proposal = await generateProposalAsStruct(
+    settings,
+    safeDeploymentAddresses,
+    ethers,
+  );
+  return {
+    steps: deploymentStepsIntoArray(proposal.steps),
+    addresses: proposal.addresses,
+  };
+}
+
+export async function generateProposalAsStruct(
+  settings: DeploymentProposalSettings,
+  safeDeploymentAddresses: SafeDeploymentAddresses,
+  ethers: HardhatEthersHelpers,
+): Promise<ProposalAsStruct> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
     await setupDeterministicSafe(
       settings.cowDao,
