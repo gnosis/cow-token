@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 
-import { constants } from "ethers";
+import { constants, utils } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -13,10 +13,7 @@ import {
   ContractName,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
-import {
-  defaultTokens,
-  nativeTokenPriceGnosisChain,
-} from "../ts/lib/constants";
+import { defaultTokens } from "../ts/lib/constants";
 import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
@@ -118,7 +115,7 @@ async function generateDeployment(
     communityFundsTarget: cowDao,
     gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
-    nativeTokenPrice: nativeTokenPriceGnosisChain,
+    nativeTokenPrice: utils.parseUnits("0.15", 18), // the price of one unit of COW in xDAI
     wrappedNativeToken: defaultTokens.weth[chainId],
   };
 
