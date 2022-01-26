@@ -94,7 +94,7 @@ async function generateDeployment(
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER}/steps.json`,
-    JSON.stringify(deploymentStepsIntoArray(steps), undefined, 2),
+    JSON.stringify(steps, undefined, 2),
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER}/claims.json`,

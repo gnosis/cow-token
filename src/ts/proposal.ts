@@ -66,8 +66,13 @@ export interface DeploymentSteps {
   transferCowTokenToCowDao: JsonMetaTransaction;
   relayCowDaoDeployment: JsonMetaTransaction;
 }
-export interface Proposal {
+export interface ProposalAsStruct {
   steps: DeploymentSteps;
+  addresses: FinalAddresses;
+}
+
+export interface Proposal {
+  steps: JsonMetaTransaction[];
   addresses: FinalAddresses;
 }
 
@@ -77,6 +82,24 @@ export async function generateProposal(
   safeDeploymentAddressesGnosisChain: SafeDeploymentAddresses,
   ethers: HardhatEthersHelpers,
 ): Promise<Proposal> {
+  const proposal = await generateProposalAsStruct(
+    settings,
+    safeDeploymentAddressesETH,
+    safeDeploymentAddressesGnosisChain,
+    ethers,
+  );
+  return {
+    steps: deploymentStepsIntoArray(proposal.steps),
+    addresses: proposal.addresses,
+  };
+}
+
+export async function generateProposalAsStruct(
+  settings: DeploymentProposalSettings,
+  safeDeploymentAddressesETH: SafeDeploymentAddresses,
+  safeDeploymentAddressesGnosisChain: SafeDeploymentAddresses,
+  ethers: HardhatEthersHelpers,
+): Promise<ProposalAsStruct> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
     await setupDeterministicSafe(
       settings.cowDao,
@@ -149,8 +172,18 @@ export async function generateProposal(
 
   // In the following we create the same cowDao safe also on gnosis
   // chain. This works only, because the owners, threshold, the
-  // fallback handler, the singleton, the factory are exactly the 
+  // fallback handler, the singleton, the factory are exactly the
   // same with the same addresses on ethereum and gnosis chain.
+  if (
+    safeDeploymentAddressesETH.singleton !==
+      safeDeploymentAddressesGnosisChain.singleton ||
+    safeDeploymentAddressesETH.factory !==
+      safeDeploymentAddressesGnosisChain.factory ||
+    safeDeploymentAddressesETH.fallbackHandler !==
+      safeDeploymentAddressesGnosisChain.fallbackHandler
+  ) {
+    throw new Error("testing");
+  }
   const relayCowDaoDeployment = await createTxForBridgedSafeSetup(
     cowDao,
     { arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH },
@@ -225,7 +258,6 @@ async function generateBridgeTokenToGnosisChainTx(
 function transformMetaTransaction(tx: MetaTransaction): JsonMetaTransaction {
   return { ...tx, value: tx.value.toString() };
 }
-
 export interface BridgeSettings {
   arbitraryMessageBridgeETH: string;
 }
