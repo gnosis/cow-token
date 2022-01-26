@@ -23,10 +23,10 @@ export async function generateDeployment(
   const chainIdUntyped = (
     await hre.ethers.provider.getNetwork()
   ).chainId.toString();
-  if (!["1", "4", "100"].includes(chainIdUntyped)) {
+  if (!["1", "4", "100", "31337"].includes(chainIdUntyped)) {
     throw new Error(`Chain id ${chainIdUntyped} not supported`);
   }
-  const chainId = chainIdUntyped as "1" | "4" | "100";
+  const chainId = chainIdUntyped as "1" | "4" | "100" | "31337";
 
   console.log("Processing input files...");
   // TODO: validate settings
@@ -44,14 +44,14 @@ export async function generateDeployment(
       gnoPrice: inputSettings.virtualCowToken.gnoPrice,
       nativeTokenPrice: inputSettings.virtualCowToken.nativeTokenPrice,
       merkleRoot,
-      usdcToken: defaultTokens.usdc[chainId],
-      gnoToken: defaultTokens.gno[chainId],
-      wrappedNativeToken: defaultTokens.weth[chainId],
+      usdcToken: defaultTokens.usdc[chainId === "31337" ? '1' : chainId],
+      gnoToken: defaultTokens.gno[chainId === "31337" ? '1' : chainId],
+      wrappedNativeToken: defaultTokens.weth[chainId === "31337" ? '1' : chainId],
     },
   };
   const proposal = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId),
+    defaultSafeDeploymentAddresses(chainId === "31337" ? '1' : chainId),
     hre.ethers,
   );
   const { steps, addresses } = proposal;
