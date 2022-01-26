@@ -9,7 +9,6 @@ import {
   removeSplitClaimFiles,
   splitClaimsAndSaveToFolder,
   generateProposal,
-  deploymentStepsIntoArray,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
 import { defaultTokens } from "../ts/lib/constants";
