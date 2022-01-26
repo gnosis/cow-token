@@ -52,7 +52,6 @@ const _typeCheck: Settings = sampleSettings;
 
 const functionSignatureBytes = 4;
 
-
 describe("proposal", function () {
   let currentSnapshot: unknown;
   let forwarder: Contract;
