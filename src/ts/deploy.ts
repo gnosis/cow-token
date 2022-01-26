@@ -394,3 +394,28 @@ export async function getDeployArgsFromVirtualToken(
     ),
   );
 }
+
+export async function getDeployArgsFromBridgedTokenDeployer(
+  bridgedTokenDeployer: Contract,
+): Promise<DeploymentHelperDeployParams> {
+  const promisedParameters: Record<
+    keyof DeploymentHelperDeployParams,
+    Promise<DeploymentHelperDeployParams[keyof DeploymentHelperDeployParams]>
+  > = {
+    merkleRoot: bridgedTokenDeployer.merkleRoot(),
+    foreignToken: bridgedTokenDeployer.foreignToken(),
+    multiTokenMediatorGnosisChain: bridgedTokenDeployer.multiTokenMediator(),
+    communityFundsTarget: bridgedTokenDeployer.communityFundsTarget(),
+    gnoToken: bridgedTokenDeployer.gnoToken(),
+    gnoPrice: bridgedTokenDeployer.gnoPrice(),
+    wrappedNativeToken: bridgedTokenDeployer.wrappedNativeToken(),
+    nativeTokenPrice: bridgedTokenDeployer.nativeTokenPrice(),
+  };
+  return Object.fromEntries(
+    await Promise.all(
+      Object.entries(promisedParameters).map(async ([key, entry]) =>
+        entry.then((e) => [key, e]),
+      ),
+    ),
+  );
+}
