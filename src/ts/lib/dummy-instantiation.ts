@@ -1,8 +1,10 @@
 import { constants } from "ethers";
+
 import {
     SafeCreationSettings,
     VirtualTokenCreationSettings,
 } from "../proposal";
+
 import { BridgeParameter } from "./common-interfaces";
 
 export const dummyVirtualTokenCreationSettings: VirtualTokenCreationSettings = {

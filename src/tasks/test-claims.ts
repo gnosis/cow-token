@@ -104,17 +104,17 @@ export function generateClaims(users: string[]): Claim[] {
     )
     .filter((configuration) => configuration.size !== 0);
 
-  const pseudorandomAmount = (i: number) =>
-    BigNumber.from(id(i.toString()))
+  const pseudorandomAmount = (userIndex: number, claimIndex: number) =>
+    BigNumber.from(id(`${userIndex}/${claimIndex}`))
       .mod(10000)
       .mul(utils.parseUnits("1", metadata.real.decimals));
   return users
     .map((account, i) =>
       Array.from(
         admissibleClaimConfigurations[i % admissibleClaimConfigurations.length],
-      ).map((type) => ({
+      ).map((type, j) => ({
         account,
-        claimableAmount: pseudorandomAmount(i),
+        claimableAmount: pseudorandomAmount(i, j),
         type,
       })),
     )

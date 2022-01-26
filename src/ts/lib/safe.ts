@@ -4,10 +4,11 @@ import {
   encodeMultiSend,
   calculateProxyAddress,
 } from "@gnosis.pm/safe-contracts";
-import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
-import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
 import GnosisSafe from "@gnosis.pm/safe-contracts/build/artifacts/contracts/GnosisSafe.sol/GnosisSafe.json";
 import CreateCall from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/CreateCall.sol/CreateCall.json";
+import MultiSend from "@gnosis.pm/safe-contracts/build/artifacts/contracts/libraries/MultiSend.sol/MultiSend.json";
+import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/contracts/proxies/GnosisSafeProxyFactory.sol/GnosisSafeProxyFactory.json";
+import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 import {
   BigNumber,
   BigNumberish,
@@ -16,7 +17,6 @@ import {
   Contract,
   utils,
 } from "ethers";
-import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
 import { defaultAbiCoder } from "ethers/lib/utils";
 
 export enum SafeOperation {

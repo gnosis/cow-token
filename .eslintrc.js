@@ -17,11 +17,11 @@ module.exports = {
     "plugin:prettier/recommended",
   ],
   ignorePatterns: [
-    "build/",
     "node_modules/",
-    "coverage/",
+    "/build/",
+    "/coverage/",
     "!.prettierrc.js",
-    "lib/",
+    "/lib/",
   ],
   rules: {
     "import/order": [
