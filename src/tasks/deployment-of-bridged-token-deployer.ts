@@ -83,8 +83,14 @@ async function generateDeployment(
     addresses: { cowToken, cowDao },
   } = await generateProposal(
     settings,
-    defaultSafeDeploymentAddresses(chainId),
-    defaultSafeDeploymentAddresses("100"),
+    {
+      ...defaultSafeDeploymentAddresses(chainId),
+      forwarder: constants.AddressZero,
+    },
+    {
+      ...defaultSafeDeploymentAddresses("100"),
+      forwarder: constants.AddressZero,
+    },
     hre.ethers,
   );
 
