@@ -11,8 +11,8 @@ import {
   generateProposal,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
+import { defaultTokens } from "../ts/lib/constants";
 
-import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/deployment";

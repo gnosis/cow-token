@@ -2,7 +2,7 @@ import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import { BigNumber } from "ethers";
-import hre, { waffle } from "hardhat";
+import hre, { ethers, waffle } from "hardhat";
 
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
@@ -13,17 +13,21 @@ import {
   metadata,
   RealTokenDeployParams,
   VirtualTokenDeployParams,
-  DeploymentProposalSettings,
-  FinalAddresses,
-  generateProposal,
-  SafeCreationSettings,
-  VirtualTokenCreationSettings,
 } from "../src/ts";
-import { Settings } from "../src/ts/lib/common-interfaces";
+import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
+import { amountToRelay } from "../src/ts/lib/constants";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
 } from "../src/ts/lib/safe";
+import {
+  DeploymentProposalSettings,
+  deploymentStepsIntoArray,
+  FinalAddresses,
+  generateProposalAsStruct,
+  SafeCreationSettings,
+  VirtualTokenCreationSettings,
+} from "../src/ts/proposal";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
@@ -38,34 +42,21 @@ const _typeCheck: Settings = sampleSettings;
 describe("proposal", function () {
   let currentSnapshot: unknown;
   let gnosisSafeManager: GnosisSafeManager;
-
-  const cowDaoSettings: SafeCreationSettings = {
-    owners: [1, 2, 3, 4, 5].map((i) => "0x".padEnd(42, i.toString())),
-    threshold: 5,
-  };
-  const teamConrollerSettings: SafeCreationSettings = {
-    owners: [6, 7, 8].map((i) => "0x".padEnd(42, i.toString())),
-    threshold: 2,
-  };
-  const virtualTokenCreationSettings: VirtualTokenCreationSettings = {
-    merkleRoot: "0x" + "42".repeat(32),
-    usdcToken: "0x0000" + "42".repeat(17) + "01",
-    gnoToken: "0x0000" + "42".repeat(17) + "02",
-    gnoPrice: "31337",
-    wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
-    nativeTokenPrice: "42424242",
-  };
-  const settings: DeploymentProposalSettings = {
-    cowDao: cowDaoSettings,
-    teamController: teamConrollerSettings,
-    cowToken: {},
-    virtualCowToken: virtualTokenCreationSettings,
-    bridge: { multiTokenMediatorGnosisChain: "0x" + "01".repeat(20) },
-  };
+  let multiTokenMediatorETH: Contract;
+  let gnosisDao: Contract;
 
   before(async function () {
     await setupDeterministicDeployer(deployer);
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
+    const OmniBridgeTransferSimulator = await ethers.getContractFactory(
+      "OmniBridgeTransferSimulator",
+    );
+    multiTokenMediatorETH = await OmniBridgeTransferSimulator.connect(
+      deployer,
+    ).deploy();
+    gnosisDao = await (
+      await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
+    ).connect(executor);
   });
 
   beforeEach(async function () {
@@ -85,32 +76,63 @@ describe("proposal", function () {
   });
 
   describe("deploys expected contracts", function () {
-    let gnosisDao: Contract;
-    let contracts: Record<keyof FinalAddresses | "virtualCowToken", Contract>;
+    const cowDaoSettings: SafeCreationSettings = {
+      owners: [1, 2, 3, 4, 5].map((i) => "0x".padEnd(42, i.toString())),
+      threshold: 5,
+    };
+    const teamConrollerSettings: SafeCreationSettings = {
+      owners: [6, 7, 8].map((i) => "0x".padEnd(42, i.toString())),
+      threshold: 2,
+    };
+    const virtualTokenCreationSettings: VirtualTokenCreationSettings = {
+      merkleRoot: "0x" + "42".repeat(32),
+      usdcToken: "0x0000" + "42".repeat(17) + "01",
+      gnoToken: "0x0000" + "42".repeat(17) + "02",
+      gnoPrice: "31337",
+      wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
+      nativeTokenPrice: "42424242",
+    };
 
+    let settings: DeploymentProposalSettings;
+    let contracts: Record<keyof FinalAddresses | "virtualCowToken", Contract>;
     before(async function () {
-      const { steps, addresses } = await generateProposal(
+      const bridgeParameters: BridgeParameter = {
+        multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+        multiTokenMediatorETH: multiTokenMediatorETH.address,
+      };
+      settings = {
+        gnosisDao: gnosisDao.address,
+        cowDao: cowDaoSettings,
+        teamController: teamConrollerSettings,
+        cowToken: {},
+        virtualCowToken: virtualTokenCreationSettings,
+        bridge: bridgeParameters,
+      };
+      const { steps, addresses } = await generateProposalAsStruct(
         settings,
         gnosisSafeManager.getDeploymentAddresses(),
         hre.ethers,
       );
 
-      gnosisDao = await (
-        await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
-      ).connect(executor);
+      let virtualTokenCreationTxResponse: TransactionResponse;
 
-      let lastResponse: TransactionResponse;
-      for (const step of steps) {
-        lastResponse = await execSafeTransaction(gnosisDao, step, [
-          gnosisDaoOwner,
-        ]);
+      for (const step of deploymentStepsIntoArray(steps)) {
+        if (step == steps.virtualCowTokenCreationTransaction) {
+          virtualTokenCreationTxResponse = await execSafeTransaction(
+            gnosisDao,
+            step,
+            [gnosisDaoOwner],
+          );
+        } else {
+          await execSafeTransaction(gnosisDao, step, [gnosisDaoOwner]);
+        }
       }
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(lastResponse!).not.to.be.undefined;
+      expect(virtualTokenCreationTxResponse!).not.to.be.undefined;
 
       const proxies = await contractsCreatedWithCreateCall(
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        lastResponse!,
+        virtualTokenCreationTxResponse!,
         gnosisSafeManager.createCall.address,
       );
       expect(proxies).to.have.length(1);
@@ -199,7 +221,7 @@ describe("proposal", function () {
         const totalSupply = await contracts.cowToken.totalSupply();
         const expected: RealTokenDeployParams = {
           cowDao: contracts.cowDao.address,
-          initialTokenHolder: contracts.cowDao.address,
+          initialTokenHolder: gnosisDao.address,
           totalSupply: BigNumber.from(10)
             .pow(3 * 3 + metadata.real.decimals)
             .toString(),
@@ -216,7 +238,47 @@ describe("proposal", function () {
         const totalSupply = await contracts.cowToken.totalSupply();
         expect(
           await contracts.cowToken.balanceOf(contracts.cowDao.address),
-        ).to.equal(totalSupply);
+        ).to.equal(totalSupply.sub(amountToRelay));
+      });
+
+      it("approval has been used in transfer", async function () {
+        expect(
+          await contracts.cowToken.allowance(
+            gnosisDao.address,
+            multiTokenMediatorETH.address,
+          ),
+        ).to.equal(0);
+      });
+    });
+
+    describe("bridge relay", function () {
+      it("has been called on function relayTokens, tokens were transferred", async function () {
+        // Usually, one would just test it like this:
+        // expect('relayTokens').to.be.calledOnContractWith(multiTokenMediatorETH, [contracts.cowDao.address, settings.cowDao, settings.bridge.amountToRelay]);
+        // but unfortunately, hardhat is not yet supporting it.
+        // https://github.com/nomiclabs/hardhat/issues/1135
+        // Hence, we are testing with custom multiTokenMediatorETH implementation
+
+        const filterTransfers = contracts.cowToken.filters.Transfer(
+          gnosisDao.address,
+          multiTokenMediatorETH.address,
+          null,
+        );
+        let logs = await contracts.cowToken.queryFilter(
+          filterTransfers,
+          0,
+          "latest",
+        );
+        expect(logs.length).to.be.equal(1);
+        expect(logs[0].args?.value).to.be.equal(amountToRelay);
+        const filteringReceiver = multiTokenMediatorETH.filters.Receiver(null);
+        logs = await multiTokenMediatorETH.queryFilter(
+          filteringReceiver,
+          0,
+          "latest",
+        );
+        expect(logs.length).to.be.equal(1);
+        expect(logs[0].args).to.deep.equal([contracts.cowDao.address]);
       });
     });
 

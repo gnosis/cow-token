@@ -13,10 +13,13 @@ import {
   ContractName,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
+import {
+  defaultTokens,
+  nativeTokenPriceGnosisChain,
+} from "../ts/lib/constants";
 import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { defaultTokens, nativeTokenPriceGnosisChain } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 export const OUTPUT_FOLDER_GC = "./output/deployment-gc";
@@ -83,6 +86,7 @@ async function generateDeployment(
     defaultSafeDeploymentAddresses(chainId),
     hre.ethers,
   );
+
   if (settings.cowToken.expectedAddress !== cowToken) {
     if (settings.cowToken.expectedAddress !== undefined) {
       throw new Error("Expected cowToken address must be defined");

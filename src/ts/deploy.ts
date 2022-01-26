@@ -182,6 +182,7 @@ export function constructorInput<T extends ContractName>(
       ];
       return result as ContructorInput[T];
     }
+
     case ContractName.Forwarder:
       return [] as ContructorInput[T];
     default: {
