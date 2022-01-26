@@ -35,6 +35,7 @@ import {
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
+import { skipOnCoverage } from "./test-management";
 import { stringify } from "./utils/formatUtils";
 
 const [deployer, gnosisDaoOwner, executor, ambExecutor] =
@@ -407,7 +408,10 @@ describe("proposal", function () {
         ),
       ).to.be.rejectedWith(Error);
     });
-    it("has the txData that allows to deploy the safe with correct threshold and owners", async function () {
+    it("has the txData that allows to deploy the safe with correct threshold and owners [skip-in-coverage]", async function () {
+      // Needs to be skipped in coverage as inserting the artifacts to check lines
+      // for coverage changes the bytecode, and with it the final address.
+      skipOnCoverage.call(this);
       const bridgedGnosisSafeDeployment = await createTxForBridgedSafeSetup(
         expectedCowDaoAddress,
         {
