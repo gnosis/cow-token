@@ -194,10 +194,10 @@ export async function generateProposalAsStruct(
   // same with the same addresses on ethereum and gnosis chain.
   if (
     deploymentAddressesETH.singleton !==
-      deploymentAddressesGnosisChain.singleton ||
+    deploymentAddressesGnosisChain.singleton ||
     deploymentAddressesETH.factory !== deploymentAddressesGnosisChain.factory ||
     deploymentAddressesETH.fallbackHandler !==
-      deploymentAddressesGnosisChain.fallbackHandler
+    deploymentAddressesGnosisChain.fallbackHandler
   ) {
     throw new Error(
       "The safeDeploymentAddress are not the same on the two different networks",
@@ -338,7 +338,11 @@ export async function createTxTriggeringBridgedTokenDeployer(
     if (chainId !== "100") {
       throw new Error("Network should have a bridgedTokenDeployer defined");
     } else {
-      // On gnosis chain this bridgedTokenDeployerAddress is not required and
+      // This function is called from the generateProposal function. The generateProposal
+      // either generates the real proposals or is only used for address calculation on gnosis chain
+      // If it is only used for address calculation, then the output of this 
+      // function is not relevant.
+      // Hence, on gnosis chain this bridgedTokenDeployerAddress is not required and
       // we can just set the values to zero.
       // Todo: refactor such that we don't use generateProposals for generating
       // the addresses, and hence avoid this case
@@ -360,7 +364,7 @@ export async function createTxTriggeringBridgedTokenDeployer(
     data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
       bridgedTokenDeployer.address,
       bridgedTokenDeployer.interface.encodeFunctionData("deploy", []),
-      3000000, // Max value is currently 2M, but it will be increase to 4M. 3M should be sufficient for vCowToken deployment.
+      3000000, // Max value is currently 2M, but it will be increased to 4M. 3M should be sufficient for vCowToken deployment.
     ]),
     operation: 0,
   };

@@ -710,7 +710,7 @@ describe("proposal", function () {
           hre.ethers,
         );
 
-      const [to, data] = defaultAbiCoder.decode(
+      const [to, data, gasLimit] = defaultAbiCoder.decode(
         ["address", "bytes", "uint256"],
         utils
           .arrayify(bridgedGnosisSafeDeployment.data)
@@ -721,17 +721,15 @@ describe("proposal", function () {
         from: ambExecutor.address,
         to,
         data,
-        value: "0",
-        operation: 0,
+        gasPrice: 545019933,
+        gasLimit,
       };
       await bridgedTokenDeployerMock.mock.deploy.withArgs().reverts();
-      await expect(execSafeTransaction(gnosisDao, tx, [gnosisDaoOwner])).to.be
-        .reverted;
+      await expect(ambExecutor.sendTransaction(tx)).to.be.reverted;
       await bridgedTokenDeployerMock.mock.deploy
         .withArgs()
         .returns("0x" + "39".repeat(20));
-      await expect(execSafeTransaction(gnosisDao, tx, [gnosisDaoOwner])).to.not
-        .be.reverted;
+      await expect(ambExecutor.sendTransaction(tx)).to.not.be.reverted;
     });
   });
 });
