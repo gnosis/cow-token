@@ -4,7 +4,6 @@ import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
 import { BigNumber } from "ethers";
 import hre, { artifacts, ethers, waffle } from "hardhat";
-
 import sampleSettings from "../example/settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
@@ -27,7 +26,7 @@ import {
   DeploymentProposalSettings,
   deploymentStepsIntoArray,
   FinalAddresses,
-  generateProposal,
+  generateProposalAsStruct,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
 } from "../src/ts/proposal";
@@ -66,6 +65,7 @@ describe("proposal", function () {
       IAMB.abi,
     );
     await arbitraryMessageBridge.mock.requireToPassMessage.returns(messageID);
+
     gnosisDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
     ).connect(executor);
@@ -121,7 +121,7 @@ describe("proposal", function () {
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
       };
-      const { steps, addresses } = await generateProposal(
+      const { steps, addresses } = await generateProposalAsStruct(
         settings,
         gnosisSafeManager.getDeploymentAddresses(),
         gnosisSafeManager.getDeploymentAddresses(),

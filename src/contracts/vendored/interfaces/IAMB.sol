@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Vendored from omnibridge, see:
-// <https://raw.githubusercontent.com/poanetwork/tokenbridge-contracts/master/contracts/interfaces/IAMB.sol>
+// <https://raw.githubusercontent.com/poanetwork/tokenbridge-contracts/908a48107919d4ab127f9af07d44d47eac91547e/contracts/interfaces/IAMB.sol>
 pragma solidity ^0.8.10;
 
 interface IAMB {

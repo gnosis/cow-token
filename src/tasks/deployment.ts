@@ -9,7 +9,6 @@ import {
   removeSplitClaimFiles,
   splitClaimsAndSaveToFolder,
   generateProposal,
-  deploymentStepsIntoArray,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
 import { defaultTokens } from "../ts/lib/constants";
@@ -94,7 +93,7 @@ async function generateDeployment(
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER}/steps.json`,
-    JSON.stringify(deploymentStepsIntoArray(steps), undefined, 2),
+    JSON.stringify(steps, undefined, 2),
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER}/claims.json`,

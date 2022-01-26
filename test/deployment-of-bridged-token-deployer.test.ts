@@ -36,14 +36,14 @@ describe("deployment of bridgedTokenDeployer", () => {
         threshold: 2,
       };
       const virtualTokenCreationSettingsStandard: VirtualTokenCreationSettings =
-        {
-          merkleRoot: "0x" + "42".repeat(32),
-          usdcToken: "0x0000" + "42".repeat(17) + "01",
-          gnoToken: "0x0000" + "42".repeat(17) + "02",
-          gnoPrice: "31337",
-          wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
-          nativeTokenPrice: "42424242",
-        };
+      {
+        merkleRoot: "0x" + "42".repeat(32),
+        usdcToken: "0x0000" + "42".repeat(17) + "01",
+        gnoToken: "0x0000" + "42".repeat(17) + "02",
+        gnoPrice: "31337",
+        wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
+        nativeTokenPrice: "42424242",
+      };
       const gnosisDao = "0x" + "29".repeat(20);
       const settingsStandard: DeploymentProposalSettings = {
         gnosisDao: gnosisDao,
