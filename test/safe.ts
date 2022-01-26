@@ -6,7 +6,13 @@ import GnosisSafeProxyFactory from "@gnosis.pm/safe-contracts/build/artifacts/co
 import { Signer, Contract } from "ethers";
 import { ethers, waffle } from "hardhat";
 
+import {
+  deterministicallyDeploy,
+  deterministicDeploymentAddress,
+} from "../src/ts";
 import { SafeDeploymentAddresses } from "../src/ts/lib/safe";
+
+import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 
 export class GnosisSafeManager {
   constructor(
@@ -29,6 +35,86 @@ export class GnosisSafeManager {
     const fallbackHandler = await waffle.deployContract(
       deployer,
       CompatibilityFallbackHandler,
+    );
+    return new GnosisSafeManager(
+      deployer,
+      singleton,
+      multisend,
+      proxyFactory,
+      createCall,
+      fallbackHandler,
+    );
+  }
+
+  public static async initDeterministic(
+    deployer: Signer,
+  ): Promise<GnosisSafeManager> {
+    await setupDeterministicDeployer(deployer);
+    const singletonByteCode = new ethers.ContractFactory(
+      GnosisSafe.abi,
+      GnosisSafe.bytecode,
+    ).getDeployTransaction().data;
+    if (singletonByteCode === undefined) {
+      throw new Error("getDeployTransaction for singleton was not successful");
+    }
+    await deterministicallyDeploy(
+      {
+        bytecode: singletonByteCode,
+      },
+      deployer,
+    );
+    const singleton = await ethers.getContractAt(
+      GnosisSafe.abi,
+      deterministicDeploymentAddress({
+        bytecode: singletonByteCode,
+        salt: undefined,
+      }),
+    );
+    const proxyFactoryByteCode = new ethers.ContractFactory(
+      GnosisSafeProxyFactory.abi,
+      GnosisSafeProxyFactory.bytecode,
+    ).getDeployTransaction().data;
+    if (proxyFactoryByteCode === undefined) {
+      throw new Error(
+        "getDeployTransaction for proxyFactory was not successful",
+      );
+    }
+    await deterministicallyDeploy(
+      {
+        bytecode: proxyFactoryByteCode,
+      },
+      deployer,
+    );
+    const proxyFactory = await ethers.getContractAt(
+      GnosisSafeProxyFactory.abi,
+      deterministicDeploymentAddress({
+        bytecode: proxyFactoryByteCode,
+        salt: undefined,
+      }),
+    );
+    const multisend = await waffle.deployContract(deployer, MultiSend);
+    const createCall = await waffle.deployContract(deployer, CreateCall);
+    const fallbackHandlerByteCode = new ethers.ContractFactory(
+      CompatibilityFallbackHandler.abi,
+      CompatibilityFallbackHandler.bytecode,
+    ).getDeployTransaction().data;
+    if (fallbackHandlerByteCode === undefined) {
+      throw new Error(
+        "getDeployTransaction for fallbackHandler was not successful",
+      );
+    }
+    await deterministicallyDeploy(
+      {
+        bytecode: fallbackHandlerByteCode,
+      },
+      deployer,
+    );
+    const fallbackHandler = await ethers.getContractAt(
+      CompatibilityFallbackHandler.abi,
+      deterministicDeploymentAddress({
+        bytecode: fallbackHandlerByteCode,
+        salt: undefined,
+      }),
     );
     return new GnosisSafeManager(
       deployer,

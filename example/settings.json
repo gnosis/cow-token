@@ -1,4 +1,5 @@
 {
+  "gnosisDao": "0x1111111111111111111111111111111111111111",
   "cowDao": {
     "expectedAddress": "0xcaddle0000000000000000000000000000000000000000000000000000001337",
     "threshold": 3,
@@ -29,6 +30,8 @@
     "nativeTokenPrice": "37500000000000"
   },
   "bridge": {
-    "multiTokenMediatorGnosisChain": "0x8888888888888888888888888888888888888888"
+    "multiTokenMediatorGnosisChain": "0xf6A78083ca3e2a662D6dd1703c939c8aCE2e268d",
+    "multiTokenMediatorETH": "0x88ad09518695c6c3712AC10a214bE5109a655671",
+    "arbitraryMessageBridgeETH": "0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e"
   }
 }

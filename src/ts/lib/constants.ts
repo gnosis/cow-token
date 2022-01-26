@@ -21,3 +21,6 @@ export const defaultTokens = {
 
 // The price of the native token in Gnosis Chain is the price of XDAI = 10**18
 export const nativeTokenPriceGnosisChain = utils.parseEther("1");
+
+// the amount of tokens to relay to the omni bridge at deployment time
+export const amountToRelay = utils.parseEther("1");

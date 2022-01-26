@@ -12,8 +12,8 @@ import {
   generateProposal,
 } from "../ts";
 import { Args, Settings } from "../ts/lib/common-interfaces";
+import { defaultTokens } from "../ts/lib/constants";
 
-import { defaultTokens } from "./ts/constants";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/deployment";
@@ -74,6 +74,10 @@ async function generateDeployment(
     settings,
     {
       ...defaultSafeDeploymentAddresses(chainId),
+      forwarder: DEFAULT_FORWARDER,
+    },
+    {
+      ...defaultSafeDeploymentAddresses("100"),
       forwarder: DEFAULT_FORWARDER,
     },
     hre.ethers,

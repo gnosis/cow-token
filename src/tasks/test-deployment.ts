@@ -17,10 +17,10 @@ import {
   computeProofs,
   parseCsvFile,
 } from "../ts";
+import { defaultTokens } from "../ts/lib/constants";
 import { contractsCreatedWithCreateCall } from "../ts/lib/safe";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
-import { defaultTokens } from "./ts/constants";
 import {
   SupportedChainId,
   isChainIdSupported,

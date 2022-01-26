@@ -171,7 +171,7 @@ describe("safeForwardIfNoCodeAt", function () {
     ).to.throw(Error, "Forwarder can only forward pure calls");
   });
 
-  it("reverts if value is nonzero", function () {
+  it("reverts if eth-value is nonzero", function () {
     expect(() =>
       callIfContractExists({
         addressToTest: constants.AddressZero,
