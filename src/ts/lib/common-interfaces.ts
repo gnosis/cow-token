@@ -13,7 +13,7 @@ export interface VirtualTokenSettings {
 export interface BridgeParameter {
   multiTokenMediatorGnosisChain: string;
   multiTokenMediatorETH: string;
-
+  arbitraryMessageBridgeETH: string;
 }
 
 export interface Settings

@@ -8,6 +8,7 @@ import {
   generateProposal,
 } from "../src/ts";
 import {
+  dummyBridgeParameters,
   dummyteamConrollerSettings,
   dummyVirtualTokenCreationSettings,
 } from "../src/ts/lib/dummy-instantiation";
@@ -50,10 +51,7 @@ describe("deployment of bridgedTokenDeployer", () => {
         teamController: teamConrollerSettingsStandard,
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettingsStandard,
-        bridge: {
-          multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
-          multiTokenMediatorETH: "0x" + "01".repeat(20),
-        },
+        bridge: dummyBridgeParameters,
       };
       const settingsSimplified: DeploymentProposalSettings = {
         gnosisDao: gnosisDao,
@@ -61,19 +59,18 @@ describe("deployment of bridgedTokenDeployer", () => {
         teamController: dummyteamConrollerSettings,
         cowToken: {},
         virtualCowToken: dummyVirtualTokenCreationSettings,
-        bridge: {
-          multiTokenMediatorGnosisChain: "0x" + "00".repeat(20),
-          multiTokenMediatorETH: "0x" + "00".repeat(20),
-        },
+        bridge: dummyBridgeParameters,
       };
 
       const { addresses: addressesStandard } = await generateProposal(
         settingsStandard,
         gnosisSafeManager.getDeploymentAddresses(),
+        gnosisSafeManager.getDeploymentAddresses(),
         hre.ethers,
       );
       const { addresses: addressesSimplified } = await generateProposal(
         settingsSimplified,
+        gnosisSafeManager.getDeploymentAddresses(),
         gnosisSafeManager.getDeploymentAddresses(),
         hre.ethers,
       );
