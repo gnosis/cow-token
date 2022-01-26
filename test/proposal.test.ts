@@ -27,6 +27,7 @@ import {
   DeploymentAddresses,
   deploymentStepsIntoArray,
   generateProposalAsStruct,
+  createTxTriggeringBridgedTokenDeployer,
 } from "../src/ts";
 import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
 import { amountToRelay } from "../src/ts/lib/constants";
@@ -48,6 +49,9 @@ const [deployer, gnosisDaoOwner, executor, ambExecutor] =
 // Test at compile time that the example file has the expected format.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _typeCheck: Settings = sampleSettings;
+
+const functionSignatureBytes = 4;
+
 
 describe("proposal", function () {
   let currentSnapshot: unknown;
@@ -131,6 +135,7 @@ describe("proposal", function () {
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
+        bridgedTokenDeployer: "0x" + "00".repeat(20),
       };
       const deploymentAddresses = {
         ...gnosisSafeManager.getDeploymentAddresses(),
@@ -353,6 +358,7 @@ describe("proposal", function () {
       cowToken: {},
       virtualCowToken: virtualTokenCreationSettings,
       bridge: dummyBridgeParameters,
+      bridgedTokenDeployer: "0x" + "00".repeat(20),
     };
     modifiedSettings.cowDao.nonce = utils.hexZeroPad("0x31337", 32);
     modifiedSettings.teamController.nonce = utils.hexZeroPad("0x31337", 32);
@@ -516,6 +522,7 @@ describe("proposal", function () {
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
+        bridgedTokenDeployer: "0x" + "00".repeat(20),
       };
       deploymentAddresses = {
         ...gnosisSafeManager.getDeploymentAddresses(),
@@ -547,7 +554,6 @@ describe("proposal", function () {
         deploymentAddresses,
         hre.ethers,
       );
-      const functionSignatureBytes = 4;
       const [to, data, gasLimit] = defaultAbiCoder.decode(
         ["address", "bytes", "uint256"],
         utils
@@ -603,7 +609,6 @@ describe("proposal", function () {
         await hre.ethers.provider.getCode(expectedCowDaoAddress),
       ).to.be.equal("0x");
 
-      const functionSignatureBytes = 4;
       const [to, data, gasLimit] = defaultAbiCoder.decode(
         ["address", "bytes", "uint256"],
         utils
@@ -628,6 +633,106 @@ describe("proposal", function () {
       );
       expect(await newSafe.getOwners()).to.deep.equal(settings.cowDao.owners);
       expect(await newSafe.getThreshold()).to.equal(settings.cowDao.threshold);
+    });
+  });
+  describe("relay of deploy() call on bridgedTokenDeployer", function () {
+    let bridgedTokenDeployerMock: MockContract;
+    before(async function () {
+      const bridgeParameters: BridgeParameter = {
+        multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+        multiTokenMediatorETH: "0x" + "02".repeat(20),
+        arbitraryMessageBridgeETH: arbitraryMessageBridge.address,
+      };
+
+      const BridgedTokenDeployer = await artifacts.readArtifact(
+        "BridgedTokenDeployer",
+      );
+      bridgedTokenDeployerMock = await waffle.deployMockContract(
+        deployer,
+        BridgedTokenDeployer.abi,
+      );
+
+      settings = {
+        gnosisDao: gnosisDao.address,
+        cowDao: cowDaoSettings,
+        teamController: teamConrollerSettings,
+        cowToken: {},
+        virtualCowToken: virtualTokenCreationSettings,
+        bridge: bridgeParameters,
+        bridgedTokenDeployer: bridgedTokenDeployerMock.address,
+      };
+    });
+    it("has the correct target address", async function () {
+      const bridgedGnosisSafeDeployment =
+        await createTxTriggeringBridgedTokenDeployer(
+          settings.bridge,
+          bridgedTokenDeployerMock.address,
+          hre.ethers,
+        );
+      expect(bridgedGnosisSafeDeployment.to).to.be.equal(
+        settings.bridge.arbitraryMessageBridgeETH,
+      );
+    });
+    it("createTxForBridgedSafeSetup calls the bridge correctly on requireToPassMessage", async function () {
+      const bridgedGnosisSafeDeployment =
+        await createTxTriggeringBridgedTokenDeployer(
+          settings.bridge,
+          bridgedTokenDeployerMock.address,
+          hre.ethers,
+        );
+      const [to, data, gasLimit] = defaultAbiCoder.decode(
+        ["address", "bytes", "uint256"],
+        utils
+          .arrayify(bridgedGnosisSafeDeployment.data)
+          .slice(functionSignatureBytes),
+      );
+      await arbitraryMessageBridge.mock.requireToPassMessage
+        .withArgs(to, data, gasLimit)
+        .reverts();
+      await expect(
+        execSafeTransaction(gnosisDao, bridgedGnosisSafeDeployment, [
+          gnosisDaoOwner,
+        ]),
+      ).to.be.reverted;
+      await arbitraryMessageBridge.mock.requireToPassMessage
+        .withArgs(to, data, gasLimit)
+        .returns(messageID);
+      await expect(
+        execSafeTransaction(gnosisDao, bridgedGnosisSafeDeployment, [
+          gnosisDaoOwner,
+        ]),
+      ).to.not.be.reverted;
+    });
+    it("has the txData that triggers the deploy() tx ", async function () {
+      const bridgedGnosisSafeDeployment =
+        await createTxTriggeringBridgedTokenDeployer(
+          settings.bridge,
+          bridgedTokenDeployerMock.address,
+          hre.ethers,
+        );
+
+      const [to, data] = defaultAbiCoder.decode(
+        ["address", "bytes", "uint256"],
+        utils
+          .arrayify(bridgedGnosisSafeDeployment.data)
+          .slice(functionSignatureBytes),
+      );
+
+      const tx = {
+        from: ambExecutor.address,
+        to,
+        data,
+        value: "0",
+        operation: 0,
+      };
+      await bridgedTokenDeployerMock.mock.deploy.withArgs().reverts();
+      await expect(execSafeTransaction(gnosisDao, tx, [gnosisDaoOwner])).to.be
+        .reverted;
+      await bridgedTokenDeployerMock.mock.deploy
+        .withArgs()
+        .returns("0x" + "39".repeat(20));
+      await expect(execSafeTransaction(gnosisDao, tx, [gnosisDaoOwner])).to.not
+        .be.reverted;
     });
   });
 });

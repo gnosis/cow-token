@@ -53,6 +53,7 @@ describe("deployment of bridgedTokenDeployer", () => {
         cowToken: {},
         virtualCowToken: virtualTokenCreationSettingsStandard,
         bridge: dummyBridgeParameters,
+        bridgedTokenDeployer: "0x" + "31".repeat(20),
       };
       const settingsSimplified: DeploymentProposalSettings = {
         gnosisDao: gnosisDao,
@@ -61,6 +62,7 @@ describe("deployment of bridgedTokenDeployer", () => {
         cowToken: {},
         virtualCowToken: dummyVirtualTokenCreationSettings,
         bridge: dummyBridgeParameters,
+        bridgedTokenDeployer: "0x" + "00".repeat(20),
       };
 
       const deploymentAddresses = {
