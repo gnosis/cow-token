@@ -123,7 +123,6 @@ describe("proposal", function () {
         virtualCowToken: virtualTokenCreationSettings,
         bridge: bridgeParameters,
       };
-
       const { steps, addresses } = await generateProposalAsStruct(
         settings,
         gnosisSafeManager.getDeploymentAddresses(),
