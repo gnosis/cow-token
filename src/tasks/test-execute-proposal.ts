@@ -1,4 +1,5 @@
 import { TransactionResponse } from "@ethersproject/abstract-provider";
+import { BigNumber, Contract } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -8,10 +9,6 @@ import { generateDeployment } from "./ts/proposal";
 import { execSafeTransaction, gnosisSafeAt } from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/test-execute-proposal";
-
-interface Args extends ArgsDeployment {
-  gnosisDao?: string;
-}
 
 const setupTestExecuteProposalTask: () => void = () => {
   task(
@@ -26,17 +23,13 @@ const setupTestExecuteProposalTask: () => void = () => {
       "settings",
       "Path to the JSON file that contains the deployment settings.",
     )
-    .addOptionalParam(
-      "gnosisDao",
-      "The address of the safe that will execute the transaction. If left unspecified, it will be deployed by the current signer.",
-    )
     .setAction(executeProposal);
 };
 
 export { setupTestExecuteProposalTask };
 
 async function executeProposal(
-  args: Args,
+  args: ArgsDeployment,
   hre: HardhatRuntimeEnvironment,
 ): Promise<void> {
   const [{ addresses, steps }, settings] = await generateDeployment(
@@ -53,32 +46,40 @@ async function executeProposal(
       .map(([key, address]) => `${key}: ${address}`)
       .join("\n"),
   );
+  console.log();
 
-  const [deployer] = await hre.ethers.getSigners();
-  console.log(`Using deployer ${deployer.address}`);
+  const [executor] = await hre.ethers.getSigners();
+  console.log(`Using executor ${executor.address}`);
 
-  const proposalDeployer = args.gnosisDao ?? deployer.address;
-  if (settings.gnosisDao !== proposalDeployer) {
-    throw new Error(
-      `Executing the current proposal would fail because the Gnosis DAO specified in the settings (${settings.gnosisDao}) is not the one used for deploying the transaction (${proposalDeployer}). Please update your settings.`,
-    );
+  let gnosisDao: null | Contract = null;
+  if (settings.gnosisDao !== executor.address) {
+    gnosisDao = gnosisSafeAt(settings.gnosisDao).connect(executor);
+    try {
+      const owners: string[] = await gnosisDao.getOwners();
+      const threshold = BigNumber.from(await gnosisDao.getThreshold());
+      if (threshold.gt(1) || !owners.includes(executor.address)) {
+        throw new Error(
+          `The Gnosis DAO specified in the settings (${settings.gnosisDao}) is not owned by the executor (${executor.address}) with threshold one.`,
+        );
+      }
+    } catch (e) {
+      console.error(e);
+      throw new Error(
+        `This script cannot execute the transaction on target Gnosis DAO ${settings.gnosisDao}.`,
+      );
+    }
   }
-
-  const gnosisDao =
-    args.gnosisDao === undefined
-      ? null
-      : gnosisSafeAt(args.gnosisDao).connect(deployer);
 
   for (const tx of steps) {
     let response: TransactionResponse;
     if (gnosisDao === null) {
       const { to, data } = tx;
-      response = await deployer.sendTransaction({
+      response = await executor.sendTransaction({
         to,
         data,
       });
     } else {
-      response = await execSafeTransaction(gnosisDao, tx, [deployer]);
+      response = await execSafeTransaction(gnosisDao, tx, [executor]);
     }
     console.log(`Sent transaction ${response.hash}`);
     await response.wait();
