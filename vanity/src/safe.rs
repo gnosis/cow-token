@@ -14,8 +14,6 @@ const FALLBACK_HANDLER: Address = address!("f48f2B2d2a534e402487b3ee7C18c33Aec0F
 /// Safe deployment.
 #[derive(Clone)]
 pub struct Safe {
-    owners: Vec<Address>,
-    threshold: usize,
     salt: [u8; 64],
     create2: Create2,
 }
@@ -34,26 +32,20 @@ impl Safe {
         hasher.update(&salt);
         hasher.finalize(create2.salt_mut());
 
-        Self {
-            owners: parameters.owners,
-            threshold: parameters.threshold,
-            salt,
-            create2,
-        }
+        Self { salt, create2 }
     }
 
     fn salt_nonce_bytes_mut(&mut self) -> &mut [u8] {
         unsafe { self.salt.get_unchecked_mut(32..64) }
     }
 
-    fn salt_nonce(&self) -> U256 {
+    /// Returns the current salt nonce value for the Safe deployment.
+    pub fn salt_nonce(&self) -> U256 {
         U256::from_big_endian(&self.salt[32..64])
     }
 }
 
 impl Deployment for Safe {
-    type Parameters = SafeParameters;
-
     fn creation_address(&self) -> Address {
         self.create2.creation_address()
     }
@@ -63,14 +55,6 @@ impl Deployment for Safe {
         let mut hasher = Keccak::v256();
         hasher.update(&self.salt);
         hasher.finalize(self.create2.salt_mut());
-    }
-
-    fn parameters(&self) -> Self::Parameters {
-        Self::Parameters {
-            owners: self.owners.clone(),
-            threshold: self.threshold,
-            nonce: self.salt_nonce(),
-        }
     }
 }
 

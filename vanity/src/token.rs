@@ -48,23 +48,20 @@ impl CowToken {
 
         Self { create2 }
     }
+
+    /// Returns the current salt value for the token deployment.
+    pub fn salt(&self) -> H256 {
+        self.create2.salt()
+    }
 }
 
 impl Deployment for CowToken {
-    type Parameters = TokenParameters;
-
     fn creation_address(&self) -> Address {
         self.create2.creation_address()
     }
 
     fn update(&mut self, rng: &mut impl rand::Rng) {
         rng.fill(self.create2.salt_mut());
-    }
-
-    fn parameters(&self) -> Self::Parameters {
-        TokenParameters {
-            salt: self.create2.salt(),
-        }
     }
 }
 

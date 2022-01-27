@@ -8,7 +8,7 @@ mod safe;
 mod settings;
 mod token;
 
-use self::{safe::Safe, token::CowToken};
+use self::{miner::Deployment as _, safe::Safe, token::CowToken};
 use clap::{ArgEnum, Parser};
 use settings::Settings;
 use std::{path::PathBuf, process, str::FromStr};
@@ -59,20 +59,22 @@ fn main() {
 
     match args.contract {
         Contract::Dao => {
-            let parameters = miner::search_address(Safe::new(settings.cow_dao), &args.prefix.0);
-            println!("salt nonce: {}", parameters.nonce);
+            let safe = miner::search_address(Safe::new(settings.cow_dao), &args.prefix.0);
+            println!("address:    {:?}", safe.creation_address());
+            println!("salt nonce: {}", safe.salt_nonce());
         }
         Contract::TeamController => {
-            let parameters =
-                miner::search_address(Safe::new(settings.team_controller), &args.prefix.0);
-            println!("salt nonce: {}", parameters.nonce);
+            let safe = miner::search_address(Safe::new(settings.team_controller), &args.prefix.0);
+            println!("address:    {:?}", safe.creation_address());
+            println!("salt nonce: {}", safe.salt_nonce());
         }
         Contract::Token => {
-            let parameters = miner::search_address(
+            let token = miner::search_address(
                 CowToken::new(settings.gnosis_dao, settings.cow_dao, settings.cow_token),
                 &args.prefix.0,
             );
-            println!("salt: {:?}", parameters.salt);
+            println!("address: {:?}", token.creation_address());
+            println!("salt:    {}", token.salt());
         }
     }
 }
