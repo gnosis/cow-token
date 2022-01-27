@@ -127,6 +127,8 @@ async function generateDeployment(
     wrappedNativeToken: defaultTokens.weth[chainId],
   };
 
+  console.log("The following deployment parameters will be used", deploymentHelperParameters);
+
   const BridgedTokenDeployer = await hre.ethers.getContractFactory(
     "BridgedTokenDeployer",
   );
