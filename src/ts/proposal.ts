@@ -194,10 +194,10 @@ export async function generateProposalAsStruct(
   // same with the same addresses on ethereum and gnosis chain.
   if (
     deploymentAddressesETH.singleton !==
-    deploymentAddressesGnosisChain.singleton ||
+      deploymentAddressesGnosisChain.singleton ||
     deploymentAddressesETH.factory !== deploymentAddressesGnosisChain.factory ||
     deploymentAddressesETH.fallbackHandler !==
-    deploymentAddressesGnosisChain.fallbackHandler
+      deploymentAddressesGnosisChain.fallbackHandler
   ) {
     throw new Error(
       "The safeDeploymentAddress are not the same on the two different networks",
@@ -340,7 +340,7 @@ export async function createTxTriggeringBridgedTokenDeployer(
     } else {
       // This function is called from the generateProposal function. The generateProposal
       // either generates the real proposals or is only used for address calculation on gnosis chain
-      // If it is only used for address calculation, then the output of this 
+      // If it is only used for address calculation, then the output of this
       // function is not relevant.
       // Hence, on gnosis chain this bridgedTokenDeployerAddress is not required and
       // we can just set the values to zero.
