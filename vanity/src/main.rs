@@ -74,7 +74,7 @@ fn main() {
                 &args.prefix.0,
             );
             println!("address: {:?}", token.creation_address());
-            println!("salt:    {}", token.salt());
+            println!("salt:    {:?}", token.salt());
         }
     }
 }
