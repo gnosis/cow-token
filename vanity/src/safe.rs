@@ -23,13 +23,9 @@ pub struct Safe {
 impl Safe {
     /// Creates a new safe from deployment parameters.
     pub fn new(parameters: SafeParameters) -> Self {
-        // Safe requires sorted owners.
-        let mut owners = parameters.owners;
-        owners.sort_unstable();
-
         let mut salt = [0_u8; 64];
         let mut hasher = Keccak::v256();
-        hasher.update(&initializer(&owners, parameters.threshold));
+        hasher.update(&initializer(&parameters.owners, parameters.threshold));
         hasher.finalize(&mut salt[0..32]);
         parameters.nonce.to_big_endian(&mut salt[32..64]);
 
@@ -39,7 +35,7 @@ impl Safe {
         hasher.finalize(create2.salt_mut());
 
         Self {
-            owners,
+            owners: parameters.owners,
             threshold: parameters.threshold,
             salt,
             create2,
