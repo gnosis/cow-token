@@ -45,6 +45,7 @@ export interface DeploymentProposalSettings {
   cowToken: RealTokenCreationSettings;
   virtualCowToken: VirtualTokenCreationSettings;
   bridge: BridgeParameter;
+  bridgedTokenDeployer?: string;
 }
 
 export interface DeploymentAddresses extends SafeDeploymentAddresses {
@@ -76,6 +77,7 @@ export interface DeploymentSteps {
   relayTestFundsToOmniBridgeTx: JsonMetaTransaction;
   transferCowTokenToCowDao: JsonMetaTransaction;
   relayCowDaoDeployment: JsonMetaTransaction;
+  bridgedTokenDeployerTriggering: JsonMetaTransaction;
 }
 export interface ProposalAsStruct {
   steps: DeploymentSteps;
@@ -209,6 +211,13 @@ export async function generateProposalAsStruct(
     ethers,
   );
 
+  const bridgedTokenDeployerTriggering =
+    await createTxTriggeringBridgedTokenDeployer(
+      { arbitraryMessageBridgeETH: settings.bridge.arbitraryMessageBridgeETH },
+      settings.bridgedTokenDeployer,
+      ethers,
+    );
+
   return {
     steps: {
       cowDaoCreationTransaction: transformMetaTransaction(
@@ -230,6 +239,9 @@ export async function generateProposalAsStruct(
       relayTestFundsToOmniBridgeTx,
       transferCowTokenToCowDao,
       relayCowDaoDeployment: transformMetaTransaction(relayCowDaoDeployment),
+      bridgedTokenDeployerTriggering: transformMetaTransaction(
+        bridgedTokenDeployerTriggering,
+      ),
     },
     addresses: {
       cowDao,
@@ -314,6 +326,49 @@ export async function createTxForBridgedSafeSetup(
     operation: 0,
   };
   return deploySafeDeterministicOnGnosisChain;
+}
+
+export async function createTxTriggeringBridgedTokenDeployer(
+  bridgeSettings: BridgeSettings,
+  bridgedTokenDeployerAddress: string | undefined,
+  ethers: HardhatEthersHelpers,
+): Promise<MetaTransaction> {
+  const chainId = (await ethers.provider.getNetwork()).chainId.toString();
+  if (bridgedTokenDeployerAddress == undefined) {
+    if (chainId !== "100") {
+      throw new Error("Network should have a bridgedTokenDeployer defined");
+    } else {
+      // This function is called from the generateProposal function. The generateProposal
+      // either generates the real proposals or is only used for address calculation on gnosis chain
+      // If it is only used for address calculation, then the output of this
+      // function is not relevant.
+      // Hence, on gnosis chain this bridgedTokenDeployerAddress is not required and
+      // we can just set the values to zero.
+      // Todo: refactor such that we don't use generateProposals for generating
+      // the addresses, and hence avoid this case
+      bridgedTokenDeployerAddress = "0x" + "00".repeat(20);
+    }
+  }
+  const bridgedTokenDeployer = await ethers.getContractAt(
+    "BridgedTokenDeployer",
+    bridgedTokenDeployerAddress,
+  );
+  const ambForeign = await ethers.getContractAt(
+    "IAMB",
+    bridgeSettings.arbitraryMessageBridgeETH,
+  );
+
+  const bridgedTokenDeployerTriggering = {
+    to: bridgeSettings.arbitraryMessageBridgeETH,
+    value: 0,
+    data: ambForeign.interface.encodeFunctionData("requireToPassMessage", [
+      bridgedTokenDeployer.address,
+      bridgedTokenDeployer.interface.encodeFunctionData("deploy", []),
+      3000000, // Max value is currently 2M, but it will be increased to 4M. 3M should be sufficient for vCowToken deployment.
+    ]),
+    operation: 0,
+  };
+  return bridgedTokenDeployerTriggering;
 }
 
 async function setupDeterministicSafe(
