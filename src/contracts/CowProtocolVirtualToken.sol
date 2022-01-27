@@ -18,8 +18,8 @@ contract CowProtocolVirtualToken is
     MerkleDistributor,
     StorageAccessible
 {
-    string private constant ERC20_SYMBOL = "vCOW";
-    string private constant ERC20_NAME = "CoW Protocol Virtual Token";
+    string private constant ERC20_SYMBOL = "Test vCOW";
+    string private constant ERC20_NAME = "Test CoW Protocol Virtual Token";
 
     constructor(
         bytes32 merkleRoot,

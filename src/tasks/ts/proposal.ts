@@ -24,10 +24,10 @@ export async function generateDeployment(
   const chainIdUntyped = (
     await hre.ethers.provider.getNetwork()
   ).chainId.toString();
-  if (!["1", "4", "100"].includes(chainIdUntyped)) {
+  if (!["1", "4", "56", "100"].includes(chainIdUntyped)) {
     throw new Error(`Chain id ${chainIdUntyped} not supported`);
   }
-  const chainId = chainIdUntyped as "1" | "4" | "100";
+  const chainId = chainIdUntyped as "1" | "4" | "100" | "56";
 
   console.log("Processing input files...");
   // TODO: validate settings

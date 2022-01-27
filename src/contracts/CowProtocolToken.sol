@@ -8,8 +8,8 @@ import "./vendored/mixins/StorageAccessible.sol";
 /// @title CoW Protocol Governance Token
 /// @author CoW Protocol Developers
 contract CowProtocolToken is InflationaryToken, StorageAccessible {
-    string private constant ERC20_SYMBOL = "COW";
-    string private constant ERC20_NAME = "CoW Protocol Token";
+    string private constant ERC20_SYMBOL = "Test COW";
+    string private constant ERC20_NAME = "Test CoW Protocol Token";
 
     constructor(
         address initialTokenHolder,

@@ -106,10 +106,19 @@ export default {
       url: "https://rpc.gnosischain.com",
       gasPrice: GAS_PRICE_GWEI
         ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
         : "auto",
       chainId: 100,
+    },
+    binancesmartchain: {
+      ...sharedNetworkConfig,
+      url: "https://bsc-dataseed.binance.org/",
+      gasPrice: GAS_PRICE_GWEI
+        ? parseInt(
+          utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
+        )
+        : "auto",
     },
   },
   namedAccounts: {
