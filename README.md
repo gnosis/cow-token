@@ -64,20 +64,54 @@ Contract code size can be benched by running:
 yarn bench:code-size
 ```
 
-### Deploying Contracts
+### Deploying Contracts: Proposal-Transactions Creation
 
-The contracts are deployed by the Gnosis DAO using the Zodiac module.
-Each step in the proposal can be generated with a script.
+The contracts are deployed by the Gnosis DAO using the Zodiac module. 
+In the following, it is show on to build the tx proposed to the Gnosis DAO with a script.
 
-Here is an example of how to get a complete list of all claims and deployment instructions:
+The deployment happens on two chains: Ethereum-Chain and Gnosis-Chain. 
+At first, a deployment helper contract - called BridgedTokenDeployer - is deployed on Gnosis-Chain. 
+This BridgedTokenDeployer contains the information to run the CowProtocolVirtualToken deployment on Gnosis-Chain. 
+This contract will later be triggered from the Ethereum-Chain via the Omni-Bridge. 
+The main part of the deployment is done on Ethereum-Chain. 
+The GnosisDAO will initiate all necessary transactions to create the different safes, create the CowProtocolToken and CowProtocolVirtualToken. 
+Furthermore, the GnosisDAO will bridge one CowProtocolToken to the Omni-Bridge in order to trigger the bridge to deploy the bridged CowProtocolToken also on Gnosis-Chain. 
+Last, but not least, the GnosisDao will bridge two transactions to Gnosis Chain over the Omni-Bridge: the deployment of the Cow DAO (at the same address as in mainnet) and the trigger transaction to the BridgedTokenDeployer that deploys the CowProtocolVirtualToken.
+
+The deployment has the following inputs:
+- mainnet/claims.csv file with the airdrop information for mainnet. See [example](#example-csv-file-with-claims)
+- setting.json describing the most important parameters. See [example](example/settings.json)
+- gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
+
+And two .env files should be prepared for each network:
+- env/gnosischain/.env file for gnosis chain. 
+- env/mainnet/.env file for Ethereum-Chain. 
+An exemplary .env file can be found [here](.env.sample)
+
+#### 1st step: Deployment on Gnosis-Chain
 ```
-export INFURA_KEY='insert your Infura key here'
-npx hardhat deployment --network mainnet --claims /path/to/claims.csv --settings /path/to/settings.json
+yarn build
+source env/gnosischain/.env
+npx hardhat deployment-bridged-token-deployer --settings ./settings.json --claims ./gnosischain/claims.csv --network gnosischain
 ```
 
-For information on the format of the two input files, you can check out:
-1. [the script generating an example CSV with pseudorandom claims](#example-csv-file-with-claims)
-2. [the example settings.json](example/settings.json)
+The output files are in the `output/deployment-gc` folder, which include:
+2. `addresses.json`, a list with on entry: the newly deployed BridgedTokenDeployer.
+3. `claims.json`, a list of all the claims of all user. It contains all information needed by a user to perform a claim onchain. 
+4. `chunks` and `mapping.json`, which contain a reorganized version of the same claims that are available in `claims.json`. This format is easier to handle by a web frontend. The format is very similar to the one used in the Uniswap airdrop.
+
+Run the verifier to check that your deployment was successful:
+```
+npx hardhat verify-contract-code --bridged-token-deployer  "<address from addresses.json>" --network gnosischain  
+```
+and copy <address from addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
+
+
+#### 2nd step: Mainnet proposal creation
+```
+source env/mainnet/.env
+npx hardhat deployment --claims ./mainnet/claims.csv --settings ./settings.json --network mainnet 
+```
 
 This script is deterministic and can be used to verify the transactions proposed to the Gnosis DAO.
 
