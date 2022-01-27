@@ -99,9 +99,9 @@ The output files are in the `output/deployment-gc` folder, which include:
 
 Run the verifier to check that your deployment was successful:
 ```
-npx hardhat verify-contract-code --bridged-token-deployer  "<address from of addresses.json>" --network gnosischain  
+npx hardhat verify-contract-code --bridged-token-deployer  "<address from addresses.json>" --network gnosischain  
 ```
-and copy <address from of addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
+and copy <address from addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
 
 
 #### 2nd step: Mainnet proposal creation
