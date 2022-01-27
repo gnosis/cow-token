@@ -112,7 +112,7 @@ async function generateDeployment(
       );
     }
   } else {
-    console.warn("settings.cowToken.expectedAddress was not defined");
+    console.warn("settings.cowDao.expectedAddress was not defined");
   }
 
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
