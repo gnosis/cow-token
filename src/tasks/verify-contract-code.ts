@@ -71,7 +71,7 @@ async function verifyVirtualToken(
     .connect(hre.ethers.provider);
   try {
     const tokenSymbol = await virtualToken.symbol();
-    if (tokenSymbol !== "vCOW") {
+    if (tokenSymbol !== "Test vCOW") {
       throw new Error(
         `The address to verify has a token with symbol ${tokenSymbol}. Expected to verify token vCOW. Please use the address of the virtual COW token instead.`,
       );

@@ -34,5 +34,5 @@
     "multiTokenMediatorETH": "0xF0b456250DC9990662a6F25808cC74A6d1131Ea9",
     "arbitraryMessageBridgeETH": "0x05185872898b6f94AA600177EF41B9334B1FA48B"
   },
-  "bridgedTokenDeployer": "0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e"
+  "bridgedTokenDeployer": "0x20d2A4cfedDbeF960F8c46EF22C5DeFCF9C26CF3"
 }
