@@ -44,7 +44,10 @@ export function callIfContractExists({
   return {
     data: forwarder.interface.encodeFunctionData(
       "forwardCallIfNoCodeAt",
-      getForwardCallIfNoCodeAtInput({ addressToTest, transaction: transaction }),
+      getForwardCallIfNoCodeAtInput({
+        addressToTest,
+        transaction: transaction,
+      }),
     ),
     to: forwarder.address,
     operation: SafeOperation.Call,
