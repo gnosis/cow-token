@@ -84,14 +84,13 @@ The deployment has the following inputs:
 - gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
 
 And two .env files should be prepared for each network:
-- env/gnosischain/.env file for gnosis chain. 
-- env/mainnet/.env file for Ethereum-Chain. 
-An exemplary .env file can be found [here](.env.sample)
+- example/gnosischain/.env file for gnosis chain. See [example](example/gnosischain/env.sample)
+- example/mainnet/.env file for Ethereum-Chain. See [example](example/mainnet/env.sample)
 
 #### 1st step: Deployment on Gnosis-Chain
 ```
 yarn build
-source env/gnosischain/.env
+source example/gnosischain/.env
 npx hardhat deployment-bridged-token-deployer --settings ./settings.json --claims ./gnosischain/claims.csv --network gnosischain
 ```
 
@@ -109,7 +108,7 @@ and copy <address from addresses.json> into the settings.json for the entry `bri
 
 #### 2nd step: Mainnet proposal creation
 ```
-source env/mainnet/.env
+source example/mainnet/.env
 npx hardhat deployment --claims ./mainnet/claims.csv --settings ./settings.json --network mainnet 
 ```
 
