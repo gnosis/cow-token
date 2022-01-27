@@ -51,7 +51,7 @@ async function generateDeployment(
     );
   }
 
-  const inputSettings: Settings = JSON.parse(
+  const settings: Settings = JSON.parse(
     await fs.readFile(settingsJson, "utf8"),
   );
   console.log(`Using deployer ${deployer.address}`);
@@ -62,8 +62,8 @@ async function generateDeployment(
   console.log("Generating Merkle proofs...");
   const { merkleRoot, claims: claimsWithProof } = computeProofs(claims);
 
-  const settings = {
-    ...inputSettings,
+  const dummySettings = {
+    ...settings,
     virtualCowToken: dummyVirtualTokenCreationSettings,
     multiTokenMediatorGnosisChain: constants.AddressZero,
   };
@@ -79,7 +79,7 @@ async function generateDeployment(
   const {
     addresses: { cowToken, cowDao },
   } = await generateProposal(
-    settings,
+    dummySettings,
     {
       ...defaultSafeDeploymentAddresses(chainId),
       forwarder: constants.AddressZero,
@@ -91,24 +91,28 @@ async function generateDeployment(
     hre.ethers,
   );
 
-  if (settings.cowToken.expectedAddress !== cowToken) {
-    if (settings.cowToken.expectedAddress !== undefined) {
+  if (settings.cowToken.expectedAddress !== undefined) {
+    if (
+      settings.cowToken.expectedAddress.toLowerCase() !== cowToken.toLowerCase()
+    ) {
       throw new Error(
-        "Expected cowToken address does not coincide with calculated address",
+        `Expected cowToken address ${settings.cowToken.expectedAddress} does not coincide with calculated address ${cowToken}`,
       );
-    } else {
-      console.warn("settings.cowToken.expectedAddress was not defined");
     }
+  } else {
+    console.warn("settings.cowToken.expectedAddress was not defined");
   }
 
-  if (settings.cowDao.expectedAddress !== cowDao) {
-    if (settings.cowDao.expectedAddress !== undefined) {
+  if (settings.cowDao.expectedAddress !== undefined) {
+    if (
+      settings.cowDao.expectedAddress.toLowerCase() !== cowDao.toLowerCase()
+    ) {
       throw new Error(
         "Expected cowDao address does not coincide with calculated address",
       );
-    } else {
-      console.warn("settings.cowToken.expectedAddress was not defined");
     }
+  } else {
+    console.warn("settings.cowDao.expectedAddress was not defined");
   }
 
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
@@ -122,6 +126,11 @@ async function generateDeployment(
     nativeTokenPrice: utils.parseUnits("0.15", 18), // the price of one unit of COW in xDAI
     wrappedNativeToken: defaultTokens.weth[chainId],
   };
+
+  console.log(
+    "The following deployment parameters will be used",
+    deploymentHelperParameters,
+  );
 
   const BridgedTokenDeployer = await hre.ethers.getContractFactory(
     "BridgedTokenDeployer",
