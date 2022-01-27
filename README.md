@@ -76,7 +76,7 @@ This contract will later be triggered from the Ethereum-Chain via the Omni-Bridg
 The main part of the deployment is done on Ethereum-Chain. 
 The GnosisDAO will initiate all necessary transactions to create the different safes, create the CowProtocolToken and CowProtocolVirtualToken. 
 Furthermore, the GnosisDAO will bridge one CowProtocolToken to the Omni-Bridge in order to trigger the bridge to deploy the bridged CowProtocolToken also on Gnosis-Chain. 
-Last, but not least, the GnosisDao will deploy over the bridge also a new Community Safe on Gnosis Chain and trigger the CowProtocolVirtualToken deployment on the BridgedTokenDeployer over the Omni-Bridge.
+Last, but not least, the GnosisDao will bridge two transactions to Gnosis Chain over the Omni-Bridge: the deployment of the Cow DAO (at the same address as in mainnet) and the trigger transaction to the BridgedTokenDeployer that deploys the CowProtocolVirtualToken.
 
 The deployment has the following inputs:
 - .env file for Ethereum-Chain. See [example](.env.sample)
