@@ -10,3 +10,6 @@ yarn-error.log
 .mocharc.json
 .env
 /settings.json
+/example/gnosischain/.env
+/example/mainnet/.env
+/example/rinkeby/
