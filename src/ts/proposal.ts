@@ -481,7 +481,8 @@ export function deploymentStepsIntoArray(
       transferCowTokenToCowDao,
     ],
     [virtualCowTokenCreationTransaction],
-    [relayCowDaoDeployment, bridgedTokenDeployerTriggering],
+    [relayCowDaoDeployment],
+    [bridgedTokenDeployerTriggering],
   ];
 }
 
