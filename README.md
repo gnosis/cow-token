@@ -76,14 +76,17 @@ This contract will later be triggered from the Ethereum-Chain via the Omni-Bridg
 The main part of the deployment is done on Ethereum-Chain. 
 The GnosisDAO will initiate all necessary transactions to create the different safes, create the CowProtocolToken and CowProtocolVirtualToken. 
 Furthermore, the GnosisDAO will bridge one CowProtocolToken to the Omni-Bridge in order to trigger the bridge to deploy the bridged CowProtocolToken also on Gnosis-Chain. 
-Last, but not least, the GnosisDao will deploy over the bridge also a new Community Safe on Gnosis Chain and trigger the CowProtocolVirtualToken deployment on the BridgedTokenDeployer over the Omni-Bridge.
+Last, but not least, the GnosisDao will bridge two transactions to Gnosis Chain over the Omni-Bridge: the deployment of the Cow DAO (at the same address as in mainnet) and the trigger transaction to the BridgedTokenDeployer that deploys the CowProtocolVirtualToken.
 
 The deployment has the following inputs:
-- .env file for Ethereum-Chain. See [example](.env.sample)
 - mainnet/claims.csv file with the airdrop information for mainnet. See [example](#example-csv-file-with-claims)
-- .env file for gnosis chain. See [example](.env.sample)
-- gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
 - setting.json describing the most important parameters. See [example](example/settings.json)
+- gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
+
+And two .env files should be prepared for each network:
+- env/gnosischain/.env file for gnosis chain. 
+- env/mainnet/.env file for Ethereum-Chain. 
+An exemplary .env file can be found [here](.env.sample)
 
 #### 1st step: Deployment on Gnosis-Chain
 ```
@@ -99,9 +102,9 @@ The output files are in the `output/deployment-gc` folder, which include:
 
 Run the verifier to check that your deployment was successful:
 ```
-npx hardhat verify-contract-code --bridged-token-deployer  "<address from of addresses.json>" --network gnosischain  
+npx hardhat verify-contract-code --bridged-token-deployer  "<address from addresses.json>" --network gnosischain  
 ```
-and copy <address from of addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
+and copy <address from addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
 
 
 #### 2nd step: Mainnet proposal creation

@@ -9,4 +9,4 @@ yarn-error.log
 *.tgz
 .mocharc.json
 .env
-settings.json
+/settings.json
