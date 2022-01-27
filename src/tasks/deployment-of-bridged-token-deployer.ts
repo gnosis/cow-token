@@ -93,7 +93,9 @@ async function generateDeployment(
 
   if (settings.cowToken.expectedAddress !== cowToken) {
     if (settings.cowToken.expectedAddress !== undefined) {
-      throw new Error("Expected cowToken address must be defined");
+      throw new Error(
+        "Expected cowToken address does not coincide with calculated address",
+      );
     } else {
       console.warn("settings.cowToken.expectedAddress was not defined");
     }
@@ -101,7 +103,9 @@ async function generateDeployment(
 
   if (settings.cowDao.expectedAddress !== cowDao) {
     if (settings.cowDao.expectedAddress !== undefined) {
-      throw new Error("Expected cowDao address must be defined");
+      throw new Error(
+        "Expected cowDao address does not coincide with calculated address",
+      );
     } else {
       console.warn("settings.cowToken.expectedAddress was not defined");
     }
