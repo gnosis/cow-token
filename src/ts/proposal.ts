@@ -12,6 +12,7 @@ import {
 import { BridgeParameter } from "./lib/common-interfaces";
 import { amountToRelay } from "./lib/constants";
 import {
+  multisend,
   prepareDeterministicSafeWithOwners,
   SafeDeploymentAddresses,
   SafeOperation,
@@ -85,7 +86,7 @@ export interface ProposalAsStruct {
 }
 
 export interface Proposal {
-  steps: JsonMetaTransaction[];
+  steps: JsonMetaTransaction[][];
   addresses: FinalAddresses;
 }
 
@@ -454,7 +455,7 @@ async function setupVirtualToken(
 
 export function deploymentStepsIntoArray(
   steps: DeploymentSteps,
-): JsonMetaTransaction[] {
+): JsonMetaTransaction[][] {
   const {
     cowDaoCreationTransaction,
     teamControllerCreationTransaction,
@@ -468,15 +469,35 @@ export function deploymentStepsIntoArray(
     bridgedTokenDeployerTriggering,
   } = steps;
   return [
-    cowDaoCreationTransaction,
-    teamControllerCreationTransaction,
-    investorFundsTargetCreationTransaction,
-    cowTokenCreationTransaction,
-    virtualCowTokenCreationTransaction,
-    approvalOmniBridgeTx,
-    relayTestFundsToOmniBridgeTx,
-    transferCowTokenToCowDao,
-    relayCowDaoDeployment,
-    bridgedTokenDeployerTriggering,
+    [
+      cowDaoCreationTransaction,
+      teamControllerCreationTransaction,
+      investorFundsTargetCreationTransaction,
+    ],
+    [
+      cowTokenCreationTransaction,
+      approvalOmniBridgeTx,
+      relayTestFundsToOmniBridgeTx,
+      transferCowTokenToCowDao,
+    ],
+    [virtualCowTokenCreationTransaction],
+    [relayCowDaoDeployment],
+    [bridgedTokenDeployerTriggering],
   ];
+}
+
+export function groupWithMultisendCallOnly(
+  proposalSteps: MetaTransaction[][],
+  multisendCallOnlyAddress: string,
+): MetaTransaction[] {
+  return proposalSteps.map((transactions) => {
+    if (
+      transactions.some((tx) => tx.operation === SafeOperation.DelegateCall)
+    ) {
+      throw new Error(
+        "Cannot join with MultisendCallOnly because one of the joined transactions is a delegatecall",
+      );
+    }
+    return multisend(transactions, multisendCallOnlyAddress);
+  });
 }

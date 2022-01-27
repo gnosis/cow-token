@@ -3,10 +3,16 @@ import { BigNumber, Contract } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
+import { groupWithMultisendCallOnly } from "../ts";
 import { Args as ArgsDeployment } from "../ts/lib/common-interfaces";
 
 import { generateDeployment } from "./ts/proposal";
-import { execSafeTransaction, gnosisSafeAt } from "./ts/safe";
+import {
+  defaultSafeDeploymentAddresses,
+  execSafeTransaction,
+  gnosisSafeAt,
+  isChainIdSupported,
+} from "./ts/safe";
 
 const OUTPUT_FOLDER = "./output/test-execute-proposal";
 
@@ -70,7 +76,15 @@ async function executeProposal(
     }
   }
 
-  for (const tx of steps) {
+  const chainId = (await hre.ethers.provider.getNetwork()).chainId.toString();
+  if (!isChainIdSupported(chainId)) {
+    throw new Error(`Chain id ${chainId} not supported by the Gnosis Safe`);
+  }
+
+  for (const tx of groupWithMultisendCallOnly(
+    steps,
+    defaultSafeDeploymentAddresses(chainId).multisendCallOnly,
+  )) {
     let response: TransactionResponse;
     if (gnosisDao === null) {
       const { to, data } = tx;
