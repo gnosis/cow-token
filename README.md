@@ -79,11 +79,14 @@ Furthermore, the GnosisDAO will bridge one CowProtocolToken to the Omni-Bridge i
 Last, but not least, the GnosisDao will bridge two transactions to Gnosis Chain over the Omni-Bridge: the deployment of the Cow DAO (at the same address as in mainnet) and the trigger transaction to the BridgedTokenDeployer that deploys the CowProtocolVirtualToken.
 
 The deployment has the following inputs:
-- .env file for Ethereum-Chain. See [example](.env.sample)
 - mainnet/claims.csv file with the airdrop information for mainnet. See [example](#example-csv-file-with-claims)
-- .env file for gnosis chain. See [example](.env.sample)
-- gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
 - setting.json describing the most important parameters. See [example](example/settings.json)
+- gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
+
+And two .env files should be prepared for each network:
+- env/gnosischain/.env file for gnosis chain. 
+- env/mainnet/.env file for Ethereum-Chain. 
+An exemplary .env file can be found [here](.env.sample)
 
 #### 1st step: Deployment on Gnosis-Chain
 ```
