@@ -92,7 +92,9 @@ async function generateDeployment(
   );
 
   if (settings.cowToken.expectedAddress !== undefined) {
-    if (settings.cowToken.expectedAddress.toLowerCase() !== cowToken.toLowerCase()) {
+    if (
+      settings.cowToken.expectedAddress.toLowerCase() !== cowToken.toLowerCase()
+    ) {
       throw new Error(
         `Expected cowToken address ${settings.cowToken.expectedAddress} does not coincide with calculated address ${cowToken}`,
       );
@@ -102,7 +104,9 @@ async function generateDeployment(
   }
 
   if (settings.cowDao.expectedAddress !== undefined) {
-    if (settings.cowDao.expectedAddress.toLowerCase() !== cowDao.toLowerCase()) {
+    if (
+      settings.cowDao.expectedAddress.toLowerCase() !== cowDao.toLowerCase()
+    ) {
       throw new Error(
         "Expected cowDao address does not coincide with calculated address",
       );
