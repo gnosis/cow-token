@@ -18,7 +18,7 @@ contract Forwarder {
     /// @param addressToTest Address to test for the presence of bytecode.
     /// @param data The calldata of the function that will be forwarded.
     /// @param callTarget The address that will be the target of the call.
-    function forwardIfNoCodeAt(
+    function forwardCallIfNoCodeAt(
         address addressToTest,
         bytes calldata data,
         address callTarget
