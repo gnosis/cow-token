@@ -1,4 +1,3 @@
-import { TransactionResponse } from "@ethersproject/abstract-provider";
 import { Contract } from "@ethersproject/contracts";
 import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
@@ -28,6 +27,7 @@ import {
   deploymentStepsIntoArray,
   generateProposalAsStruct,
   createTxTriggeringBridgedTokenDeployer,
+  groupWithMultisendCallOnly,
 } from "../src/ts";
 import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
 import { amountToRelay } from "../src/ts/lib/constants";
@@ -147,28 +147,27 @@ describe("proposal", function () {
         hre.ethers,
       );
 
-      let virtualTokenCreationTxResponse: TransactionResponse;
-
-      for (const step of deploymentStepsIntoArray(steps)) {
-        if (step == steps.virtualCowTokenCreationTransaction) {
-          virtualTokenCreationTxResponse = await execSafeTransaction(
-            gnosisDao,
-            step,
-            [gnosisDaoOwner],
-          );
-        } else {
-          await execSafeTransaction(gnosisDao, step, [gnosisDaoOwner]);
-        }
+      const allCreatedProxies = [];
+      for (const step of groupWithMultisendCallOnly(
+        deploymentStepsIntoArray(steps),
+        gnosisSafeManager.getDeploymentAddresses().multisendCallOnly,
+      )) {
+        const response = await execSafeTransaction(gnosisDao, step, [
+          gnosisDaoOwner,
+        ]);
+        allCreatedProxies.push(
+          ...(await contractsCreatedWithCreateCall(
+            response,
+            gnosisSafeManager.createCall.address,
+          )),
+        );
       }
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      expect(virtualTokenCreationTxResponse!).not.to.be.undefined;
 
-      const proxies = await contractsCreatedWithCreateCall(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        virtualTokenCreationTxResponse!,
-        gnosisSafeManager.createCall.address,
+      const proxiesMinusKnownAddresses = allCreatedProxies.filter(
+        (addr) => !Object.values(addresses).includes(addr),
       );
-      expect(proxies).to.have.length(1);
+      expect(proxiesMinusKnownAddresses).to.have.length(1);
+      const vTokenAddress = proxiesMinusKnownAddresses[0];
 
       contracts = {
         cowDao: gnosisSafeAt(addresses.cowDao).connect(hre.ethers.provider),
@@ -185,7 +184,7 @@ describe("proposal", function () {
         virtualCowToken: (
           await hre.ethers.getContractFactory(ContractName.VirtualToken)
         )
-          .attach(proxies[0])
+          .attach(vTokenAddress)
           .connect(hre.ethers.provider),
       };
     });
@@ -454,7 +453,7 @@ describe("proposal", function () {
         // contract.
         expect(addresses[deterministicAddress]).to.equal(predeployedAddress);
 
-        for (const step of steps) {
+        for (const step of steps.flat()) {
           await expect(execSafeTransaction(gnosisDao, step, [gnosisDaoOwner]))
             .not.to.be.reverted;
         }

@@ -54,6 +54,7 @@ export function defaultSafeDeploymentAddresses(
     fallbackHandler:
       CompatibilityFallbackHandlerDeployment.networkAddresses[chainId],
     createCall: CreateCallDeployment.networkAddresses[chainId],
+    multisendCallOnly: MultiSendDeployment.networkAddresses[chainId],
   };
 }
 

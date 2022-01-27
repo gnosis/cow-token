@@ -29,6 +29,7 @@ export interface SafeDeploymentAddresses {
   factory: string;
   fallbackHandler: string;
   createCall: string;
+  multisendCallOnly: string;
 }
 
 const gnosisSafeIface = new utils.Interface(GnosisSafe.abi);
