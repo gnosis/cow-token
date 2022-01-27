@@ -94,7 +94,7 @@ async function generateDeployment(
   if (settings.cowToken.expectedAddress !== cowToken) {
     if (settings.cowToken.expectedAddress !== undefined) {
       throw new Error(
-        "Expected cowToken address does not coincide with calculated address",
+        `Expected cowToken address ${settings.cowToken.expectedAddress} does not coincide with calculated address ${cowToken}`,
       );
     } else {
       console.warn("settings.cowToken.expectedAddress was not defined");
@@ -114,11 +114,11 @@ async function generateDeployment(
   const deploymentHelperParameters: DeploymentHelperDeployParams = {
     foreignToken: cowToken,
     multiTokenMediatorGnosisChain:
-      settings.bridge.multiTokenMediatorGnosisChain,
+      inputSettings.bridge.multiTokenMediatorGnosisChain,
     merkleRoot,
     communityFundsTarget: cowDao,
     gnoToken: defaultTokens.gno[chainId],
-    gnoPrice: settings.virtualCowToken.gnoPrice,
+    gnoPrice: inputSettings.virtualCowToken.gnoPrice,
     nativeTokenPrice: utils.parseUnits("0.15", 18), // the price of one unit of COW in xDAI
     wrappedNativeToken: defaultTokens.weth[chainId],
   };
