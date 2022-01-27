@@ -123,7 +123,7 @@ describe("Forwarder", function () {
   });
 });
 
-describe("safeForwardCallIfNoCodeAt", function () {
+describe("callIfContractExists", function () {
   const basicMetatransaction: MetaTransaction = {
     to: constants.AddressZero,
     data: "0x",
