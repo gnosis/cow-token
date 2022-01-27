@@ -338,6 +338,42 @@ describe("proposal", function () {
       });
     });
   });
+  describe("generateProposal result", function () {
+    let settings: DeploymentProposalSettings;
+    it("has same length as generateProposalAsStruct result", async function () {
+      const bridgeParameters: BridgeParameter = {
+        multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+        multiTokenMediatorETH: multiTokenMediatorETH.address,
+        arbitraryMessageBridgeETH: arbitraryMessageBridge.address,
+      };
+      settings = {
+        gnosisDao: gnosisDao.address,
+        cowDao: cowDaoSettings,
+        teamController: teamConrollerSettings,
+        cowToken: {},
+        virtualCowToken: virtualTokenCreationSettings,
+        bridge: bridgeParameters,
+        bridgedTokenDeployer: "0x" + "00".repeat(20),
+      };
+      const deploymentAddresses = {
+        ...gnosisSafeManager.getDeploymentAddresses(),
+        forwarder: forwarder.address,
+      };
+      const { steps: stepsAsStruct } = await generateProposalAsStruct(
+        settings,
+        deploymentAddresses,
+        deploymentAddresses,
+        hre.ethers,
+      );
+      const { steps: stepsAsVec } = await generateProposal(
+        settings,
+        deploymentAddresses,
+        deploymentAddresses,
+        hre.ethers,
+      );
+      expect(Object.keys(stepsAsStruct).length).to.be.equal(stepsAsVec.length);
+    });
+  });
 
   describe("if the following contract is deployed in advance, it still deploys", function () {
     // We set up `earlierDeployment` so that for every deterministically

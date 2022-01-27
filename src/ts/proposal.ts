@@ -465,6 +465,7 @@ export function deploymentStepsIntoArray(
     relayTestFundsToOmniBridgeTx,
     transferCowTokenToCowDao,
     relayCowDaoDeployment,
+    bridgedTokenDeployerTriggering,
   } = steps;
   return [
     cowDaoCreationTransaction,
@@ -476,5 +477,6 @@ export function deploymentStepsIntoArray(
     relayTestFundsToOmniBridgeTx,
     transferCowTokenToCowDao,
     relayCowDaoDeployment,
+    bridgedTokenDeployerTriggering,
   ];
 }
