@@ -370,7 +370,9 @@ describe("proposal", function () {
         deploymentAddresses,
         hre.ethers,
       );
-      expect(Object.keys(stepsAsStruct).length).to.be.equal(stepsAsVec.length);
+      expect(Object.keys(stepsAsStruct).length).to.be.equal(
+        stepsAsVec.flat().length,
+      );
     });
   });
 
