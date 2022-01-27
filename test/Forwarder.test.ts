@@ -10,7 +10,7 @@ import {
   ContractName,
   DEFAULT_FORWARDER,
   getDeterministicDeploymentTransaction,
-  getForwardIfNoCodeAtInput,
+  getForwardCallIfNoCodeAtInput,
 } from "../src/ts";
 import { SafeOperation } from "../src/ts/lib/safe";
 
@@ -52,8 +52,8 @@ describe("Forwarder", function () {
       to: eventEmitter.address,
     };
     await expect(
-      forwarder.forwardIfNoCodeAt(
-        ...getForwardIfNoCodeAtInput({
+      forwarder.forwardCallIfNoCodeAt(
+        ...getForwardCallIfNoCodeAtInput({
           addressToTest: constants.AddressZero,
           transaction: tx,
         }),
@@ -73,8 +73,8 @@ describe("Forwarder", function () {
     };
 
     await expect(
-      forwarder.forwardIfNoCodeAt(
-        ...getForwardIfNoCodeAtInput({
+      forwarder.forwardCallIfNoCodeAt(
+        ...getForwardCallIfNoCodeAtInput({
           addressToTest: contract.address,
           transaction: tx,
         }),
@@ -95,8 +95,8 @@ describe("Forwarder", function () {
     };
 
     await expect(
-      forwarder.forwardIfNoCodeAt(
-        ...getForwardIfNoCodeAtInput({
+      forwarder.forwardCallIfNoCodeAt(
+        ...getForwardCallIfNoCodeAtInput({
           addressToTest: constants.AddressZero,
           transaction: tx,
         }),
@@ -123,7 +123,7 @@ describe("Forwarder", function () {
   });
 });
 
-describe("safeForwardIfNoCodeAt", function () {
+describe("safeForwardCallIfNoCodeAt", function () {
   const basicMetatransaction: MetaTransaction = {
     to: constants.AddressZero,
     data: "0x",
@@ -149,8 +149,8 @@ describe("safeForwardIfNoCodeAt", function () {
       callIfContractExists({ addressToTest, transaction, forwarder }),
     ).to.deep.equal({
       data: forwarder.interface.encodeFunctionData(
-        "forwardIfNoCodeAt",
-        getForwardIfNoCodeAtInput({ addressToTest, transaction: transaction }),
+        "forwardCallIfNoCodeAt",
+        getForwardCallIfNoCodeAtInput({ addressToTest, transaction: transaction }),
       ),
       to: forwarder.address,
       operation: SafeOperation.Call,
