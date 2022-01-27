@@ -89,7 +89,7 @@ The deployment has the following inputs:
 ```
 yarn build
 source env/gnosischain/.env
-npx hardhat deployment-bridged-token-deployer --settings ./example/settings.json --claims ./claims.csv --network gnosischain
+npx hardhat deployment-bridged-token-deployer --settings ./settings.json --claims ./gnosischain/claims.csv --network gnosischain
 ```
 
 The output files are in the `output/deployment-gc` folder, which include:
@@ -107,7 +107,7 @@ and copy <address from of addresses.json> into the settings.json for the entry `
 #### 2nd step: Mainnet proposal creation
 ```
 source env/mainnet/.env
-npx hardhat deployment --network mainnet --claims /path/to/claims.csv --settings /path/to/settings.json
+npx hardhat deployment --claims ./mainnet/claims.csv --settings ./settings.json --network mainnet 
 ```
 
 This script is deterministic and can be used to verify the transactions proposed to the Gnosis DAO.
