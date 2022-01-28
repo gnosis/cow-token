@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 
-import { constants, utils } from "ethers";
+import { BigNumber, BigNumberish, constants, utils } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -11,8 +11,9 @@ import {
   generateProposal,
   constructorInput,
   ContractName,
+  getDeployArgsFromBridgedTokenDeployer,
 } from "../ts";
-import { Args, Settings } from "../ts/lib/common-interfaces";
+import { Args as ArgsDeployment, Settings } from "../ts/lib/common-interfaces";
 import { defaultTokens } from "../ts/lib/constants";
 import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
@@ -20,6 +21,10 @@ import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 export const OUTPUT_FOLDER_GC = "./output/deployment-gc";
+
+interface Args extends ArgsDeployment {
+  verify: string;
+}
 
 const setupBridgedTokenDeployerTask: () => void = () => {
   task(
@@ -34,11 +39,17 @@ const setupBridgedTokenDeployerTask: () => void = () => {
       "settings",
       "Path to the JSON file that contains the deployment settings.",
     )
+    .addFlag(
+      "verify",
+      "If set, the factory is not deployed but the existing deployment in the settings is checked against the computed parameter.",
+    )
     .setAction(generateDeployment);
 };
 
+export { setupBridgedTokenDeployerTask };
+
 async function generateDeployment(
-  { claims: claimCsv, settings: settingsJson }: Args,
+  { claims: claimCsv, settings: settingsJson, verify }: Args,
   hre: HardhatRuntimeEnvironment,
 ): Promise<void> {
   const { ethers } = hre;
@@ -123,7 +134,7 @@ async function generateDeployment(
     communityFundsTarget: cowDao,
     gnoToken: defaultTokens.gno[chainId],
     gnoPrice: settings.virtualCowToken.gnoPrice,
-    nativeTokenPrice: utils.parseUnits("0.15", 18), // the price of one unit of COW in xDAI
+    nativeTokenPrice: utils.parseUnits("0.15", 18).toString(), // the price of one unit of COW in xDAI
     wrappedNativeToken: defaultTokens.weth[chainId],
   };
 
@@ -132,22 +143,39 @@ async function generateDeployment(
     deploymentHelperParameters,
   );
 
-  const BridgedTokenDeployer = await hre.ethers.getContractFactory(
-    "BridgedTokenDeployer",
-  );
-  const bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
-    ...constructorInput(
-      ContractName.BridgedTokenDeployer,
+  let bridgedTokenDeployerAddress;
+  if (!verify) {
+    const BridgedTokenDeployer = await hre.ethers.getContractFactory(
+      "BridgedTokenDeployer",
+    );
+    const bridgedTokenDeployer = await BridgedTokenDeployer.deploy(
+      ...constructorInput(
+        ContractName.BridgedTokenDeployer,
+        deploymentHelperParameters,
+      ),
+    );
+
+    bridgedTokenDeployerAddress = bridgedTokenDeployer.address;
+  } else {
+    if (settings.bridgedTokenDeployer === undefined) {
+      throw new Error(
+        "Bridged token deployer not found in settings, nothing to verify.",
+      );
+    }
+    bridgedTokenDeployerAddress = settings.bridgedTokenDeployer;
+    await verifyDeployment(
+      bridgedTokenDeployerAddress,
       deploymentHelperParameters,
-    ),
-  );
+      hre,
+    );
+  }
 
   console.log("Clearing old files...");
-  await fs.rm(`${OUTPUT_FOLDER_GC}/claims.json`, {
+  await fs.rm(`${OUTPUT_FOLDER_GC}/addresses.json`, {
     recursive: true,
     force: true,
   });
-  await fs.rm(`${OUTPUT_FOLDER_GC}/params.json`, {
+  await fs.rm(`${OUTPUT_FOLDER_GC}/claims.json`, {
     recursive: true,
     force: true,
   });
@@ -157,7 +185,7 @@ async function generateDeployment(
   await fs.mkdir(OUTPUT_FOLDER_GC, { recursive: true });
   await fs.writeFile(
     `${OUTPUT_FOLDER_GC}/addresses.json`,
-    JSON.stringify(bridgedTokenDeployer.address, undefined, 2),
+    JSON.stringify(bridgedTokenDeployerAddress, undefined, 2),
   );
   await fs.writeFile(
     `${OUTPUT_FOLDER_GC}/claims.json`,
@@ -166,4 +194,34 @@ async function generateDeployment(
   await splitClaimsAndSaveToFolder(claimsWithProof, OUTPUT_FOLDER_GC);
 }
 
-export { setupBridgedTokenDeployerTask };
+async function verifyDeployment(
+  address: string,
+  expectedParams: DeploymentHelperDeployParams,
+  hre: HardhatRuntimeEnvironment,
+) {
+  const instance = await hre.ethers.getContractAt(
+    ContractName.BridgedTokenDeployer,
+    address,
+  );
+  const realParams = await getDeployArgsFromBridgedTokenDeployer(instance);
+
+  for (const key of Object.keys(
+    realParams,
+  ) as (keyof DeploymentHelperDeployParams)[]) {
+    const real = stringifyParam(realParams[key]);
+    const expected = stringifyParam(expectedParams[key]);
+    if (real !== expected) {
+      throw new Error(
+        `Bad parameter detected! Expected parameter ${key} to be ${expected}, found ${real}`,
+      );
+    }
+  }
+
+  console.log(
+    `The deployment parameters of contract ${address} match the settings of the proposal.`,
+  );
+}
+
+function stringifyParam(input: string | BigNumberish): string {
+  return typeof input === "string" ? input : BigNumber.from(input).toString();
+}
