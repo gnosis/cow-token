@@ -195,10 +195,10 @@ export async function generateProposalAsStruct(
   // same with the same addresses on ethereum and gnosis chain.
   if (
     deploymentAddressesETH.singleton !==
-      deploymentAddressesGnosisChain.singleton ||
+    deploymentAddressesGnosisChain.singleton ||
     deploymentAddressesETH.factory !== deploymentAddressesGnosisChain.factory ||
     deploymentAddressesETH.fallbackHandler !==
-      deploymentAddressesGnosisChain.fallbackHandler
+    deploymentAddressesGnosisChain.fallbackHandler
   ) {
     throw new Error(
       "The safeDeploymentAddress are not the same on the two different networks",
@@ -498,6 +498,6 @@ export function groupWithMultisendCallOnly(
         "Cannot join with MultisendCallOnly because one of the joined transactions is a delegatecall",
       );
     }
-    return multisend(transactions, multisendCallOnlyAddress);
-  });
+    return transactions.map(t => { return { to: t.to, value: t.value, operation: t.operation, data: t.data } });
+  }).flat();
 }

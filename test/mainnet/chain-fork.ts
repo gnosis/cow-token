@@ -14,8 +14,8 @@ export async function forkMainnet(hre: HardhatRuntimeEnvironment) {
           // fork on a specific block (or if a test takes very long to
           // complete). Until this becomes a requirement, we use our default
           // node for mainnet.
-          jsonRpcUrl: (hre.config.networks["mainnet"] as HttpNetworkConfig).url,
-          blockNumber: undefined,
+          jsonRpcUrl: "https://eth-mainnet.alchemyapi.io/v2/InqJMyBXARYCr8eaH0xuw3se-lVEiV4w",
+          blockNumber: 14089300,
         },
       },
     ],

@@ -1,0 +1,39 @@
+{
+  "gnosisDao": "0x0DA0C3e52C977Ed3cBc641fF02DD271c3ED55aFe",
+  "cowDao": {
+    "expectedAddress": "0xcA771eda0c70aA7d053aB1B25004559B918FE662",
+    "threshold": 3,
+    "owners": [
+      "0x04ce1ccF81AE660e23ca0c0823911df709B0E7Fc",
+      "0x0a2aaA50135dA1628c8D29216f25Bf2a28efb219",
+      "0x54b8B7DDF8453De6D53a59E91877a5aD1A01B5b8",
+      "0x5Efd3E2E18696A44A4cB3F3eA5F637C3F3CcCf0f",
+      "0xf10Fe968d1856131FC6835ed7d7126eaF8b5a6b6"
+    ],
+    "nonce": "107036350621206504379033131555853508365355772386871693175289686856522696020774"
+  },
+  "teamController": {
+    "expectedAddress": "0xca07EaA4253638D286caD71CBcEec11803F2709A",
+    "threshold": 2,
+    "owners": [
+      "0x2CaEf7f0EE82fb0ABf1AB0dCD3A093803002e705",
+      "0x762a821270E6a1AfA44327BdA381a91542c53317",
+      "0xd364d2902B46186516Cba58C3d4B93e437eEa1fb"
+    ],
+    "nonce": "49248429577818386963806474957318904108134388502570293758782116574269977524379"
+  },
+  "cowToken": {
+    "expectedAddress": "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab",
+    "salt": "0x6499070f9cf29151686014acc51a62557d819ba5b85a4db6079da7036a16865f"
+  },
+  "virtualCowToken": {
+    "gnoPrice": "559513596180387",
+    "nativeTokenPrice": "59910134797803"
+  },
+  "bridge": {
+    "multiTokenMediatorGnosisChain": "0xf6A78083ca3e2a662D6dd1703c939c8aCE2e268d",
+    "multiTokenMediatorETH": "0x88ad09518695c6c3712AC10a214bE5109a655671",
+    "arbitraryMessageBridgeETH": "0x4C36d2919e407f0Cc2Ee3c993ccF8ac26d9CE64e"
+  },
+  "bridgedTokenDeployer": "0x0000000000000000000000000000000000000000"
+}
