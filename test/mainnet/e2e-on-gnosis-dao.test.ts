@@ -21,7 +21,7 @@ import {
 import { Args, Settings } from "../../src/ts/lib/common-interfaces";
 import { defaultTokens } from "../../src/ts/lib/constants";
 import { Contract } from "ethers";
-import { assert } from "console";
+import { assert, group } from "console";
 
 
 // copied code, todo: refactor to use it only once
@@ -140,13 +140,14 @@ describe("Mainnet: deployment from gnosis DAO", () => {
         const realitio = await getRealityIO(hre);
 
         // Dummy modifications for debugging
-        groupedSteps = groupedSteps.slice(0, 1)
-        groupedSteps[0].data = '0x015640100505'
+
+        // groupedSteps = groupedSteps.slice(9, 10)
+        groupedSteps[0].data = "0x" + "01".repeat(5000)
 
         const proposals = Array.from(Array(groupedSteps.length).keys()).map(x => { return { tx: groupedSteps[x], id: x } })
         let txsHashes = [];
         for (const proposal of proposals) {
-            txsHashes.push(await realityModule.connect(proposer).getTransactionHash(proposal.tx.to, parseInt(proposal.tx.value.toString()), proposal.tx.data, proposal.tx.operation, proposal.id));
+            txsHashes.push(await realityModule.connect(proposer).getTransactionHash(proposal.tx.to, proposal.tx.value, proposal.tx.data, proposal.tx.operation, proposal.id));
         }
 
 
