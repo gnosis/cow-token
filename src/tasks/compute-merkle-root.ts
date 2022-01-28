@@ -1,7 +1,6 @@
 import { task } from "hardhat/config";
 
 import { computeProofs, parseCsvFile } from "../ts";
-import { Args } from "../ts/lib/common-interfaces";
 
 const setupComputeMerkleRootTask: () => void = () => {
   task(
@@ -15,9 +14,13 @@ const setupComputeMerkleRootTask: () => void = () => {
     .setAction(computeMerkleRoot);
 };
 
-async function computeMerkleRoot({ claims: claimCsv }: Args): Promise<void> {
-  const claims = await parseCsvFile(claimCsv);
-  const { merkleRoot } = computeProofs(claims);
+interface Args {
+  claims: string;
+}
+
+async function computeMerkleRoot({ claims }: Args): Promise<void> {
+  const parsedClaims = await parseCsvFile(claims);
+  const { merkleRoot } = computeProofs(parsedClaims);
   console.log(merkleRoot);
 }
 
