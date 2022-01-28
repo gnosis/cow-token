@@ -1,3 +1,4 @@
+import { setupComputeMerkleRootTask } from "./compute-merkle-root";
 import { setupDeployForwarder } from "./deploy-forwarder";
 import { setupDeployment } from "./deployment";
 import { setupBridgedTokenDeployerTask } from "./deployment-of-bridged-token-deployer";
@@ -14,4 +15,5 @@ export function setupTasks(): void {
   setupTestExecuteProposalTask();
   setupVerifyContractCodeTask();
   setupBridgedTokenDeployerTask();
+  setupComputeMerkleRootTask();
 }

@@ -103,7 +103,7 @@ Run the verifier to check that your deployment was successful:
 ```
 npx hardhat verify-contract-code --bridged-token-deployer  "<address from addresses.json>" --network gnosischain  
 ```
-and copy <address from addresses.json> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
+and copy \<address from addresses.json\> into the settings.json for the entry `bridgedTokenDeployer` for the next step.
 
 
 #### 2nd step: Mainnet proposal creation
@@ -162,3 +162,11 @@ yarn verify $VIRTUAL_TOKEN_ADDRESS --network $NETWORK
 ```
 
 It is currently only possible to verify the contract code on mainnet or Rinkeby.
+
+### Computing the Merkle Root
+
+To just compute the merkle root of a given claim file, use the following script
+
+```
+yarn hardhat compute-merkle-root --claims <path to csv>
+```
