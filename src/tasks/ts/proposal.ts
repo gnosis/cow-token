@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { text } from "stream/consumers";
 
 import {
   DEFAULT_FORWARDER,
@@ -10,9 +11,11 @@ import {
   splitClaimsAndSaveToFolder,
   generateProposal,
   Proposal,
+  groupWithMultisendCallOnly,
 } from "../../ts";
 import { Args, Settings } from "../../ts/lib/common-interfaces";
 import { defaultTokens } from "../../ts/lib/constants";
+import { multisend, SafeOperation } from "../../ts/lib/safe";
 
 import { defaultSafeDeploymentAddresses } from "./safe";
 
@@ -64,6 +67,11 @@ export async function generateDeployment(
   );
   const { steps, addresses } = proposal;
 
+  const msendaddr = defaultSafeDeploymentAddresses("1").multisendCallOnly;
+  const result = JSON.stringify(groupWithMultisendCallOnly(steps, msendaddr));
+  console.log(result);
+
+  process.exit(0);
   console.log("Clearing old files...");
   await fs.rm(`${outputFolder}/addresses.json`, {
     recursive: true,
