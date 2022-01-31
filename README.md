@@ -120,6 +120,22 @@ The output files are in the `output/deployment` folder, which include:
 3. `claims.json`, a list of all the claims of all user. It contains all information needed by a user to perform a claim onchain. 
 4. `chunks` and `mapping.json`, which contain a reorganized version of the same claims that are available in `claims.json`. This format is easier to handle by a web frontend. The format is very similar to the one used in the Uniswap airdrop.
 
+#### Verify GIP-13 proposal
+
+##### Mainnet
+
+The scripts in this repo have been used to generate the [snapshot proposal](https://snapshot.org/#/gnosis.eth/proposal/0x9b12a093e17e92b56d070ed876883d8c2331678ca3945e44f66dd416cfd47a64) for the [Gnosis Improvement Proposal #13](https://forum.gnosis.io/t/gip-13-gnosis-protocol-token/1529).
+
+You can verifying the correctness of the transactions by running:
+
+```
+source example/mainnet/.env # fill the env file with the required parameters
+wget https://raw.githubusercontent.com/gnosis/cow-token-allocation/2111ee1e678be345ba8b33e80be5fa0d0ed780f4/allocations-mainnet.csv
+npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --settings ./example/Gnosis-DAO-proposal-settings.json
+```
+
+The output file `./output/deployment/steps.json` contains all the transactions that are included in the snapshot.
+
 #### Test deployment
 
 A script that can be used to create a live test deployment of the token contract on the supported networks.
