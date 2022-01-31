@@ -122,9 +122,11 @@ The output files are in the `output/deployment` folder, which include:
 
 #### Verify GIP-13 proposal
 
-##### Mainnet
-
 The scripts in this repo have been used to generate the [snapshot proposal](https://snapshot.org/#/gnosis.eth/proposal/0x9b12a093e17e92b56d070ed876883d8c2331678ca3945e44f66dd416cfd47a64) for the [Gnosis Improvement Proposal #13](https://forum.gnosis.io/t/gip-13-gnosis-protocol-token/1529).
+
+Deployments on both mainnet and Gnosis Chain can be verified with the tooling in this repo.
+
+##### Mainnet
 
 You can verifying the correctness of the transactions by running:
 
@@ -135,6 +137,19 @@ npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --se
 ```
 
 The output file `./output/deployment/steps.json` contains all the transactions that are included in the snapshot.
+
+##### Gnosis Chain
+
+A factory contract was deployed on Gnosis Chain to facilitate the deployment of the virtual token contract through a mainnet proposal.
+The correctness of the contract parameters can be checked with:
+
+```
+source example/gnosischain/.env # fill the env file with the required parameters
+wget https://raw.githubusercontent.com/gnosis/cow-token-allocation/2111ee1e678be345ba8b33e80be5fa0d0ed780f4/allocations-gchain.csv
+npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./allocations-gchain.csv --settings ./example/Gnosis-DAO-proposal-settings.json --verify
+```
+
+The terminal output of the script will show whether the verification process was successful. 
 
 #### Test deployment
 
