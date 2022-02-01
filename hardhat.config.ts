@@ -36,15 +36,6 @@ const {
 const DEFAULT_MNEMONIC =
   "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
 
-const sharedNetworkConfig: HttpNetworkUserConfig = {};
-if (PK) {
-  sharedNetworkConfig.accounts = [PK];
-} else {
-  sharedNetworkConfig.accounts = {
-    mnemonic: MNEMONIC || DEFAULT_MNEMONIC,
-  };
-}
-
 if (
   ["rinkeby", "mainnet"].includes(argv.network) &&
   NODE_URL === undefined &&
@@ -55,8 +46,21 @@ if (
   );
 }
 
-if (NODE_URL !== undefined) {
+const sharedNetworkConfig: HttpNetworkUserConfig = {};
+if (NODE_URL) {
   sharedNetworkConfig.url = NODE_URL;
+}
+if (PK) {
+  sharedNetworkConfig.accounts = [PK];
+} else {
+  sharedNetworkConfig.accounts = {
+    mnemonic: MNEMONIC || DEFAULT_MNEMONIC,
+  };
+}
+if (GAS_PRICE_GWEI) {
+  sharedNetworkConfig.gasPrice = utils
+    .parseUnits(GAS_PRICE_GWEI, "gwei")
+    .toNumber();
 }
 
 const { mocha, initialBaseFeePerGas, optimizerDetails } =
@@ -69,7 +73,6 @@ export default {
   paths: {
     artifacts: "build/artifacts",
     cache: "build/cache",
-    deploy: "src/deploy",
     sources: "src/contracts",
   },
   solidity: {
@@ -104,11 +107,6 @@ export default {
     gnosischain: {
       ...sharedNetworkConfig,
       url: "https://rpc.gnosischain.com",
-      gasPrice: GAS_PRICE_GWEI
-        ? parseInt(
-            utils.parseUnits(GAS_PRICE_GWEI.toString(), "gwei").toString(),
-          )
-        : "auto",
       chainId: 100,
     },
   },
@@ -120,7 +118,7 @@ export default {
   gasReporter: {
     enabled: REPORT_GAS ? true : false,
     currency: "USD",
-    gasPrice: 21,
+    gasPrice: 100,
   },
   etherscan: {
     apiKey: {
