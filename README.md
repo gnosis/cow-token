@@ -136,7 +136,7 @@ wget https://raw.githubusercontent.com/gnosis/cow-token-allocation/2111ee1e678be
 npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --settings ./example/Gnosis-DAO-proposal-settings.json
 ```
 
-The output file `./output/deployment/steps.json` contains all the transactions that are included in the snapshot.
+The output file `./output/deployment/txhashes.json` contains the hashes of all transactions that are included in the snapshot and can be compared to the batch transaction hashes that are shown in the Snapshot interface.
 
 ##### Gnosis Chain
 
