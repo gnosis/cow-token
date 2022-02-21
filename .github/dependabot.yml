@@ -7,5 +7,5 @@ updates:
       day: monday
       time: "02:00"
     open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: "@openzeppelin/contracts"
+    ignore:
+      - dependency-name: "@openzeppelin/contracts"
