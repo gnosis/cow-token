@@ -10,11 +10,16 @@ import {
   splitClaimsAndSaveToFolder,
   generateProposal,
   Proposal,
+  groupMultipleTransactions,
 } from "../../ts";
 import { Args, Settings } from "../../ts/lib/common-interfaces";
-import { defaultTokens } from "../../ts/lib/constants";
+import {
+  realityModule as realityModuleAddress,
+  defaultTokens,
+} from "../../ts/lib/constants";
 
 import { defaultSafeDeploymentAddresses } from "./safe";
+import { RealityModule } from "./snapshot";
 
 export async function generateDeployment(
   { claims: claimCsv, settings: settingsJson }: Args,
@@ -64,12 +69,36 @@ export async function generateDeployment(
   );
   const { steps, addresses } = proposal;
 
+  let txHashes = null;
+  if (
+    Object.keys(realityModuleAddress).includes(chainId) &&
+    settings.multisend !== undefined
+  ) {
+    console.log("Generating proposal transaction hashes...");
+    const realityModule = new RealityModule(
+      realityModuleAddress[chainId as keyof typeof realityModuleAddress],
+      hre.ethers.provider,
+    );
+
+    const mergedSteps = groupMultipleTransactions(steps, settings.multisend);
+
+    txHashes = await Promise.all(
+      mergedSteps.map((tx, index) =>
+        realityModule.getTransactionHash(tx, index),
+      ),
+    );
+  }
+
   console.log("Clearing old files...");
   await fs.rm(`${outputFolder}/addresses.json`, {
     recursive: true,
     force: true,
   });
   await fs.rm(`${outputFolder}/steps.json`, { recursive: true, force: true });
+  await fs.rm(`${outputFolder}/txhashes.json`, {
+    recursive: true,
+    force: true,
+  });
   await fs.rm(`${outputFolder}/claims.json`, { recursive: true, force: true });
   await removeSplitClaimFiles(outputFolder);
 
@@ -83,6 +112,12 @@ export async function generateDeployment(
     `${outputFolder}/steps.json`,
     JSON.stringify(steps, undefined, 2),
   );
+  if (txHashes !== null) {
+    await fs.writeFile(
+      `${outputFolder}/txhashes.json`,
+      JSON.stringify(txHashes, undefined, 2),
+    );
+  }
   await fs.writeFile(
     `${outputFolder}/claims.json`,
     JSON.stringify(claimsWithProof),

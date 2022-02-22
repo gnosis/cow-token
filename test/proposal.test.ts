@@ -27,7 +27,7 @@ import {
   deploymentStepsIntoArray,
   generateProposalAsStruct,
   createTxTriggeringBridgedTokenDeployer,
-  groupWithMultisendCallOnly,
+  groupMultipleTransactions,
 } from "../src/ts";
 import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
 import { amountToRelay } from "../src/ts/lib/constants";
@@ -148,7 +148,7 @@ describe("proposal", function () {
       );
 
       const allCreatedProxies = [];
-      for (const step of groupWithMultisendCallOnly(
+      for (const step of groupMultipleTransactions(
         deploymentStepsIntoArray(steps),
         gnosisSafeManager.getDeploymentAddresses().multisendCallOnly,
       )) {

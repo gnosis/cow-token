@@ -3,7 +3,7 @@ import { BigNumber, Contract } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-import { groupWithMultisendCallOnly } from "../ts";
+import { groupMultipleTransactions } from "../ts";
 import { Args as ArgsDeployment } from "../ts/lib/common-interfaces";
 
 import { generateDeployment } from "./ts/proposal";
@@ -81,9 +81,10 @@ async function executeProposal(
     throw new Error(`Chain id ${chainId} not supported by the Gnosis Safe`);
   }
 
-  for (const tx of groupWithMultisendCallOnly(
+  for (const tx of groupMultipleTransactions(
     steps,
-    defaultSafeDeploymentAddresses(chainId).multisendCallOnly,
+    settings.multisend ??
+      defaultSafeDeploymentAddresses(chainId).multisendCallOnly,
   )) {
     let response: TransactionResponse;
     if (gnosisDao === null) {

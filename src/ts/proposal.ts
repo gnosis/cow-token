@@ -486,18 +486,16 @@ export function deploymentStepsIntoArray(
   ];
 }
 
-export function groupWithMultisendCallOnly(
+export function groupMultipleTransactions(
   proposalSteps: MetaTransaction[][],
-  multisendCallOnlyAddress: string,
+  multisendAddress: string,
 ): MetaTransaction[] {
   return proposalSteps.map((transactions) => {
-    if (
-      transactions.some((tx) => tx.operation === SafeOperation.DelegateCall)
-    ) {
-      throw new Error(
-        "Cannot join with MultisendCallOnly because one of the joined transactions is a delegatecall",
-      );
+    if (transactions.length === 0) {
+      throw new Error("Group contains zero transactions");
     }
-    return multisend(transactions, multisendCallOnlyAddress);
+    return transactions.length === 1
+      ? transactions[0]
+      : multisend(transactions, multisendAddress);
   });
 }

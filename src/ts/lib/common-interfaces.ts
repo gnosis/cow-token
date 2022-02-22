@@ -19,4 +19,5 @@ export interface BridgeParameter {
 export interface Settings
   extends Omit<DeploymentProposalSettings, "virtualCowToken"> {
   virtualCowToken: VirtualTokenSettings;
+  multisend?: string;
 }
