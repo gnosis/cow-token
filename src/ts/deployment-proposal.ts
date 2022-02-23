@@ -1,6 +1,6 @@
 import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
-import { BigNumber, Contract, utils } from "ethers";
+import { BigNumber, constants, Contract, utils } from "ethers";
 
 import {
   getDeterministicDeploymentTransaction,
@@ -103,6 +103,43 @@ export interface DeploymentProposalAsStruct {
 export interface DeploymentProposal {
   steps: JsonMetaTransaction[][];
   addresses: FinalAddresses;
+}
+
+export async function getExpectedAddresses(
+  settings: ReducedDeploymentProposalSettings,
+  deploymentAddressesETH: Omit<DeploymentAddresses, "forwarder">,
+  deploymentAddressesGnosisChain: Omit<DeploymentAddresses, "forwarder">,
+  ethers: HardhatEthersHelpers,
+): Promise<DeploymentProposal["addresses"]> {
+  // Computes and returns the expected contract addresseses that would result
+  // from executing the input proposal.
+
+  // As some parameters aren't needed to pregenerate the addresses, we set these
+  // values to dummy values. A test will enforce that the result of this
+  // function is consistent with the output of generateDeploymentProposal.
+  const dummyVirtualTokenCreationSettings: VirtualTokenCreationSettings = {
+    merkleRoot: constants.HashZero,
+    usdcToken: constants.AddressZero,
+    gnoToken: constants.AddressZero,
+    gnoPrice: "0",
+    wrappedNativeToken: constants.AddressZero,
+    nativeTokenPrice: "0",
+  };
+
+  const dummySettings = {
+    ...settings,
+    virtualCowToken: dummyVirtualTokenCreationSettings,
+    multiTokenMediatorGnosisChain: constants.AddressZero,
+  };
+
+  return (
+    await generateDeploymentProposal(
+      dummySettings,
+      { ...deploymentAddressesETH, forwarder: constants.AddressZero },
+      { ...deploymentAddressesGnosisChain, forwarder: constants.AddressZero },
+      ethers,
+    )
+  ).addresses;
 }
 
 export async function generateDeploymentProposal(

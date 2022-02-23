@@ -29,10 +29,10 @@ import {
   createTxTriggeringBridgedTokenDeployer,
   groupMultipleTransactions,
   BridgeParameter,
+  getExpectedAddresses,
   ReducedDeploymentProposalSettings,
 } from "../src/ts";
 import { amountToRelay } from "../src/ts/lib/constants";
-import { dummyBridgeParameters } from "../src/ts/lib/dummy-instantiation";
 import {
   contractsCreatedWithCreateCall,
   getFallbackHandler,
@@ -40,6 +40,7 @@ import {
 } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
+import { dummyBridgeParameters } from "./dummy-instantiation";
 import { GnosisSafeManager } from "./safe";
 import { stringify } from "./utils/formatUtils";
 
@@ -767,5 +768,81 @@ describe("bridged steps of deployment proposal", function () {
         .returns("0x" + "39".repeat(20));
       await expect(ambExecutor.sendTransaction(tx)).to.not.be.reverted;
     });
+  });
+});
+
+describe("getExpectedAddresses", function () {
+  let gnosisSafeManager: GnosisSafeManager;
+  const [deployer] = waffle.provider.getWallets();
+
+  before(async function () {
+    await setupDeterministicDeployer(deployer);
+    gnosisSafeManager = await GnosisSafeManager.init(deployer);
+  });
+
+  it("returns the same addresses that are generated in a proposal", async function () {
+    const cowDaoSettings: SafeCreationSettings = {
+      owners: [1, 2, 3, 4, 5].map((i) => "0x".padEnd(42, i.toString())),
+      threshold: 5,
+      nonce: "42",
+    };
+    const teamConrollerSettingsStandard: SafeCreationSettings = {
+      owners: [6, 7, 8].map((i) => "0x".padEnd(42, i.toString())),
+      threshold: 2,
+      nonce: "21",
+    };
+    const virtualTokenCreationSettingsStandard: VirtualTokenCreationSettings = {
+      merkleRoot: "0x" + "42".repeat(32),
+      usdcToken: "0x0000" + "42".repeat(17) + "01",
+      gnoToken: "0x0000" + "42".repeat(17) + "02",
+      gnoPrice: "31337",
+      wrappedNativeToken: "0x0000" + "42".repeat(17) + "03",
+      nativeTokenPrice: "42424242",
+    };
+    const cowTokenSettings = { salt: "0x" + "42".repeat(32) };
+    const gnosisDao = "0x" + "29".repeat(20);
+    const settingsFull: DeploymentProposalSettings = {
+      gnosisDao,
+      cowDao: cowDaoSettings,
+      teamController: teamConrollerSettingsStandard,
+      cowToken: cowTokenSettings,
+      virtualCowToken: virtualTokenCreationSettingsStandard,
+      bridge: dummyBridgeParameters,
+      bridgedTokenDeployer: "0x" + "31".repeat(20),
+    };
+    const settingsReduced: ReducedDeploymentProposalSettings = {
+      ...settingsFull,
+      virtualCowToken: {
+        gnoPrice: "1234",
+        nativeTokenPrice: "5678",
+      },
+    };
+
+    const deploymentAddressesWithoutForwarder =
+      gnosisSafeManager.getDeploymentAddresses();
+    const deploymentAddresses = {
+      ...deploymentAddressesWithoutForwarder,
+      forwarder: "0x" + "f0".repeat(20),
+    };
+    const { addresses } = await generateDeploymentProposal(
+      settingsFull,
+      deploymentAddresses,
+      deploymentAddresses,
+      hre.ethers,
+    );
+    const expectedAddresses = await getExpectedAddresses(
+      settingsReduced,
+      deploymentAddressesWithoutForwarder,
+      deploymentAddressesWithoutForwarder,
+      hre.ethers,
+    );
+    expect(Object.keys(addresses)).to.deep.equal(
+      Object.keys(expectedAddresses),
+    );
+    for (const key of Object.keys(addresses)) {
+      expect(expectedAddresses[key as keyof typeof expectedAddresses]).to.equal(
+        addresses[key as keyof typeof addresses],
+      );
+    }
   });
 });
