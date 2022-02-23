@@ -108,6 +108,7 @@ and copy \<address from addresses.json\> into the settings.json for the entry `b
 
 
 #### 2nd step: Mainnet proposal creation
+
 ```
 source example/mainnet/.env
 npx hardhat deployment --claims ./mainnet/claims.csv --settings ./settings.json --network mainnet 
@@ -119,7 +120,10 @@ The output files are in the `output/deployment` folder, which include:
 1. `steps.json`, a list of transactions to be executed from the Gnosis DAO in the proposal.
 2. `addresses.json`, a list of (deterministically generated) contract addresses that will result from executing the deployment onchain.
 3. `claims.json`, a list of all the claims of all user. It contains all information needed by a user to perform a claim onchain. 
-4. `chunks` and `mapping.json`, which contain a reorganized version of the same claims that are available in `claims.json`. This format is easier to handle by a web frontend. The format is very similar to the one used in the Uniswap airdrop.
+4. `chunks` and `mapping.json`, which contain a reorganized version of the same claims that are available in `claims.json`. This format is easier to handle by a web frontend.
+5. `txhashes.json`, the hashes of all transactions appearing in the proposal. They can be used to verify that the proposal was created correctly.
+
+The format is very similar to the one used in the Uniswap airdrop.
 
 #### Verify GIP-13 proposal
 
@@ -151,6 +155,25 @@ npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./a
 ```
 
 The terminal output of the script will show whether the verification process was successful. 
+
+#### Make vCOW token swappable
+
+The vCOW token can be swapped one to one to COW tokens.
+This is made possible by a Snapshot proposal to the Cow DAO.
+The steps of that proposal can be generated with:
+
+```
+source example/mainnet/.env
+npx hardhat make-swappable --settings ./settings.json --network mainnet 
+```
+
+For details on the format of `settings.json`, see the example file `./example/test-make-vcow-swappable.json`.
+
+This script is deterministic and can be used to verify the transactions proposed to the Cow DAO by comparing the transaction hashes.
+
+The output files are in the `output/deployment` folder, which include:
+1. `steps.json`, a list of transactions to be executed from the Cow DAO in the proposal.
+2. `txhashes.json`, the hashes of all transactions appearing in the proposal. They can be used to verify that the proposal was created correctly.
 
 #### Test deployment
 

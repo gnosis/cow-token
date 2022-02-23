@@ -1,0 +1,8 @@
+{
+  "mainnet": {
+    "cowToken": "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB",
+    "virtualCowToken": "0xd057b63f5e69cf1b929b356b579cba08d7688048",
+    "atoms": "123456000000000000000000",
+    "multisend": "0x8d29be29923b68abfdd21e541b9374737b49cdad"
+  }
+}
