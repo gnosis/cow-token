@@ -9,7 +9,6 @@ import {
   VirtualTokenDeployParams,
   ContractName,
 } from "./deploy";
-import { BridgeParameter } from "./lib/common-interfaces";
 import { amountToRelay } from "./lib/constants";
 import {
   multisend,
@@ -39,6 +38,11 @@ export interface VirtualTokenCreationSettings {
   wrappedNativeToken: string;
   nativeTokenPrice: string;
 }
+export interface BridgeParameter {
+  multiTokenMediatorGnosisChain: string;
+  multiTokenMediatorETH: string;
+  arbitraryMessageBridgeETH: string;
+}
 export interface DeploymentProposalSettings {
   gnosisDao: string;
   cowDao: SafeCreationSettings;
@@ -57,6 +61,17 @@ export type JsonMetaTransaction = Record<
   keyof Omit<MetaTransaction, "operation">,
   string
 > & { operation: number };
+
+export interface ReducedVirtualTokenSettings {
+  gnoPrice: string;
+  nativeTokenPrice: string;
+}
+
+export interface ReducedDeploymentProposalSettings
+  extends Omit<DeploymentProposalSettings, "virtualCowToken"> {
+  virtualCowToken: ReducedVirtualTokenSettings;
+  multisend?: string;
+}
 
 export const deterministicallyComputedAddresses = [
   "cowDao",
@@ -80,23 +95,23 @@ export interface DeploymentSteps {
   relayCowDaoDeployment: JsonMetaTransaction;
   bridgedTokenDeployerTriggering: JsonMetaTransaction;
 }
-export interface ProposalAsStruct {
+export interface DeploymentProposalAsStruct {
   steps: DeploymentSteps;
   addresses: FinalAddresses;
 }
 
-export interface Proposal {
+export interface DeploymentProposal {
   steps: JsonMetaTransaction[][];
   addresses: FinalAddresses;
 }
 
-export async function generateProposal(
+export async function generateDeploymentProposal(
   settings: DeploymentProposalSettings,
   deploymentAddressesETH: DeploymentAddresses,
   deploymentAddressesGnosisChain: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
-): Promise<Proposal> {
-  const proposal = await generateProposalAsStruct(
+): Promise<DeploymentProposal> {
+  const proposal = await generateDeploymentProposalAsStruct(
     settings,
     deploymentAddressesETH,
     deploymentAddressesGnosisChain,
@@ -108,12 +123,12 @@ export async function generateProposal(
   };
 }
 
-export async function generateProposalAsStruct(
+export async function generateDeploymentProposalAsStruct(
   settings: DeploymentProposalSettings,
   deploymentAddressesETH: DeploymentAddresses,
   deploymentAddressesGnosisChain: DeploymentAddresses,
   ethers: HardhatEthersHelpers,
-): Promise<ProposalAsStruct> {
+): Promise<DeploymentProposalAsStruct> {
   const { address: cowDao, transaction: cowDaoCreationTransaction } =
     await setupDeterministicSafe(
       settings.cowDao,
@@ -339,14 +354,15 @@ export async function createTxTriggeringBridgedTokenDeployer(
     if (chainId !== "100") {
       throw new Error("Network should have a bridgedTokenDeployer defined");
     } else {
-      // This function is called from the generateProposal function. The generateProposal
-      // either generates the real proposals or is only used for address calculation on gnosis chain
+      // This function is called from the generateDeploymentProposal function.
+      // generateDeploymentProposal either generates the real proposals or is
+      // only used for address calculation on gnosis chain
       // If it is only used for address calculation, then the output of this
       // function is not relevant.
-      // Hence, on gnosis chain this bridgedTokenDeployerAddress is not required and
-      // we can just set the values to zero.
-      // Todo: refactor such that we don't use generateProposals for generating
-      // the addresses, and hence avoid this case
+      // Hence, on gnosis chain this bridgedTokenDeployerAddress is not required
+      // and we can just set the values to zero.
+      // Todo: refactor such that we don't use generateDeploymentProposal
+      // for generating the addresses, and hence avoid this case
       bridgedTokenDeployerAddress = "0x" + "00".repeat(20);
     }
   }

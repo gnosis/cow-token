@@ -8,21 +8,22 @@ import {
   computeProofs,
   parseCsvFile,
   DeploymentHelperDeployParams,
-  generateProposal,
   constructorInput,
   ContractName,
   getDeployArgsFromBridgedTokenDeployer,
+  ReducedDeploymentProposalSettings,
+  generateDeploymentProposal,
 } from "../ts";
-import { Args as ArgsDeployment, Settings } from "../ts/lib/common-interfaces";
 import { defaultTokens } from "../ts/lib/constants";
 import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
+import { CowDeploymentArgs } from "./ts/deployment";
 import { defaultSafeDeploymentAddresses } from "./ts/safe";
 
 export const OUTPUT_FOLDER_GC = "./output/deployment-gc";
 
-interface Args extends ArgsDeployment {
+interface Args extends CowDeploymentArgs {
   verify: string;
 }
 
@@ -62,7 +63,7 @@ async function generateDeployment(
     );
   }
 
-  const settings: Settings = JSON.parse(
+  const settings: ReducedDeploymentProposalSettings = JSON.parse(
     await fs.readFile(settingsJson, "utf8"),
   );
   console.log(`Using deployer ${deployer.address}`);
@@ -89,7 +90,7 @@ async function generateDeployment(
   // setting variables
   const {
     addresses: { cowToken, cowDao },
-  } = await generateProposal(
+  } = await generateDeploymentProposal(
     dummySettings,
     {
       ...defaultSafeDeploymentAddresses(chainId),

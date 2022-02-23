@@ -5,7 +5,7 @@ import { BigNumber, utils, Signer } from "ethers";
 import { defaultAbiCoder } from "ethers/lib/utils";
 import hre, { artifacts, ethers, waffle } from "hardhat";
 
-import sampleSettings from "../example/settings.json";
+import cowDeploymentSettings from "../example/gip-cow-deployment-settings.json";
 import { execSafeTransaction, gnosisSafeAt } from "../src/tasks/ts/safe";
 import {
   ContractName,
@@ -16,7 +16,7 @@ import {
   VirtualTokenDeployParams,
   DeploymentProposalSettings,
   FinalAddresses,
-  generateProposal,
+  generateDeploymentProposal,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
   DeterministicallyComputedAddress,
@@ -25,11 +25,12 @@ import {
   createTxForBridgedSafeSetup,
   DeploymentAddresses,
   deploymentStepsIntoArray,
-  generateProposalAsStruct,
+  generateDeploymentProposalAsStruct,
   createTxTriggeringBridgedTokenDeployer,
   groupMultipleTransactions,
+  BridgeParameter,
+  ReducedDeploymentProposalSettings,
 } from "../src/ts";
-import { BridgeParameter, Settings } from "../src/ts/lib/common-interfaces";
 import { amountToRelay } from "../src/ts/lib/constants";
 import { dummyBridgeParameters } from "../src/ts/lib/dummy-instantiation";
 import {
@@ -40,7 +41,6 @@ import {
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
 import { GnosisSafeManager } from "./safe";
-import { skipOnCoverage } from "./test-management";
 import { stringify } from "./utils/formatUtils";
 
 const [deployer, gnosisDaoOwner, executor, ambExecutor] =
@@ -48,11 +48,12 @@ const [deployer, gnosisDaoOwner, executor, ambExecutor] =
 
 // Test at compile time that the example file has the expected format.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _typeCheck: Settings = sampleSettings;
+const _cowDeploymentTypeCheck: ReducedDeploymentProposalSettings =
+  cowDeploymentSettings;
 
 const functionSignatureBytes = 4;
 
-describe("proposal", function () {
+describe("deployment proposal", function () {
   let currentSnapshot: unknown;
   let forwarder: Contract;
   let gnosisSafeManager: GnosisSafeManager;
@@ -140,7 +141,7 @@ describe("proposal", function () {
         ...gnosisSafeManager.getDeploymentAddresses(),
         forwarder: forwarder.address,
       };
-      const { steps, addresses } = await generateProposalAsStruct(
+      const { steps, addresses } = await generateDeploymentProposalAsStruct(
         settings,
         deploymentAddresses,
         deploymentAddresses,
@@ -337,9 +338,10 @@ describe("proposal", function () {
       });
     });
   });
-  describe("generateProposal result", function () {
+
+  describe("generateDeploymentProposal result", function () {
     let settings: DeploymentProposalSettings;
-    it("has same length as generateProposalAsStruct result", async function () {
+    it("has same length as generateDeploymentProposalAsStruct result", async function () {
       const bridgeParameters: BridgeParameter = {
         multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
         multiTokenMediatorETH: multiTokenMediatorETH.address,
@@ -358,13 +360,13 @@ describe("proposal", function () {
         ...gnosisSafeManager.getDeploymentAddresses(),
         forwarder: forwarder.address,
       };
-      const { steps: stepsAsStruct } = await generateProposalAsStruct(
+      const { steps: stepsAsStruct } = await generateDeploymentProposalAsStruct(
         settings,
         deploymentAddresses,
         deploymentAddresses,
         hre.ethers,
       );
-      const { steps: stepsAsVec } = await generateProposal(
+      const { steps: stepsAsVec } = await generateDeploymentProposal(
         settings,
         deploymentAddresses,
         deploymentAddresses,
@@ -479,7 +481,7 @@ describe("proposal", function () {
           ...gnosisSafeManager.getDeploymentAddresses(),
           forwarder: forwarder.address,
         };
-        const { steps, addresses } = await generateProposal(
+        const { steps, addresses } = await generateDeploymentProposal(
           modifiedSettings,
           deploymentAddresses,
           deploymentAddresses,
@@ -500,7 +502,7 @@ describe("proposal", function () {
   });
 });
 
-describe("proposal", function () {
+describe("bridged steps of deployment proposal", function () {
   let gnosisSafeManager: GnosisSafeManager;
   let gnosisDao: Contract;
   let forwarder: Contract;
@@ -628,10 +630,8 @@ describe("proposal", function () {
         ),
       ).to.be.rejectedWith(Error);
     });
-    it("has the txData that allows to deploy the safe with correct threshold and owners [skip-in-coverage]", async function () {
-      // Needs to be skipped in coverage as inserting the artifacts to check lines
-      // for coverage changes the bytecode, and with it the final address.
-      skipOnCoverage.call(this);
+
+    it("has the txData that allows to deploy the safe with correct threshold and owners", async function () {
       const bridgedGnosisSafeDeployment = await createTxForBridgedSafeSetup(
         expectedCowDaoAddress,
         {
@@ -659,8 +659,7 @@ describe("proposal", function () {
         gasPrice: 545019933,
         gasLimit,
       };
-      const signed = await ambExecutor.signTransaction(tx);
-      await hre.ethers.provider.sendTransaction(signed);
+      await ambExecutor.sendTransaction(tx);
       expect(
         await hre.ethers.provider.getCode(expectedCowDaoAddress),
       ).not.to.equal("0x");
