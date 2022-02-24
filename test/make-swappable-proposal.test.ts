@@ -29,7 +29,6 @@ describe("make swappable proposal", function () {
   let settings: MakeSwappableSettings;
 
   before(async function () {
-    //await setupDeterministicDeployer(deployer);
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
 
     cowDao = await (
