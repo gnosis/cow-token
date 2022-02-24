@@ -40,9 +40,14 @@ import {
 } from "../src/ts/lib/safe";
 
 import { setupDeployer as setupDeterministicDeployer } from "./deterministic-deployment";
-import { dummyBridgeParameters } from "./dummy-instantiation";
 import { GnosisSafeManager } from "./safe";
 import { stringify } from "./utils/formatUtils";
+
+export const dummyBridgeParameters: BridgeParameter = {
+  multiTokenMediatorGnosisChain: "0x" + "01".repeat(20),
+  multiTokenMediatorETH: "0x" + "02".repeat(20),
+  arbitraryMessageBridgeETH: "0x" + "03".repeat(20),
+};
 
 const [deployer, gnosisDaoOwner, executor, ambExecutor] =
   waffle.provider.getWallets();
