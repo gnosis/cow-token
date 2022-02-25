@@ -1,4 +1,4 @@
-import { Contract } from "@ethersproject/contracts";
+import { Contract, ContractFactory } from "@ethersproject/contracts";
 import IERC20 from "@openzeppelin/contracts/build/contracts/IERC20.json";
 import { expect } from "chai";
 import { MockContract } from "ethereum-waffle";
@@ -24,12 +24,18 @@ const _makeSwappableTypeCheck: MakeSwappableSettings =
 
 describe("make swappable proposal", function () {
   let cowDao: Contract;
+  let multiTokenMediator: Contract;
   let cowToken: MockContract;
   let gnosisSafeManager: GnosisSafeManager;
   let settings: MakeSwappableSettings;
+  let OmniBridgeTransferSimulator: ContractFactory;
 
   before(async function () {
     gnosisSafeManager = await GnosisSafeManager.init(deployer);
+    OmniBridgeTransferSimulator = await ethers.getContractFactory(
+      "OmniBridgeTransferSimulator",
+      deployer,
+    );
 
     cowDao = await (
       await gnosisSafeManager.newSafe([gnosisDaoOwner.address], 1)
@@ -38,19 +44,57 @@ describe("make swappable proposal", function () {
 
   beforeEach(async function () {
     cowToken = await waffle.deployMockContract(deployer, IERC20.abi);
+    multiTokenMediator = await OmniBridgeTransferSimulator.deploy();
 
     settings = {
       cowToken: cowToken.address,
       virtualCowToken: "0x" + "42".repeat(20),
       atomsToTransfer: "31337",
       multisend: gnosisSafeManager.multisend.address,
+      multiTokenMediator: multiTokenMediator.address,
+      bridged: {
+        virtualCowToken: "0x" + "21".repeat(20),
+        atomsToTransfer: "1337",
+      },
     };
   });
 
+  // Returns an object that assigns to each makeSwappable proposal (flattened)
+  // step the mocks it needs for its execution.
+  function prepareMocks(cowToken: MockContract) {
+    return {
+      "0": [
+        () =>
+          cowToken.mock.transfer
+            .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
+            .returns(true),
+      ],
+      "1": [
+        () =>
+          cowToken.mock.approve
+            .withArgs(
+              settings.multiTokenMediator,
+              settings.bridged.atomsToTransfer,
+            )
+            .returns(true),
+      ],
+      "2": [
+        () =>
+          cowToken.mock.transferFrom
+            .withArgs(
+              cowDao.address,
+              settings.multiTokenMediator,
+              settings.bridged.atomsToTransfer,
+            )
+            .returns(true),
+      ],
+    };
+  }
+
   it("executes successfully", async function () {
-    cowToken.mock.transfer
-      .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
-      .returns(true);
+    for (const mock of Object.values(prepareMocks(cowToken)).flat()) {
+      await mock();
+    }
 
     const { steps } = await generateMakeSwappableProposal(settings, ethers);
     for (const step of groupMultipleTransactions(
@@ -62,20 +106,49 @@ describe("make swappable proposal", function () {
     }
   });
 
-  it("transfers COW to vCOW", async function () {
-    // Require that the mock in the test "executes successfully" has been
-    // called. This is done by observing that without the mock the transaction
-    // reverts.
+  // We want to test that each mock is used at its step to make sure that the
+  // mock contract was called at the expected point. This is done by testing
+  // that execution reverts with "uninitialized mock" if the mock is not set.
+  async function expectUninitializedMockAtIndex(revertIndex: number) {
+    const mocksPerStep = prepareMocks(cowToken);
 
-    const { steps } = await generateMakeSwappableProposal(settings, ethers);
-    // Assumption: the first transaction in the list is the transfer. If this
-    // test fails, it might be that it has changed order.
-    const [[transferCow]] = steps;
-    // To help check that, we assert that `to` is the COW token.
-    expect(transferCow.to).to.equal(settings.cowToken);
+    const steps = (
+      await generateMakeSwappableProposal(settings, ethers)
+    ).steps.flat();
+
+    for (let index = 0; index < revertIndex; index++) {
+      expect(Object.keys(mocksPerStep)).to.include(index.toString());
+      for (const mock of mocksPerStep[
+        index.toString() as keyof typeof mocksPerStep
+      ]) {
+        await mock();
+      }
+
+      await expect(
+        executor.sendTransaction({
+          to: steps[index].to,
+          data: steps[index].data,
+        }),
+      ).not.to.be.reverted;
+    }
 
     await expect(
-      executor.sendTransaction({ to: transferCow.to, data: transferCow.data }),
+      executor.sendTransaction({
+        to: steps[revertIndex].to,
+        data: steps[revertIndex].data,
+      }),
     ).to.be.revertedWith(RevertMessage.UninitializedMock);
+  }
+
+  it("transfers COW to vCOW", async function () {
+    await expectUninitializedMockAtIndex(0);
+  });
+
+  it("approves the DAO for sending COW to the multibridge", async function () {
+    await expectUninitializedMockAtIndex(1);
+  });
+
+  it("the multibridge withdraws COW from the Cow DAO", async function () {
+    await expectUninitializedMockAtIndex(2);
   });
 });

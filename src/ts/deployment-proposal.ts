@@ -1,6 +1,6 @@
 import { MetaTransaction } from "@gnosis.pm/safe-contracts";
 import { HardhatEthersHelpers } from "@nomiclabs/hardhat-ethers/types";
-import { BigNumber, Contract, utils } from "ethers";
+import { BigNumber, utils } from "ethers";
 
 import {
   getDeterministicDeploymentTransaction,
@@ -9,6 +9,7 @@ import {
   VirtualTokenDeployParams,
   ContractName,
 } from "./deploy";
+import { prepareBridgingTokens } from "./lib/bridge";
 import { amountToRelay } from "./lib/constants";
 import {
   prepareDeterministicSafeWithOwners,
@@ -181,13 +182,14 @@ export async function generateDeploymentProposalAsStruct(
     ContractName.RealToken,
     cowToken,
   );
-  const [approvalOmniBridgeTx, relayTestFundsToOmniBridgeTx] =
-    await generateBridgeTokenToGnosisChainTx(
-      cowTokenContract,
-      settings,
+  const { approve: approvalOmniBridgeTx, relay: relayTestFundsToOmniBridgeTx } =
+    await prepareBridgingTokens({
+      token: cowTokenContract.address,
+      receiver: cowDao,
+      atoms: amountToRelay,
+      multiTokenMediator: settings.bridge.multiTokenMediatorETH,
       ethers,
-      cowDao,
-    );
+    });
 
   const transferCowTokenToCowDao = {
     to: cowToken,
@@ -229,31 +231,29 @@ export async function generateDeploymentProposalAsStruct(
       ethers,
     );
 
+  const rawSteps = {
+    cowDaoCreationTransaction,
+    teamControllerCreationTransaction,
+    investorFundsTargetCreationTransaction,
+    cowTokenCreationTransaction,
+    virtualCowTokenCreationTransaction,
+    approvalOmniBridgeTx,
+    relayTestFundsToOmniBridgeTx,
+    transferCowTokenToCowDao,
+    relayCowDaoDeployment,
+    bridgedTokenDeployerTriggering,
+  };
+  const steps = Object.fromEntries(
+    Object.entries(rawSteps).map(([key, entry]) => [
+      key,
+      transformMetaTransaction(entry),
+    ]),
+  ) as Record<
+    keyof typeof rawSteps,
+    ReturnType<typeof transformMetaTransaction>
+  >;
   return {
-    steps: {
-      cowDaoCreationTransaction: transformMetaTransaction(
-        cowDaoCreationTransaction,
-      ),
-      teamControllerCreationTransaction: transformMetaTransaction(
-        teamControllerCreationTransaction,
-      ),
-      investorFundsTargetCreationTransaction: transformMetaTransaction(
-        investorFundsTargetCreationTransaction,
-      ),
-      cowTokenCreationTransaction: transformMetaTransaction(
-        cowTokenCreationTransaction,
-      ),
-      virtualCowTokenCreationTransaction: transformMetaTransaction(
-        virtualCowTokenCreationTransaction,
-      ),
-      approvalOmniBridgeTx,
-      relayTestFundsToOmniBridgeTx,
-      transferCowTokenToCowDao,
-      relayCowDaoDeployment: transformMetaTransaction(relayCowDaoDeployment),
-      bridgedTokenDeployerTriggering: transformMetaTransaction(
-        bridgedTokenDeployerTriggering,
-      ),
-    },
+    steps,
     addresses: {
       cowDao,
       teamController,
@@ -263,38 +263,6 @@ export async function generateDeploymentProposalAsStruct(
   };
 }
 
-async function generateBridgeTokenToGnosisChainTx(
-  cowTokenContract: Contract,
-  settings: DeploymentProposalSettings,
-  ethers: HardhatEthersHelpers,
-  cowDao: string,
-): Promise<JsonMetaTransaction[]> {
-  const multiTokenMediator = await ethers.getContractAt(
-    "IOmnibridge",
-    settings.bridge.multiTokenMediatorETH,
-  );
-  const approvalOmniBridgeTx = {
-    to: cowTokenContract.address,
-    value: "0",
-    data: cowTokenContract.interface.encodeFunctionData("approve", [
-      settings.bridge.multiTokenMediatorETH,
-      amountToRelay,
-    ]),
-    operation: 0,
-  };
-
-  const relayTestFundsToOmniBridgeTx = {
-    to: settings.bridge.multiTokenMediatorETH,
-    value: "0",
-    data: multiTokenMediator.interface.encodeFunctionData("relayTokens", [
-      cowTokenContract.address,
-      cowDao,
-      amountToRelay,
-    ]),
-    operation: 0,
-  };
-  return [approvalOmniBridgeTx, relayTestFundsToOmniBridgeTx];
-}
 export interface BridgeSettings {
   arbitraryMessageBridgeETH: string;
 }
