@@ -53,7 +53,7 @@ async function makeSwappable(
     console.log("Generating proposal transaction hashes...");
     txHashes = await getSnapshotTransactionHashes(
       steps,
-      settings.mainnet.multisend,
+      settings.multisend,
       chainId as keyof typeof realityModuleAddress,
       hre.ethers.provider,
     );

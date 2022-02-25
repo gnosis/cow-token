@@ -5,16 +5,11 @@ import { ContractName } from "./deploy";
 import { SafeOperation } from "./lib/safe";
 import { JsonMetaTransaction, transformMetaTransaction } from "./proposal";
 
-export interface NetworkSpecificMakeSwappableSettings {
-  cowToken: string;
-  virtualCowToken: string;
-  atoms: string;
-}
-
 export interface MakeSwappableSettings {
-  mainnet: NetworkSpecificMakeSwappableSettings & {
-    multisend: string;
-  };
+  virtualCowToken: string;
+  atomsToTransfer: string;
+  cowToken: string;
+  multisend: string;
 }
 
 export interface MakeSwappableProposal {
@@ -26,7 +21,7 @@ export async function generateMakeSwappableProposal(
   ethers: HardhatEthersHelpers,
 ): Promise<MakeSwappableProposal> {
   const mainnetMakeSwappableTransaction = await makeVcowSwappable(
-    settings.mainnet,
+    settings,
     ethers,
   );
   return {
@@ -37,7 +32,14 @@ export async function generateMakeSwappableProposal(
 }
 
 async function makeVcowSwappable(
-  { cowToken, virtualCowToken, atoms }: NetworkSpecificMakeSwappableSettings,
+  {
+    cowToken,
+    virtualCowToken,
+    atomsToTransfer,
+  }: Pick<
+    MakeSwappableSettings,
+    "cowToken" | "virtualCowToken" | "atomsToTransfer"
+  >,
   ethers: HardhatEthersHelpers,
 ): Promise<MetaTransaction> {
   const realTokenIface = (
@@ -48,7 +50,7 @@ async function makeVcowSwappable(
     to: cowToken,
     data: realTokenIface.encodeFunctionData("transfer", [
       virtualCowToken,
-      atoms,
+      atomsToTransfer,
     ]),
     value: 0,
     operation: SafeOperation.Call,

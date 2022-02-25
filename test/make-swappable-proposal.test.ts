@@ -40,18 +40,16 @@ describe("make swappable proposal", function () {
     cowToken = await waffle.deployMockContract(deployer, IERC20.abi);
 
     settings = {
-      mainnet: {
-        cowToken: cowToken.address,
-        virtualCowToken: "0x" + "42".repeat(20),
-        atoms: "31337",
-        multisend: gnosisSafeManager.multisend.address,
-      },
+      cowToken: cowToken.address,
+      virtualCowToken: "0x" + "42".repeat(20),
+      atomsToTransfer: "31337",
+      multisend: gnosisSafeManager.multisend.address,
     };
   });
 
   it("executes successfully", async function () {
     cowToken.mock.transfer
-      .withArgs(settings.mainnet.virtualCowToken, settings.mainnet.atoms)
+      .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
       .returns(true);
 
     const { steps } = await generateMakeSwappableProposal(settings, ethers);
@@ -74,7 +72,7 @@ describe("make swappable proposal", function () {
     // test fails, it might be that it has changed order.
     const [[transferCow]] = steps;
     // To help check that, we assert that `to` is the COW token.
-    expect(transferCow.to).to.equal(settings.mainnet.cowToken);
+    expect(transferCow.to).to.equal(settings.cowToken);
 
     await expect(
       executor.sendTransaction({ to: transferCow.to, data: transferCow.data }),
