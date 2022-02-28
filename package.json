@@ -50,7 +50,7 @@
     "chai-as-promised": "^7.1.1",
     "csv": "^6.0.5",
     "dotenv": "^16.0.0",
-    "eslint": "^8.9.0",
+    "eslint": "^8.10.0",
     "eslint-config-prettier": "^8.4.0",
     "eslint-plugin-import": "^2.25.3",
     "eslint-plugin-no-only-tests": "^2.6.0",
