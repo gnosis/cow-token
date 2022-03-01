@@ -80,7 +80,7 @@ Last, but not least, the GnosisDao will bridge two transactions to Gnosis Chain 
 
 The deployment has the following inputs:
 - mainnet/claims.csv file with the airdrop information for mainnet. See [example](#example-csv-file-with-claims)
-- setting.json describing the most important parameters. See [example](example/settings.json)
+- setting.json describing the most important parameters. See [example](example/gip-cow-deployment-settings.json)
 - gnosischain/claims.csv file with the airdrop information for Gnosis-Chain
 
 And two .env files should be prepared for each network:
@@ -88,6 +88,7 @@ And two .env files should be prepared for each network:
 - example/mainnet/.env file for Ethereum-Chain. See [example](example/mainnet/env.sample)
 
 #### 1st step: Deployment on Gnosis-Chain
+
 ```
 yarn build
 source example/gnosischain/.env
@@ -133,7 +134,7 @@ You can verifying the correctness of the transactions by running:
 ```
 source example/mainnet/.env # fill the env file with the required parameters
 wget https://raw.githubusercontent.com/gnosis/cow-token-allocation/2111ee1e678be345ba8b33e80be5fa0d0ed780f4/allocations-mainnet.csv
-npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --settings ./example/Gnosis-DAO-proposal-settings.json
+npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --settings ./example/gip-cow-deployment-settings.json
 ```
 
 The output file `./output/deployment/txhashes.json` contains the hashes of all transactions that are included in the snapshot and can be compared to the batch transaction hashes that are shown in the Snapshot interface.
@@ -146,7 +147,7 @@ The correctness of the contract parameters can be checked with:
 ```
 source example/gnosischain/.env # fill the env file with the required parameters
 wget https://raw.githubusercontent.com/gnosis/cow-token-allocation/2111ee1e678be345ba8b33e80be5fa0d0ed780f4/allocations-gchain.csv
-npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./allocations-gchain.csv --settings ./example/Gnosis-DAO-proposal-settings.json --verify
+npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./allocations-gchain.csv --settings ./example/gip-cow-deployment-settings.json --verify
 ```
 
 The terminal output of the script will show whether the verification process was successful. 

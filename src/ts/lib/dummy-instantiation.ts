@@ -1,11 +1,10 @@
 import { constants } from "ethers";
 
 import {
+  BridgeParameter,
   SafeCreationSettings,
   VirtualTokenCreationSettings,
-} from "../proposal";
-
-import { BridgeParameter } from "./common-interfaces";
+} from "../deployment-proposal";
 
 export const dummyVirtualTokenCreationSettings: VirtualTokenCreationSettings = {
   merkleRoot: constants.HashZero,

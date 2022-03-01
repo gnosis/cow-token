@@ -6,7 +6,7 @@ import {
   DeploymentProposalSettings,
   VirtualTokenCreationSettings,
   SafeCreationSettings,
-  generateProposal,
+  generateDeploymentProposal,
 } from "../src/ts";
 import {
   dummyBridgeParameters,
@@ -69,7 +69,7 @@ describe("deployment of bridgedTokenDeployer", () => {
         ...gnosisSafeManager.getDeploymentAddresses(),
         forwarder: "0x" + "f0".repeat(20),
       };
-      const { addresses: addressesStandard } = await generateProposal(
+      const { addresses: addressesStandard } = await generateDeploymentProposal(
         settingsStandard,
         deploymentAddresses,
         deploymentAddresses,
@@ -79,12 +79,13 @@ describe("deployment of bridgedTokenDeployer", () => {
         ...gnosisSafeManager.getDeploymentAddresses(),
         forwarder: constants.AddressZero,
       };
-      const { addresses: addressesSimplified } = await generateProposal(
-        settingsSimplified,
-        dummyDeploymentAddresses,
-        dummyDeploymentAddresses,
-        hre.ethers,
-      );
+      const { addresses: addressesSimplified } =
+        await generateDeploymentProposal(
+          settingsSimplified,
+          dummyDeploymentAddresses,
+          dummyDeploymentAddresses,
+          hre.ethers,
+        );
       expect(addressesStandard.cowDao).to.be.equal(addressesSimplified.cowDao);
       expect(addressesStandard.cowToken).to.be.equal(
         addressesSimplified.cowToken,

@@ -4,9 +4,8 @@ import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
 import { groupMultipleTransactions } from "../ts";
-import { Args as ArgsDeployment } from "../ts/lib/common-interfaces";
 
-import { generateDeployment } from "./ts/proposal";
+import { generateDeployment, CowDeploymentArgs } from "./ts/deployment";
 import {
   defaultSafeDeploymentAddresses,
   execSafeTransaction,
@@ -35,7 +34,7 @@ const setupTestExecuteProposalTask: () => void = () => {
 export { setupTestExecuteProposalTask };
 
 async function executeProposal(
-  args: ArgsDeployment,
+  args: CowDeploymentArgs,
   hre: HardhatRuntimeEnvironment,
 ): Promise<void> {
   const [{ addresses, steps }, settings] = await generateDeployment(

@@ -8,11 +8,11 @@ import {
   computeProofs,
   removeSplitClaimFiles,
   splitClaimsAndSaveToFolder,
-  generateProposal,
-  Proposal,
+  generateDeploymentProposal,
+  DeploymentProposal,
   groupMultipleTransactions,
+  ReducedDeploymentProposalSettings,
 } from "../../ts";
-import { Args, Settings } from "../../ts/lib/common-interfaces";
 import {
   realityModule as realityModuleAddress,
   defaultTokens,
@@ -21,11 +21,16 @@ import {
 import { defaultSafeDeploymentAddresses } from "./safe";
 import { RealityModule } from "./snapshot";
 
+export interface CowDeploymentArgs {
+  claims: string;
+  settings: string;
+}
+
 export async function generateDeployment(
-  { claims: claimCsv, settings: settingsJson }: Args,
+  { claims: claimCsv, settings: settingsJson }: CowDeploymentArgs,
   hre: HardhatRuntimeEnvironment,
   outputFolder: string,
-): Promise<[Proposal, Settings]> {
+): Promise<[DeploymentProposal, ReducedDeploymentProposalSettings]> {
   const chainIdUntyped = (
     await hre.ethers.provider.getNetwork()
   ).chainId.toString();
@@ -36,7 +41,7 @@ export async function generateDeployment(
 
   console.log("Processing input files...");
   // TODO: validate settings
-  const inputSettings: Settings = JSON.parse(
+  const inputSettings: ReducedDeploymentProposalSettings = JSON.parse(
     await fs.readFile(settingsJson, "utf8"),
   );
   const claims = await parseCsvFile(claimCsv);
@@ -55,7 +60,7 @@ export async function generateDeployment(
       wrappedNativeToken: defaultTokens.weth[chainId],
     },
   };
-  const proposal = await generateProposal(
+  const proposal = await generateDeploymentProposal(
     settings,
     {
       ...defaultSafeDeploymentAddresses(chainId),
