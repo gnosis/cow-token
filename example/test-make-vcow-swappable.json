@@ -5,7 +5,7 @@
   "multisend": "0x8d29be29923b68abfdd21e541b9374737b49cdad",
   "multiTokenMediator": "0x88ad09518695c6c3712AC10a214bE5109a655671",
   "bridged": {
-    "virtualCowToken": "0xd057b63f5e69cf1b929b356b579cba08d7688048",
+    "virtualCowToken": "0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB",
     "atomsToTransfer": "7891011000000000000000000"
   }
 }
