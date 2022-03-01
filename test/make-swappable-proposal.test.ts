@@ -61,36 +61,38 @@ describe("make swappable proposal", function () {
 
   // Returns an array that assigns to each makeSwappable proposal (flattened)
   // step the mocks it needs for its execution.
-  const preparedMocks = [
-    [
-      () =>
-        cowToken.mock.transfer
-          .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
-          .returns(true),
-    ],
-    [
-      () =>
-        cowToken.mock.approve
-          .withArgs(
-            settings.multiTokenMediator,
-            settings.bridged.atomsToTransfer,
-          )
-          .returns(true),
-    ],
-    [
-      () =>
-        cowToken.mock.transferFrom
-          .withArgs(
-            cowDao.address,
-            settings.multiTokenMediator,
-            settings.bridged.atomsToTransfer,
-          )
-          .returns(true),
-    ],
-  ];
+  function prepareMocks(executingAddress: string) {
+    return [
+      [
+        () =>
+          cowToken.mock.transfer
+            .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
+            .returns(true),
+      ],
+      [
+        () =>
+          cowToken.mock.approve
+            .withArgs(
+              settings.multiTokenMediator,
+              settings.bridged.atomsToTransfer,
+            )
+            .returns(true),
+      ],
+      [
+        () =>
+          cowToken.mock.transferFrom
+            .withArgs(
+              executingAddress,
+              settings.multiTokenMediator,
+              settings.bridged.atomsToTransfer,
+            )
+            .returns(true),
+      ],
+    ];
+  }
 
   it("executes successfully", async function () {
-    for (const mock of preparedMocks.flat()) {
+    for (const mock of prepareMocks(cowDao.address).flat()) {
       await mock();
     }
 
@@ -104,15 +106,15 @@ describe("make swappable proposal", function () {
     }
   });
 
-  // We want to test that each mock is used at its step to make sure that the
-  // mock contract was called at the expected point. This is done by testing
-  // that execution reverts with "uninitialized mock" if the mock is not set.
-  async function expectUninitializedMockAtIndex(revertIndex: number) {
+  async function generateStepsAndExecUpToIndex(
+    lastExecutedIndex: number,
+    preparedMocks: ReturnType<typeof prepareMocks>,
+  ) {
     const steps = (
       await generateMakeSwappableProposal(settings, ethers)
     ).steps.flat();
 
-    for (let index = 0; index < revertIndex; index++) {
+    for (let index = 0; index <= lastExecutedIndex; index++) {
       expect(Object.keys(preparedMocks)).to.include(index.toString());
       for (const mock of preparedMocks[index]) {
         await mock();
@@ -125,6 +127,19 @@ describe("make swappable proposal", function () {
         }),
       ).not.to.be.reverted;
     }
+
+    return { steps };
+  }
+
+  // We want to test that each mock is used at its step to make sure that the
+  // mock contract was called at the expected point. This is done by testing
+  // that execution reverts with "uninitialized mock" if the mock is not set.
+  async function expectUninitializedMockAtIndex(revertIndex: number) {
+    const mocks = prepareMocks(executor.address);
+    const { steps } = await generateStepsAndExecUpToIndex(
+      revertIndex - 1,
+      mocks,
+    );
 
     await expect(
       executor.sendTransaction({
@@ -142,7 +157,32 @@ describe("make swappable proposal", function () {
     await expectUninitializedMockAtIndex(1);
   });
 
-  it("the multibridge withdraws COW from the Cow DAO", async function () {
-    await expectUninitializedMockAtIndex(2);
+  describe("multibridge", function () {
+    const bridgingStepIndex = 2;
+
+    it("withdraws COW from the Cow DAO", async function () {
+      await expectUninitializedMockAtIndex(bridgingStepIndex);
+    });
+
+    it("bridges tokens to the bridged vCOW", async function () {
+      const mocks = prepareMocks(executor.address);
+      const { steps } = await generateStepsAndExecUpToIndex(
+        bridgingStepIndex - 1,
+        mocks,
+      );
+
+      for (const mock of mocks[bridgingStepIndex]) {
+        await mock();
+      }
+
+      await expect(
+        executor.sendTransaction({
+          to: steps[bridgingStepIndex].to,
+          data: steps[bridgingStepIndex].data,
+        }),
+      )
+        .to.emit(multiTokenMediator, "Receiver")
+        .withArgs(settings.bridged.virtualCowToken);
+    });
   });
 });
