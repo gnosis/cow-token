@@ -59,40 +59,38 @@ describe("make swappable proposal", function () {
     };
   });
 
-  // Returns an object that assigns to each makeSwappable proposal (flattened)
+  // Returns an array that assigns to each makeSwappable proposal (flattened)
   // step the mocks it needs for its execution.
-  function prepareMocks(cowToken: MockContract) {
-    return {
-      "0": [
-        () =>
-          cowToken.mock.transfer
-            .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
-            .returns(true),
-      ],
-      "1": [
-        () =>
-          cowToken.mock.approve
-            .withArgs(
-              settings.multiTokenMediator,
-              settings.bridged.atomsToTransfer,
-            )
-            .returns(true),
-      ],
-      "2": [
-        () =>
-          cowToken.mock.transferFrom
-            .withArgs(
-              cowDao.address,
-              settings.multiTokenMediator,
-              settings.bridged.atomsToTransfer,
-            )
-            .returns(true),
-      ],
-    };
-  }
+  const preparedMocks = [
+    [
+      () =>
+        cowToken.mock.transfer
+          .withArgs(settings.virtualCowToken, settings.atomsToTransfer)
+          .returns(true),
+    ],
+    [
+      () =>
+        cowToken.mock.approve
+          .withArgs(
+            settings.multiTokenMediator,
+            settings.bridged.atomsToTransfer,
+          )
+          .returns(true),
+    ],
+    [
+      () =>
+        cowToken.mock.transferFrom
+          .withArgs(
+            cowDao.address,
+            settings.multiTokenMediator,
+            settings.bridged.atomsToTransfer,
+          )
+          .returns(true),
+    ],
+  ];
 
   it("executes successfully", async function () {
-    for (const mock of Object.values(prepareMocks(cowToken)).flat()) {
+    for (const mock of preparedMocks.flat()) {
       await mock();
     }
 
@@ -110,17 +108,13 @@ describe("make swappable proposal", function () {
   // mock contract was called at the expected point. This is done by testing
   // that execution reverts with "uninitialized mock" if the mock is not set.
   async function expectUninitializedMockAtIndex(revertIndex: number) {
-    const mocksPerStep = prepareMocks(cowToken);
-
     const steps = (
       await generateMakeSwappableProposal(settings, ethers)
     ).steps.flat();
 
     for (let index = 0; index < revertIndex; index++) {
-      expect(Object.keys(mocksPerStep)).to.include(index.toString());
-      for (const mock of mocksPerStep[
-        index.toString() as keyof typeof mocksPerStep
-      ]) {
+      expect(Object.keys(preparedMocks)).to.include(index.toString());
+      for (const mock of preparedMocks[index]) {
         await mock();
       }
 
