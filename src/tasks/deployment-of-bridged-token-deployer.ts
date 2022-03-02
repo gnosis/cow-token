@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 
-import { BigNumber, BigNumberish, constants, utils } from "ethers";
+import { BigNumber, BigNumberish, utils } from "ethers";
 import { task } from "hardhat/config";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
@@ -11,11 +11,10 @@ import {
   constructorInput,
   ContractName,
   getDeployArgsFromBridgedTokenDeployer,
+  getExpectedAddresses,
   ReducedDeploymentProposalSettings,
-  generateDeploymentProposal,
 } from "../ts";
 import { defaultTokens } from "../ts/lib/constants";
-import { dummyVirtualTokenCreationSettings } from "../ts/lib/dummy-instantiation";
 import { removeSplitClaimFiles, splitClaimsAndSaveToFolder } from "../ts/split";
 
 import { CowDeploymentArgs } from "./ts/deployment";
@@ -74,32 +73,10 @@ async function generateDeployment(
   console.log("Generating Merkle proofs...");
   const { merkleRoot, claims: claimsWithProof } = computeProofs(claims);
 
-  const dummySettings = {
-    ...settings,
-    virtualCowToken: dummyVirtualTokenCreationSettings,
-    multiTokenMediatorGnosisChain: constants.AddressZero,
-  };
-
-  // In the following function, we are generating the addresses, as they would
-  // be generated within the mainnet deployment script - but with many zero
-  // addresses and hashes, as displayed in the settings definition
-  // Hence, we rely on the fact that the addresses computed by generateProposal
-  // for the cowDao and cowToken do not depend on the virtual token deployment
-  // parameters.
-  // For double security, one can also provide the expected values in as expected
-  // setting variables
-  const {
-    addresses: { cowToken, cowDao },
-  } = await generateDeploymentProposal(
-    dummySettings,
-    {
-      ...defaultSafeDeploymentAddresses(chainId),
-      forwarder: constants.AddressZero,
-    },
-    {
-      ...defaultSafeDeploymentAddresses("100"),
-      forwarder: constants.AddressZero,
-    },
+  const { cowToken, cowDao } = await getExpectedAddresses(
+    settings,
+    defaultSafeDeploymentAddresses(chainId),
+    defaultSafeDeploymentAddresses("100"),
     hre.ethers,
   );
 
