@@ -11,11 +11,11 @@ import {
 } from "./deploy";
 import { amountToRelay } from "./lib/constants";
 import {
-  multisend,
   prepareDeterministicSafeWithOwners,
   SafeDeploymentAddresses,
   SafeOperation,
 } from "./lib/safe";
+import { JsonMetaTransaction, transformMetaTransaction } from "./proposal";
 import { metadata } from "./token";
 
 import { callIfContractExists } from ".";
@@ -56,11 +56,6 @@ export interface DeploymentProposalSettings {
 export interface DeploymentAddresses extends SafeDeploymentAddresses {
   forwarder: string;
 }
-
-export type JsonMetaTransaction = Record<
-  keyof Omit<MetaTransaction, "operation">,
-  string
-> & { operation: number };
 
 export interface ReducedVirtualTokenSettings {
   gnoPrice: string;
@@ -337,9 +332,6 @@ async function generateBridgeTokenToGnosisChainTx(
   };
   return [approvalOmniBridgeTx, relayTestFundsToOmniBridgeTx];
 }
-function transformMetaTransaction(tx: MetaTransaction): JsonMetaTransaction {
-  return { ...tx, value: tx.value.toString() };
-}
 export interface BridgeSettings {
   arbitraryMessageBridgeETH: string;
 }
@@ -537,18 +529,4 @@ export function deploymentStepsIntoArray(
     [relayCowDaoDeployment],
     [bridgedTokenDeployerTriggering],
   ];
-}
-
-export function groupMultipleTransactions(
-  proposalSteps: MetaTransaction[][],
-  multisendAddress: string,
-): MetaTransaction[] {
-  return proposalSteps.map((transactions) => {
-    if (transactions.length === 0) {
-      throw new Error("Group contains zero transactions");
-    }
-    return transactions.length === 1
-      ? transactions[0]
-      : multisend(transactions, multisendAddress);
-  });
 }
