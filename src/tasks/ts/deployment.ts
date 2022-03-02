@@ -10,16 +10,15 @@ import {
   splitClaimsAndSaveToFolder,
   generateDeploymentProposal,
   DeploymentProposal,
-  groupMultipleTransactions,
   ReducedDeploymentProposalSettings,
 } from "../../ts";
 import {
-  realityModule as realityModuleAddress,
   defaultTokens,
+  realityModule as realityModuleAddress,
 } from "../../ts/lib/constants";
 
 import { defaultSafeDeploymentAddresses } from "./safe";
-import { RealityModule } from "./snapshot";
+import { getSnapshotTransactionHashes } from "./snapshot";
 
 export interface CowDeploymentArgs {
   claims: string;
@@ -80,17 +79,11 @@ export async function generateDeployment(
     settings.multisend !== undefined
   ) {
     console.log("Generating proposal transaction hashes...");
-    const realityModule = new RealityModule(
-      realityModuleAddress[chainId as keyof typeof realityModuleAddress],
+    txHashes = await getSnapshotTransactionHashes(
+      steps,
+      settings.multisend,
+      chainId as keyof typeof realityModuleAddress,
       hre.ethers.provider,
-    );
-
-    const mergedSteps = groupMultipleTransactions(steps, settings.multisend);
-
-    txHashes = await Promise.all(
-      mergedSteps.map((tx, index) =>
-        realityModule.getTransactionHash(tx, index),
-      ),
     );
   }
 
