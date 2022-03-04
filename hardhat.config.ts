@@ -110,11 +110,6 @@ export default {
       chainId: 100,
     },
   },
-  namedAccounts: {
-    // Note: accounts defined by a number refer to the the accounts as configured
-    // by the current network.
-    deployer: 0,
-  },
   gasReporter: {
     enabled: REPORT_GAS ? true : false,
     currency: "USD",
