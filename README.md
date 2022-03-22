@@ -156,25 +156,6 @@ npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./a
 
 The terminal output of the script will show whether the verification process was successful. 
 
-#### Make vCOW token swappable
-
-The vCOW token can be swapped one to one to COW tokens.
-This is made possible by a Snapshot proposal to the Cow DAO.
-The steps of that proposal can be generated with:
-
-```
-source example/mainnet/.env
-npx hardhat make-swappable --settings ./settings.json --network mainnet 
-```
-
-For details on the format of `settings.json`, see the example file `./example/test-make-vcow-swappable.json`.
-
-This script is deterministic and can be used to verify the transactions proposed to the Cow DAO by comparing the transaction hashes.
-
-The output files are in the `output/deployment` folder, which include:
-1. `steps.json`, a list of transactions to be executed from the Cow DAO in the proposal.
-2. `txhashes.json`, the hashes of all transactions appearing in the proposal. They can be used to verify that the proposal was created correctly.
-
 #### Test deployment
 
 A script that can be used to create a live test deployment of the token contract on the supported networks.

@@ -3,7 +3,6 @@ export * from "./csv";
 export * from "./deploy";
 export * from "./deployment-proposal";
 export * from "./forwarder";
-export * from "./make-swappable-proposal";
 export * from "./permit";
 export * from "./proposal";
 export * from "./split";
