@@ -22,7 +22,7 @@ Then, the claim owner will be able to swap virtual tokens to real tokens, effect
 
 ## Getting Started
 
-### Building the Project
+### Building
 
 ```sh
 yarn
@@ -35,7 +35,7 @@ yarn build
 yarn test
 ```
 
-#### Test coverage
+#### Test Coverage
 
 The contracts code in this repo is fully covered by unit tests.
 Test coverage can be checked by running the following command:
@@ -56,7 +56,7 @@ Gas consumption can be estimated from the tests. Setting the `REPORT_GAS` flag w
 REPORT_GAS=1 yarn test
 ```
 
-#### Contract Code Size
+### Contract Code Size
 
 Contract code size can be benched by running:
 
@@ -125,13 +125,13 @@ The output files are in the `output/deployment` folder, which include:
 
 The format is very similar to the one used in the Uniswap airdrop.
 
-#### Verify GIP-13 proposal
+### Verify GIP-13 proposal
 
 The scripts in this repo have been used to generate the [snapshot proposal](https://snapshot.org/#/gnosis.eth/proposal/0x9b12a093e17e92b56d070ed876883d8c2331678ca3945e44f66dd416cfd47a64) for the [Gnosis Improvement Proposal #13](https://forum.gnosis.io/t/gip-13-gnosis-protocol-token/1529).
 
 Deployments on both mainnet and Gnosis Chain can be verified with the tooling in this repo.
 
-##### Mainnet
+#### Mainnet
 
 You can verifying the correctness of the transactions by running:
 
@@ -143,7 +143,7 @@ npx hardhat deployment --network mainnet --claims ./allocations-mainnet.csv --se
 
 The output file `./output/deployment/txhashes.json` contains the hashes of all transactions that are included in the snapshot and can be compared to the batch transaction hashes that are shown in the Snapshot interface.
 
-##### Gnosis Chain
+#### Gnosis Chain
 
 A factory contract was deployed on Gnosis Chain to facilitate the deployment of the virtual token contract through a mainnet proposal.
 The correctness of the contract parameters can be checked with:
@@ -156,7 +156,7 @@ npx hardhat deployment-bridged-token-deployer --network gnosischain --claims ./a
 
 The terminal output of the script will show whether the verification process was successful. 
 
-#### Test deployment
+### Test deployment
 
 A script that can be used to create a live test deployment of the token contract on the supported networks.
 It generates claims based on an input CSV file. See the [example section](#example-csv-file-with-claims) for how to generate a valid CSV file.
@@ -174,7 +174,7 @@ The output files can be found in the `output/test-deployment` folder, which incl
 
 More advanced options can be listed by running `npx hardhat test-deployment --help`.
 
-#### Example CSV file with claims
+### Example CSV file with claims
 
 A script is available to generate a CSV file containing pseudorandom claims for testing.
 It generates private keys for each user based on a mnemonic parameter. To each of these users will be assigned different claim combinations.
@@ -205,4 +205,14 @@ To just compute the merkle root of a given claim file, use the following script
 
 ```
 yarn hardhat compute-merkle-root --claims <path to csv>
+```
+
+## Use the code in another project
+
+The Solidity contract code, contract ABIs, and Typescript library code are available through the NPM package `@gnosis.pm/cow-token`.
+
+If your project uses yarn, you can install this package with:
+
+```sh
+yarn add @gnosis.pm/cow-token
 ```
