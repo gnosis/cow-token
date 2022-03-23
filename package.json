@@ -1,6 +1,6 @@
 {
   "name": "@gnosis.pm/cow-token",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "LGPL-3.0-or-later",
   "scripts": {
     "verify": "hardhat verify-contract-code",
@@ -22,6 +22,7 @@
   "module": "lib/esm/index.js",
   "types": "lib/esm/index.d.ts",
   "files": [
+    "build/",
     "lib/",
     "src/"
   ],
